@@ -2,66 +2,62 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Transactiekosten Frankrijk – Calculator</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transactiekosten Frankrijk – Premium Tool</title>
+  <link rel="stylesheet" href="./style.css" />
 </head>
+
 <body>
 
-<div class="app">
+<div class="app-wrapper">
 
-  <h1 class="title">Transactiekosten bij Aankoop & Verkoop (Frankrijk)</h1>
-
-  <!-- ============================================================
-       ROLSELECTIE
-       ============================================================ -->
-  <section class="block">
-    <h2>Rol in de transactie</h2>
-
-    <label class="radio-line">
-      <input type="radio" name="role" value="koper" checked onclick="setRole('koper')"> Ik ben koper
-    </label>
-
-    <label class="radio-line">
-      <input type="radio" name="role" value="verkoper" onclick="setRole('verkoper')"> Ik ben verkoper
-    </label>
-
-    <p class="subtext">
-      Ontgrendelde velden zijn invoerbaar. Velden van de andere partij worden wel getoond, maar zijn vergrendeld.
+  <header class="header">
+    <h1>Transactiekosten bij Aankoop & Verkoop in Frankrijk</h1>
+    <p class="sub">
+      Premium rekentool • Notariskosten • Plus-Value • Facultatieve kosten • Educatieve toelichting
     </p>
+  </header>
+
+  <!-- ROL -->
+  <section class="card">
+    <h2>1. Uw rol in de transactie</h2>
+    <div class="role-row">
+      <label class="role-box">
+        <input type="radio" name="role" id="role_koper" value="koper" checked>
+        <span>Koper</span>
+      </label>
+      <label class="role-box">
+        <input type="radio" name="role" id="role_verkoper" value="verkoper">
+        <span>Verkoper</span>
+      </label>
+    </div>
+    <p class="hint">De tool toont altijd beide kostenblokken. Alleen uw eigen invoervelden zijn wijzigbaar.</p>
   </section>
 
+  <!-- BASISGEGEVENS -->
+  <section class="card">
+    <h2>2. Basisgegevens</h2>
 
-  <!-- ============================================================
-       BASISGEGEVENS
-       ============================================================ -->
-  <section class="block">
-    <h2>Basisgegevens</h2>
+    <div class="form-grid">
 
-    <div class="grid-2">
-
-      <div>
+      <div class="field">
         <label>Koopsom (€)</label>
-        <input id="prix_achat" type="number" value="200000">
-        <div class="inline-note">
-          Indicatie notariskosten: <span id="notaris_preview">–</span>
-        </div>
+        <input id="prix_achat" type="number" value="250000" />
+        <div id="notaire_hint" class="inline-info"></div>
       </div>
 
-      <div>
+      <div class="field">
         <label>Verkoopprijs (€)</label>
-        <input id="prix_vente" type="number" value="400000">
+        <input id="prix_vente" type="number" value="350000" />
       </div>
 
-      <div>
+      <div class="field">
         <label>Départementnummer</label>
-        <input id="dept" type="number" value="62" oninput="updateMutationRate()">
-        <div class="inline-note">
-          Mutationstarief: <span id="mut_rate">–</span>
-        </div>
+        <input id="dept" type="number" value="75" />
+        <div id="mutation_info" class="inline-info"></div>
       </div>
 
-      <div>
+      <div class="field">
         <label>Type woning</label>
         <select id="type_bien">
           <option value="ancien">Bestaand (ancien)</option>
@@ -69,179 +65,140 @@
         </select>
       </div>
 
-      <div>
+      <div class="field">
         <label>Résidence principale bij verkoop?</label>
         <select id="rp">
-          <option value="yes">Ja → vrijstelling</option>
+          <option value="yes">Ja (vrijstelling)</option>
           <option value="no" selected>Nee</option>
         </select>
       </div>
 
-      <div>
+      <div class="field">
         <label>Jaren bezit</label>
-        <input id="annees" type="number" value="8">
+        <input id="annees" type="number" value="10" />
       </div>
-
     </div>
   </section>
 
+  <!-- FACULTATIEVE KOSTEN -->
+  <section class="card">
+    <h2>3. Facultatieve kosten</h2>
 
-  <!-- ============================================================
-       MAKELAARSKOSTEN (radio — één partij)
-       ============================================================ -->
-  <section class="block">
-    <h2>Makelaarskosten (één partij)</h2>
+    <div class="opt-block">
+      <label>Makelaarskosten</label>
+      <select id="opt_makelaar_rol">
+        <option value="verkoper" selected>Betaald door verkoper</option>
+        <option value="koper">Betaald door koper</option>
+        <option value="geen">Geen makelaar</option>
+      </select>
+      <button class="info-btn" onclick="toggleInfo('inf_makelaar')">i</button>
+      <div id="inf_makelaar" class="info">
+        Meestal betaalt de verkoper de makelaar (3-8%). Koper-betaling mag ook en kan later worden
+        afgetrokken bij de plus-value. Geen makelaar? De notaris kan de hele transactie afhandelen.
+      </div>
+    </div>
 
-    <label class="radio-line">
-      <input type="radio" name="agence" value="verkoper" checked> Verkoper betaalt (meest gebruikelijk)
-    </label>
+    <div class="opt-block">
+      <label>Hypotheekgarantie / caution (koper)</label>
+      <input type="checkbox" id="opt_hypotheek" />
+      <button class="info-btn" onclick="toggleInfo('inf_hypotheek')">i</button>
+      <div id="inf_hypotheek" class="info">
+        Bij hypothecaire lening. Een bancaire <em>caution</em> is meestal goedkoper dan een
+        klassieke hypotheekakte en voorkomt extra kosten bij verkoop.
+      </div>
+    </div>
 
-    <label class="radio-line">
-      <input type="radio" name="agence" value="koper"> Koper betaalt
-    </label>
+    <div class="opt-block">
+      <label>Mainlevée d’hypothèque (verkoper)</label>
+      <input type="checkbox" id="opt_mainlevee" />
+      <button class="info-btn" onclick="toggleInfo('inf_mainlevee')">i</button>
+      <div id="inf_mainlevee" class="info">
+        Alleen bij bestaande hypotheek. Variabel €400-900.
+      </div>
+    </div>
 
-    <label class="radio-line">
-      <input type="radio" name="agence" value="geen"> Geen makelaar betrokken
-    </label>
+    <div class="opt-block">
+      <label>Assainissement / fosse septique (verkoper)</label>
+      <input type="checkbox" id="opt_assainissement" />
+      <button class="info-btn" onclick="toggleInfo('inf_assainissement')">i</button>
+      <div id="inf_assainissement" class="info">
+        Rapport verplicht in de meeste landelijke gemeenten. Niet-conform → koper kan herstel eisen.
+      </div>
+    </div>
 
-    <div class="info-box">
-      <strong>Uitleg:</strong><br>
-      Makelaarskosten zijn onderhandelbaar (3–8%). Wanneer de koper betaalt, kan dit later worden opgevoerd als kosten bij zijn toekomstige plus-value.  
-      Wanneer de verkoper betaalt, verlaagt het de netto-opbrengst.  
-      Geen makelaar → notaris kan volledige verkoop begeleiden → grootste kostenbesparing voor de verkoper.
+    <div class="opt-block">
+      <label>Géomètre (verkoper)</label>
+      <input type="checkbox" id="opt_geometre" />
+      <button class="info-btn" onclick="toggleInfo('inf_geometre')">i</button>
+      <div id="inf_geometre" class="info">
+        Bij grensproblemen of perceelsplitsing verplicht. Kosten €500-€2000.
+      </div>
     </div>
   </section>
 
+  <!-- PLUS-VALUE -->
+  <section class="card" id="pv-section">
+    <h2>4. Plus-Value (verkoper)</h2>
 
-  <!-- ============================================================
-       FACULTATIEVE KOSTEN
-       ============================================================ -->
-  <section class="block">
-    <h2>Facultatieve kosten</h2>
-
-    <div class="opt">
-      <input type="checkbox" id="opt_hypotheek">
-      <label for="opt_hypotheek"><strong>Hypotheekgarantie / caution (koper)</strong></label>
-      <div class="i" onclick="toggleInfo('i_hypotheek')">i</div>
-      <div class="info" id="i_hypotheek">
-        Als koper kunt u kiezen tussen een klassieke hypothèque (duur) of een garantie/caution (goedkoper).  
-        Besparing: €500–€1.500.  
-        Wordt enkel geactiveerd wanneer u een lening gebruikt.
-      </div>
-    </div>
-
-    <div class="opt">
-      <input type="checkbox" id="opt_mainlevee">
-      <label for="opt_mainlevee"><strong>Mainlevée d’hypothèque (verkoper)</strong></label>
-      <div class="i" onclick="toggleInfo('i_mainlevee')">i</div>
-      <div class="info" id="i_mainlevee">
-        Verplichte opheffing van een bestaande hypotheek.  
-        Kosten €400–€900.  
-        Te beperken door de hypotheek vooraf af te lossen.
-      </div>
-    </div>
-
-    <div class="opt">
-      <input type="checkbox" id="opt_assain">
-      <label for="opt_assain"><strong>Assainissement / fosse septique (verkoper)</strong></label>
-      <div class="i" onclick="toggleInfo('i_assain')">i</div>
-      <div class="info" id="i_assain">
-        Gemeenten kunnen een verplicht rapport eisen.  
-        Als het systeem niet conform is, kan de koper tot €15.000 aan renovatie verlangen.  
-        Door dit vooraf te controleren voorkomt u hoge kosten.
-      </div>
-    </div>
-
-    <div class="opt">
-      <input type="checkbox" id="opt_geo">
-      <label for="opt_geo"><strong>Géomètre (verkoper)</strong></label>
-      <div class="i" onclick="toggleInfo('i_geo')">i</div>
-      <div class="info" id="i_geo">
-        Enkel verplicht bij grensdisputen of perceelwijziging.  
-        Kosten €500–€2.000.  
-        Voorkom dit door uw dossier vooraf op te bouwen (kadaster + buurakkoord).
-      </div>
-    </div>
-
-  </section>
-
-
-  <!-- ============================================================
-       PLUS-VALUE (alleen zichtbaar als rol = verkoper)
-       ============================================================ -->
-  <section class="block" id="pv_block">
-    <h2>Plus-Value parameters (verkoper)</h2>
+    <p class="hint">Plus-value geldt alleen voor verkopers en nooit voor kopers.</p>
 
     <label>Kostensysteem</label>
-    <select id="pv_mode" onchange="togglePVmode()">
-      <option value="forfait">Forfait (7,5% + 15%)</option>
-      <option value="custom">Eigen bedragen</option>
+    <select id="pv_mode">
+      <option value="forfait" selected>Forfait (7,5% + 15%)</option>
+      <option value="custom">Eigen kosten invoeren</option>
     </select>
 
-    <div id="pv_custom" class="hidden">
+    <div id="pv_customblock" class="pv-hidden">
       <label>Werkelijke aankoopkosten (€)</label>
-      <input type="number" id="pv_cout" value="0">
-
+      <input id="pv_achat_cout" type="number" />
       <label>Werkelijke verbouwingskosten (€)</label>
-      <input type="number" id="pv_travaux" value="0">
-    </div>
-
-    <div class="info-box">
-      <strong>Uitleg plus-value:</strong><br>
-      – 19% belasting, vrijstelling na 22 jaar<br>
-      – 17,2% sociale lasten, vrijstelling na 30 jaar<br>
-      – Voor hoofdverblijf → altijd vrijstelling
+      <input id="pv_travaux" type="number" />
     </div>
   </section>
 
-
-  <!-- ============================================================
-       BEREKENKNOP
-       ============================================================ -->
-  <button id="calc" onclick="calcAll()">Bereken alles</button>
-
-
-  <!-- ============================================================
-       RESULTAAT
-       ============================================================ -->
-  <section id="result" class="block"></section>
-
-
-  <!-- ============================================================
-       FAQ (harmonica, v2)
-       ============================================================ -->
-  <section class="block faq">
-    <h2>Veelgestelde vragen</h2>
-
-    <div class="fq" onclick="toggleFAQ('fq1')">Wie betaalt de notaris?</div>
-    <div class="fa" id="fq1">
-      De koper betaalt de wettelijke notariskosten.  
-      Zowel koper als verkoper mogen hun eigen notaris inschakelen zonder dat de totale kosten stijgen.
-    </div>
-
-    <div class="fq" onclick="toggleFAQ('fq2')">Hoe werkt het mutationstarief?</div>
-    <div class="fa" id="fq2">
-      Voer een département in → de tool toont het juiste tarief.  
-      Geen département ingevuld → standaardtarief 5,80665%.
-    </div>
-
-    <div class="fq" onclick="toggleFAQ('fq3')">Hoe kan ik kosten besparen?</div>
-    <div class="fa" id="fq3">
-      – Geen makelaar gebruiken<br>
-      – Een caution kiezen i.p.v. hypothèque<br>
-      – Dossier vooraf compleet maken<br>
-      – Goed plannen i.v.m. plus-value staffels
-    </div>
-
-    <div class="fq" onclick="toggleFAQ('fq4')">Welke facturen moet ik bewaren?</div>
-    <div class="fa" id="fq4">
-      Alle verbouwingen met factuur op naam (TVA-aftrekbaar), makelaarskosten, notariskosten, aankoopkosten.
-    </div>
-
+  <!-- BUTTON -->
+  <section class="card center">
+    <button id="calc-btn" onclick="calcAll()">Bereken alle kosten</button>
   </section>
+
+  <!-- RESULTATEN -->
+  <section class="card" id="result-section" style="display:none;">
+    <h2>5. Resultaten</h2>
+    <div id="result-koper"></div>
+    <div id="result-verkoper"></div>
+    <div id="result-totaal"></div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="card">
+    <h2>6. FAQ</h2>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFAQ(this)">Wie betaalt de notaris?</div>
+      <div class="faq-a">De koper betaalt. Twee notarissen → zelfde kosten.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFAQ(this)">Hoe wordt plus-value berekend?</div>
+      <div class="faq-a">
+        19% belasting + 17,2% sociale lasten. Afbouw na 6 t/m 30 jaar. Hoofdverblijf = vrijstelling.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFAQ(this)">Wat is het mutationstarief?</div>
+      <div class="faq-a">
+        5,09% • 5,81% • 6,31%. Afhankelijk van département. De tool berekent dit automatisch.
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    © Infofrankrijk.com – indicatieve berekeningen, geen juridisch advies.
+  </footer>
 
 </div>
 
-<script src="script.js"></script>
+<script src="./script.js"></script>
 </body>
 </html>
