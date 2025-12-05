@@ -19,7 +19,7 @@
   </header>
 
   <!-- ROL -->
-  <section class="card">
+  <section class="card fade-in">
     <h2>1. Uw rol in de transactie</h2>
 
     <div class="role-row">
@@ -43,7 +43,7 @@
   </section>
 
   <!-- BASISGEGEVENS -->
-  <section class="card">
+  <section class="card fade-in">
     <h2>2. Basisgegevens</h2>
 
     <div class="form-grid">
@@ -61,8 +61,20 @@
 
       <div class="field">
         <label>Départementnummer</label>
-        <input id="dept" type="number" value="75" />
+        <div class="field-inline">
+          <input id="dept" type="number" value="75" />
+          <button class="info-btn" onclick="toggleInfo('info_dept')">i</button>
+        </div>
         <div id="mutation_info" class="inline-info"></div>
+        <div id="info_dept" class="info-box collapsible">
+          Het mutationstarief (“droits de mutation”) is de overdrachtsbelasting.  
+          Afhankelijk van het département: 5,09%, 5,81% of 6,31%.  
+          De tool bepaalt dit automatisch.  
+          Bron:  
+          <a target="_blank" href="https://www.service-public.fr/particuliers/vosdroits/F10864">
+            Service-Public – Droits de mutation
+          </a>.
+        </div>
       </div>
 
       <div class="field">
@@ -90,95 +102,97 @@
   </section>
 
   <!-- FACULTATIEVE KOSTEN -->
-  <section class="card">
+  <section class="card fade-in">
     <h2>3. Facultatieve kosten</h2>
 
-    <div class="opt-block">
+    <!-- Makelaarskosten → 3 knoppen -->
+    <div class="field small-gap">
       <label>Makelaarskosten (3–8%)</label>
-      <select id="opt_makelaar_rol">
-        <option value="verkoper" selected>Verkoper betaalt</option>
-        <option value="koper">Koper betaalt</option>
-        <option value="geen">Geen makelaar</option>
-      </select>
-      <button class="info-btn" onclick="toggleInfo('inf_makelaar')">i</button>
-      <div id="inf_makelaar" class="info">
-        <strong>Berekeningsbasis:</strong> commissie meestal 3–8% van de transactieprijs.  
-        <strong>Wettelijk kader:</strong> “Loi Hoguet” regelt makelaarscourtage.  
-        <strong>Besparing:</strong> Een notaris kan een verkoop volledig afhandelen zonder makelaar.  
-        <a href="https://www.service-public.fr/particuliers/vosdroits/F2066" target="_blank">Service-Public: Frais d’agence</a>
+      <div class="broker-buttons">
+        <button class="choice-btn active" data-role="verkoper" onclick="setMakelaar(this)">Verkoper</button>
+        <button class="choice-btn" data-role="koper" onclick="setMakelaar(this)">Koper</button>
+        <button class="choice-btn" data-role="geen" onclick="setMakelaar(this)">Geen</button>
       </div>
+      <input type="hidden" id="opt_makelaar_rol" value="verkoper">
     </div>
 
-    <div class="opt-block">
-      <label>Hypotheekgarantie / Caution (koper)</label>
-      <input type="checkbox" id="opt_hypotheek" />
-      <button class="info-btn" onclick="toggleInfo('inf_hypotheek')">i</button>
-      <div id="inf_hypotheek" class="info">
-        <strong>Berekeningsbasis:</strong> 0,8–1,5% van leensom.  
-        Banken bieden vaak een “caution bancaire”, goedkoper en zonder latere mainlevée.  
-        <a href="https://www.service-public.fr/particuliers/vosdroits/F2415" target="_blank">Meer over hypotheken</a>
-      </div>
-    </div>
+    <!-- Opties als tegels -->
+    <div class="tile-grid">
 
-    <div class="opt-block">
-      <label>Mainlevée d’hypothèque (verkoper)</label>
-      <input type="checkbox" id="opt_mainlevee" />
-      <button class="info-btn" onclick="toggleInfo('inf_mainlevee')">i</button>
-      <div id="inf_mainlevee" class="info">
-        <strong>Berekeningsbasis:</strong> €400–€900 afhankelijk van restant schuld + formaliteiten.  
-        Verplicht bij verkoop zolang hypotheek niet is opgeheven.
+      <div class="tile">
+        <div class="tile-header">
+          <input type="checkbox" id="opt_hypotheek">
+          <button class="info-btn-tile" onclick="toggleInfo('i_hyp')">i</button>
+        </div>
+        <div class="tile-title">Hypotheekgarantie / Caution</div>
+        <div id="i_hyp" class="info-box collapsible">
+          Een *caution bancaire* wordt slechts onder specifieke voorwaarden verstrekt:
+          stabiel inkomen, residentiestatus en sterke bancaire relatie.
+          Buitenlandse kopers van een tweede woning krijgen dit vaak moeilijk.  
+          Bron:  
+          <a href="https://www.service-public.fr/particuliers/vosdroits/F2415" target="_blank">
+            Service-Public – Garantie bancaire
+          </a>.
+        </div>
       </div>
-    </div>
 
-    <div class="opt-block">
-      <label>Assainissement / fosse septique (verkoper)</label>
-      <input type="checkbox" id="opt_assainissement" />
-      <button class="info-btn" onclick="toggleInfo('inf_assainissement')">i</button>
-      <div id="inf_assainissement" class="info">
-        <strong>Berekeningsbasis:</strong> SPANC-rapport; kosten variëren.  
-        Een niet-conform systeem leidt vaak tot herstelplicht binnen 1 jaar na verkoop.
+      <div class="tile">
+        <div class="tile-header">
+          <input type="checkbox" id="opt_mainlevee">
+          <button class="info-btn-tile" onclick="toggleInfo('i_main')">i</button>
+        </div>
+        <div class="tile-title">Mainlevée d’hypothèque</div>
+        <div id="i_main" class="info-box collapsible">
+          Opheffing oude hypotheek, €400–€900.  
+          Verplicht als een hypotheek nog geregistreerd staat.
+        </div>
       </div>
-    </div>
 
-    <div class="opt-block">
-      <label>Géomètre (verkoper)</label>
-      <input type="checkbox" id="opt_geometre" />
-      <button class="info-btn" onclick="toggleInfo('inf_geometre')">i</button>
-      <div id="inf_geometre" class="info">
-        <strong>Berekeningsbasis:</strong> €500–€2000.  
-        Verplicht bij grensvaststelling of perceelsplitsing (<em>bornage</em>).
+      <div class="tile">
+        <div class="tile-header">
+          <input type="checkbox" id="opt_assainissement">
+          <button class="info-btn-tile" onclick="toggleInfo('i_assain')">i</button>
+        </div>
+        <div class="tile-title">Assainissement / SPANC</div>
+        <div id="i_assain" class="info-box collapsible">
+          SPANC-inspectie verplicht.  
+          Niet-conformiteit leidt vaak tot herstel binnen 1 jaar.
+        </div>
       </div>
-    </div>
 
+      <div class="tile">
+        <div class="tile-header">
+          <input type="checkbox" id="opt_geometre">
+          <button class="info-btn-tile" onclick="toggleInfo('i_geo')">i</button>
+        </div>
+        <div class="tile-title">Géomètre</div>
+        <div id="i_geo" class="info-box collapsible">
+          Verplicht bij *bornage* of perceelsplitsing.  
+          Richtprijs €500–€2000.
+        </div>
+      </div>
+
+    </div>
   </section>
 
   <!-- PLUS VALUE -->
-  <section class="card" id="pv-section">
+  <section class="card fade-in">
     <h2>4. Plus-Value (verkoper)</h2>
 
-    <p class="hint">Plus-value geldt uitsluitend voor de verkoper. Koper betaalt dit nooit.</p>
-
-    <label>Kostensysteem</label>
-    <select id="pv_mode">
-      <option value="forfait">Forfait (7,5% + 15%)</option>
-      <option value="custom">Eigen kosten invoeren</option>
-    </select>
-
-    <div id="pv_customblock" class="pv-hidden">
-      <label>Aankoopkosten destijds (€)</label>
-      <input id="pv_achat_cout" type="number" />
-      <label>Verbouwingskosten (€)</label>
-      <input id="pv_travaux" type="number" />
-    </div>
+    <p class="hint">
+      Plus-value geldt uitsluitend voor de verkoper.  
+      Deze tool rekent volgens de forfaitaire methode.  
+      Een volledige, gedetailleerde simulator staat op Infofrankrijk.com.
+    </p>
   </section>
 
   <!-- BUTTON -->
-  <section class="card center">
+  <section class="card center fade-in">
     <button id="calc-btn" onclick="calcAll()">Bereken alle kosten</button>
   </section>
 
   <!-- RESULTATEN -->
-  <section class="card" id="result-section" style="display:none;">
+  <section class="card fade-in" id="result-section" style="display:none;">
     <h2>5. Resultaten</h2>
 
     <div id="result-koper"></div>
@@ -189,39 +203,48 @@
   </section>
 
   <!-- FAQ -->
-  <section class="card">
+  <section class="card fade-in">
     <h2>6. FAQ</h2>
 
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFAQ(this)">Wie betaalt de notaris?</div>
-      <div class="faq-a">
-        De koper betaalt de notariskosten (“frais d’acquisition”).  
-        Twee notarissen inschakelen verandert niets aan het tarief.  
-        <br><a href="https://www.service-public.fr/particuliers/vosdroits/F31470" target="_blank">Service-Public: Frais d’acquisition</a>
+      <div class="faq-a collapsible">
+        De koper betaalt de notariskosten.  
+        Twee notarissen → geen hogere kosten voor koper of verkoper.  
+        <br>
+        <a href="https://www.service-public.fr/particuliers/vosdroits/F31470" target="_blank">
+          Bron: Service-Public – Frais d’acquisition
+        </a>
       </div>
     </div>
 
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFAQ(this)">Wat is het mutationstarief?</div>
-      <div class="faq-a">
-        Dit is de overdrachtsbelasting (droits de mutation).  
-        Tarief: 5,09%, 5,81% of 6,31% afhankelijk van département.  
-        <br><a href="https://www.service-public.fr/particuliers/vosdroits/F10864" target="_blank">Service-Public: Droits de mutation</a>
+      <div class="faq-a collapsible">
+        Overdrachtsbelasting (droits de mutation).  
+        5,09% – 5,81% – 6,31% afhankelijk van département.  
+        <br>
+        <a href="https://www.service-public.fr/particuliers/vosdroits/F10864" target="_blank">
+          Service-Public – Droits de mutation
+        </a>
       </div>
     </div>
 
     <div class="faq-item">
-      <div class="faq-q" onclick="toggleFAQ(this)">Hoe wordt plus-value berekend?</div>
-      <div class="faq-a">
-        19% belasting + 17,2% sociale lasten.  
-        Afbouw (abattements) vanaf 6 jaar, volledige vrijstelling na 22 en 30 jaar.  
-        <br><a href="https://www.service-public.fr/particuliers/vosdroits/F10864" target="_blank">Service-Public: Plus-value immobilière</a>
+      <div class="faq-q" onclick="toggleFAQ(this)">Hoe vermijd ik plus-value?</div>
+      <div class="faq-a collapsible">
+        Door het pand uw résidence principale te maken voorafgaand aan verkoop,  
+        mits voldaan wordt aan de wettelijke voorwaarden:
+        feitelijke bewoning, hoofdverblijfstatus en verkoop binnen redelijke termijn.  
+        <br>
+        <a href="https://www.service-public.fr/particuliers/vosdroits/F10864" target="_blank">
+          Bron: Service-Public – Exonération résidence principale
+        </a>
       </div>
     </div>
-
   </section>
 
-  <footer class="footer">
+  <footer class="footer fade-in">
     © Infofrankrijk.com – indicatieve berekening, geen juridisch advies.
   </footer>
 
