@@ -1,198 +1,209 @@
-:root{
-  --if-red:#800000;
-  --if-dark:#5a0000;
-  --bg:#f6f6f6;
-  --card:#ffffff;
-  --border:#e0e0e0;
-  --text:#222;
-  --radius:10px;
-}
+function qs(id){return document.getElementById(id);}
 
-body{
-  margin:0;
-  background:var(--bg);
-  font-family:"Inter",-apple-system,system-ui,sans-serif;
-  color:var(--text);
-}
-
-.app-wrapper{
-  max-width:900px;
-  margin:0 auto;
-  padding:18px;
-}
-
-.header h1{
-  text-align:center;
-  margin:0 0 8px;
-  font-size:1.9rem;
-  color:var(--if-red);
-}
-.sub{
-  text-align:center;
-  font-size:.95rem;
-  color:#555;
-}
-
-/* CARD */
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  padding:18px;
-  margin:18px 0;
-  border-radius:var(--radius);
-  box-shadow:0 2px 6px rgba(0,0,0,.06);
-  transition:all .25s ease;
-}
-.card:hover{
-  transform:translateY(-2px);
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
-}
-.card h2{
-  margin-top:0;
-  color:var(--if-dark);
-}
-
-/* GRID */
-.form-grid{
-  display:grid;
-  gap:16px;
-}
-@media(min-width:700px){
-  .form-grid{
-    grid-template-columns:1fr 1fr;
-  }
-}
-
-/* FIELDS */
-.field label{
-  font-weight:600;
-}
-.field input,
-.field select{
-  width:100%;
-  padding:10px;
-  border-radius:6px;
-  border:1px solid #ccc;
-  font-size:1rem;
-}
-.inline-info{
-  font-size:.85rem;
-  color:#666;
-  margin-top:4px;
-}
-
-/* ROLE */
-.role-row{
-  display:flex;
-  gap:18px;
-  flex-wrap:wrap;
-}
-.role-box{
-  border:1px solid var(--border);
-  padding:10px 14px;
-  border-radius:var(--radius);
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-
-/* OPT BLOCKS */
-.opt-block{
-  margin-bottom:22px;
-  position:relative;
-}
-.opt-block label{
-  font-weight:600;
-  display:block;
-  margin-bottom:4px;
-}
-.opt-block input[type=checkbox]{
-  transform:scale(1.25);
-  margin-right:10px;
-}
-.info-btn{
-  background:var(--if-red);
-  color:#fff;
-  border:none;
-  width:24px;
-  height:24px;
-  border-radius:50%;
-  cursor:pointer;
-  position:absolute;
-  right:0;
-  top:0;
-}
-.info{
-  display:none;
-  background:#fafafa;
-  border-left:4px solid var(--if-red);
-  padding:12px;
-  border-radius:6px;
-  margin-top:8px;
-  font-size:.9rem;
-}
-
-/* PLUS VALUE */
-.pv-hidden{
-  display:none;
-}
-
-/* BUTTON */
-#calc-btn{
-  background:var(--if-red);
-  color:#fff;
-  padding:14px 20px;
-  border:none;
-  font-size:1.1rem;
-  border-radius:var(--radius);
-  cursor:pointer;
-  width:100%;
-  max-width:300px;
-}
-#calc-btn:hover{
-  background:var(--if-dark);
-}
-
-/* RESULTS */
-.result-block h3{
-  color:var(--if-dark);
-}
-
-.result-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:12px;
-}
-.result-table th,
-.result-table td{
-  border:1px solid #ddd;
-  padding:8px;
-}
-.result-table th{
-  background:#f2f2f2;
+/* COLLAPSIBLE INFO */
+function toggleInfo(id){
+  const box = qs(id);
+  box.classList.toggle("open");
 }
 
 /* FAQ */
-.faq-item{
-  border-bottom:1px solid #ddd;
-  padding:10px 0;
-}
-.faq-q{
-  font-weight:600;
-  color:var(--if-red);
-  cursor:pointer;
-}
-.faq-a{
-  display:none;
-  font-size:.95rem;
-  padding-top:8px;
+function toggleFAQ(el){
+  const ans = el.nextElementSibling;
+  ans.classList.toggle("open");
 }
 
-/* FOOTER */
-.footer{
-  text-align:center;
-  font-size:.85rem;
-  color:#777;
-  margin-top:30px;
+/* MAKELAAR KEUZE */
+function setMakelaar(btn){
+  document.querySelectorAll(".choice-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  qs("opt_makelaar_rol").value = btn.dataset.role;
+}
+
+/* ROL UI */
+document.querySelectorAll("input[name='role']").forEach(r=>{
+  r.addEventListener("change",updateRoleUI);
+});
+
+function updateRoleUI(){
+  const isKoper = qs("role_koper").checked;
+  const isVerkoper = qs("role_verkoper").checked;
+  const isNotaris = qs("role_notaris").checked;
+
+  const fields = ["prix_achat","prix_vente","dept","type_bien","rp","annees"];
+  fields.forEach(f=> qs(f).disabled = false);
+
+  if(isKoper){
+    qs("prix_achat").disabled = true;
+    qs("rp").disabled = true;
+    qs("annees").disabled = true;
+  }
+  if(isVerkoper){
+    qs("dept").disabled = true;
+    qs("type_bien").disabled = true;
+  }
+}
+updateRoleUI();
+
+/* MUTATION TARIEF */
+function mutationRate(d){
+  const low=[36,56,976];
+  const high=[75,13,31,35,59,69,92,93,94,34,44];
+  d=parseInt(d);
+  if(low.includes(d)) return 0.0509006;
+  if(high.includes(d)) return 0.063185;
+  return 0.0580665;
+}
+
+function showMutationInfo(){
+  const d = qs("dept").value.trim()||"00";
+  qs("mutation_info").textContent =
+    "Mutationstarief: " + (mutationRate(d)*100).toFixed(3) + "%";
+}
+qs("dept").addEventListener("input", showMutationInfo);
+showMutationInfo();
+
+/* NOTARISKOSTEN */
+function calcNotaire(koopsom,type,dept){
+  let droits = type==="vefa" ? koopsom*0.00715 : koopsom*mutationRate(dept);
+  let em_ht = koopsom*0.00799 + 397.25;
+  let em_ttc = em_ht*1.20;
+  let formal=1000, divers=400;
+  let secu = Math.max(15,koopsom*0.001);
+  return droits + em_ttc + formal + divers + secu;
+}
+
+function showNotaireHint(){
+  const a=parseFloat(qs("prix_achat").value)||0;
+  const t=qs("type_bien").value;
+  const d=qs("dept").value||"00";
+  qs("notaire_hint").textContent =
+    "Indicatieve notariskosten: €" + calcNotaire(a,t,d).toLocaleString();
+}
+showNotaireHint();
+qs("prix_achat").addEventListener("input",showNotaireHint);
+qs("dept").addEventListener("input",showNotaireHint);
+qs("type_bien").addEventListener("change",showNotaireHint);
+
+/* FACULTATIEVEN */
+function facultatieven(role, achat, vente, hyp, mainl, assain, geo){
+  let k=0, v=0;
+  return {
+    koper:{
+      makelaar: role==="koper"? achat*0.05:0,
+      hypothee:hyp? achat*0.012:0,
+      totaal: (role==="koper"? achat*0.05:0) + (hyp? achat*0.012:0)
+    },
+    verkoper:{
+      makelaar: role==="verkoper"? vente*0.05:0,
+      mainlevee: mainl?600:0,
+      assain: assain?300:0,
+      geometre: geo?800:0,
+      totaal:(role==="verkoper"? vente*0.05:0)+(mainl?600:0)+(assain?300:0)+(geo?800:0)
+    }
+  };
+}
+
+/* PLUS VALUE (forfait) */
+function calcPlusValue(vente,achat,years){
+  const brut = vente - achat;
+  let costBuy = achat*0.075;
+  let costWork = years>=5 ? achat*0.15 : 0;
+  const net = brut - costBuy - costWork;
+
+  function abbF(y){
+    if(y<6) return 0;
+    if(y<=21) return (y-5)*6;
+    if(y===22) return 100;
+    return 100;
+  }
+  function abbS(y){
+    if(y<6)return 0;
+    if(y<=21)return (y-5)*1.65;
+    if(y===22)return 16.6;
+    if(y<=30)return 16.6+(y-22)*9;
+    return 100;
+  }
+
+  const aF=abbF(years), aS=abbS(years);
+  const baseF = net*(1-aF/100);
+  const baseS = net*(1-aS/100);
+  let imp=baseF*0.19, soc=baseS*0.172;
+  if(net<=0){imp=0;soc=0;}
+  return {total:imp+soc};
+}
+
+/* CALC ALL */
+function calcAll(){
+
+  const achat=parseFloat(qs("prix_achat").value)||0;
+  const vente=parseFloat(qs("prix_vente").value)||0;
+  const dept=qs("dept").value||"00";
+  const type=qs("type_bien").value;
+
+  const years=parseInt(qs("annees").value)||0;
+  const rp=qs("rp").value;
+
+  const makRol=qs("opt_makelaar_rol").value;
+  const hyp=qs("opt_hypotheek").checked;
+  const mainl=qs("opt_mainlevee").checked;
+  const ass=qs("opt_assainissement").checked;
+  const geo=qs("opt_geometre").checked;
+
+  const notKoper=calcNotaire(achat,type,dept);
+  const fac=facultatieven(makRol, achat, vente, hyp, mainl, ass, geo);
+
+  let pv = {total:0};
+  if(rp==="no") pv = calcPlusValue(vente,achat,years);
+
+  const koperT = notKoper + fac.koper.totaal;
+  const verkoperT = pv.total + fac.verkoper.totaal;
+  const cumul = koperT + verkoperT;
+
+  qs("result-section").style.display="block";
+
+  qs("result-koper").innerHTML = `
+    <h3>KOPER</h3>
+    <table class="result-table">
+      <tr><th>Post</th><th>Bedrag</th></tr>
+      <tr><td>Notariskosten</td><td>€${notKoper.toLocaleString()}</td></tr>
+      <tr><th colspan="2">Facultatieve kosten</th></tr>
+      <tr><td>Makelaar</td><td>€${fac.koper.makelaar.toLocaleString()}</td></tr>
+      <tr><td>Hypotheekgarantie</td><td>€${fac.koper.hypothee.toLocaleString()}</td></tr>
+      <tr><td><strong>Totaal facultatief</strong></td><td><strong>€${fac.koper.totaal.toLocaleString()}</strong></td></tr>
+      <tr><th colspan="2">Totaal koper</th></tr>
+      <tr><td colspan="2"><strong>€${koperT.toLocaleString()}</strong></td></tr>
+    </table>
+  `;
+
+  qs("result-verkoper").innerHTML = `
+    <h3>VERKOPER</h3>
+    <table class="result-table">
+      <tr><th>Post</th><th>Bedrag</th></tr>
+      <tr><td>Plus-value</td><td>€${pv.total.toLocaleString()}</td></tr>
+      <tr><th colspan="2">Facultatieve kosten</th></tr>
+      <tr><td>Makelaar</td><td>€${fac.verkoper.makelaar.toLocaleString()}</td></tr>
+      <tr><td>Mainlevée</td><td>€${fac.verkoper.mainlevee.toLocaleString()}</td></tr>
+      <tr><td>Assainissement</td><td>€${fac.verkoper.assain.toLocaleString()}</td></tr>
+      <tr><td>Géomètre</td><td>€${fac.verkoper.geometre.toLocaleString()}</td></tr>
+      <tr><td><strong>Totaal facultatief</strong></td><td><strong>€${fac.verkoper.totaal.toLocaleString()}</strong></td></tr>
+      <tr><th colspan="2">Totaal verkoper</th></tr>
+      <tr><td colspan="2"><strong>€${verkoperT.toLocaleString()}</strong></td></tr>
+    </table>
+  `;
+
+  qs("result-totaal").innerHTML = `
+    <h3>CUMULATIEVE KOSTEN</h3>
+    <p><strong>€${cumul.toLocaleString()}</strong></p>
+  `;
+
+  qs("result-advies").innerHTML = `
+    <h3>Adviezen & Mogelijkheden om te besparen</h3>
+    <ul>
+      <li>Verkoper kan volledige plus-value vermijden door de woning vooraf als résidence principale te bewonen (volgens wettelijke voorwaarden).</li>
+      <li>Koper: Vraag naar caution bancaire, maar houd rekening met strenge eisen voor NL/BE kopers.</li>
+      <li>Verkoper: Een notaris kan de verkoop volledig afhandelen → makelaarskosten besparen.</li>
+      <li>Verkoper: Laat SPANC-onderzoek vooraf uitvoeren om prijsdruk bij verkoop te voorkomen.</li>
+      <li>Verkoper: Regel tijdig géomètre bij grenskwesties om vertraging bij verkoop te voorkomen.</li>
+    </ul>
+  `;
 }
