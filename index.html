@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transactiekosten Frankrijk – Calculator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-container">
+
+  <h1 class="title">Transactiekosten bij Aankoop & Verkoop (Frankrijk)</h1>
+
+  <!-- ====================== INPUT-BLOK ====================== -->
+  <section class="block">
+    <h2>Basisgegevens</h2>
+
+    <label>Koopsom (€)</label>
+    <input id="prix_achat" type="number" value="250000">
+
+    <label>Verkoopprijs (€)</label>
+    <input id="prix_vente" type="number" value="350000">
+
+    <label>Départementnummer</label>
+    <input id="dept" type="number" value="75">
+
+    <label>Type woning</label>
+    <select id="type_bien">
+      <option value="ancien">Bestaand (ancien)</option>
+      <option value="vefa">Nieuw / VEFA</option>
+    </select>
+
+    <label>Résidence principale bij verkoop?</label>
+    <select id="rp">
+      <option value="yes">Ja → vrijstelling</option>
+      <option value="no" selected>Nee</option>
+    </select>
+
+    <label>Jaren bezit</label>
+    <input id="annees" type="number" value="10">
+  </section>
+
+  <!-- ====================== FACULTATIEVE KOSTEN ====================== -->
+  <section class="block">
+    <h2>Facultatieve kosten</h2>
+
+    <div class="opt">
+      <label><input type="checkbox" id="opt_makelaar_verkoper" checked> Makelaarskosten verkoper</label>
+      <button class="info-btn" onclick="toggleInfo('i_makelaar_verkoper')">i</button>
+      <div class="info" id="i_makelaar_verkoper">3–8%, meestal door verkoper betaald.</div>
+    </div>
+
+    <div class="opt">
+      <label><input type="checkbox" id="opt_makelaar_koper"> Makelaarskosten koper</label>
+      <button class="info-btn" onclick="toggleInfo('i_makelaar_koper')">i</button>
+      <div class="info" id="i_makelaar_koper">Aftrekbaar in plus-value berekening.</div>
+    </div>
+
+    <div class="opt">
+      <label><input type="checkbox" id="opt_hypotheek"> Hypotheekgarantie / caution</label>
+      <button class="info-btn" onclick="toggleInfo('i_hypotheek')">i</button>
+      <div class="info" id="i_hypotheek">Typisch 1–1,5% van het leenbedrag.</div>
+    </div>
+
+    <div class="opt">
+      <label><input type="checkbox" id="opt_mainlevee"> Mainlevée d’hypothèque</label>
+      <button class="info-btn" onclick="toggleInfo('i_mainlevee')">i</button>
+      <div class="info" id="i_mainlevee">Opheffing oude hypotheek bij verkoper. 400–900€.</div>
+    </div>
+
+    <div class="opt">
+      <label><input type="checkbox" id="opt_assainissement"> Assainissement / fosse septique</label>
+      <button class="info-btn" onclick="toggleInfo('i_assainissement')">i</button>
+      <div class="info" id="i_assainissement">Controleverplichting per gemeente.</div>
+    </div>
+
+    <div class="opt">
+      <label><input type="checkbox" id="opt_geometre"> Géomètre</label>
+      <button class="info-btn" onclick="toggleInfo('i_geometre')">i</button>
+      <div class="info" id="i_geometre">Grensbepaling / perceelwijziging. 500–2000€.</div>
+    </div>
+  </section>
+
+  <!-- ====================== PLUS-VALUE PARAMETERS ====================== -->
+  <section class="block">
+    <h2>Plus-Value Parameters</h2>
+
+    <label>Kostensysteem</label>
+    <select id="pv_mode">
+      <option value="forfait" selected>Forfait (7,5% + 15%)</option>
+      <option value="custom">Eigen bedragen</option>
+    </select>
+
+    <div id="pv_customblock" class="custom-block">
+      <label>Werkelijke aankoopkosten (€)</label>
+      <input id="pv_achat_cout" type="number" value="0">
+      <label>Werkelijke verbouwingskosten (€)</label>
+      <input id="pv_travaux" type="number" value="0">
+    </div>
+  </section>
+
+  <!-- ====================== BEREKEN-KNOP ====================== -->
+  <button id="calc-btn" onclick="calcAll()">Bereken alles</button>
+
+  <!-- ====================== OUTPUT ====================== -->
+  <section class="block" id="fr-output"></section>
+
+  <!-- ====================== FAQ ====================== -->
+  <section class="block">
+    <h2>FAQ</h2>
+
+    <div class="faq">
+      <div class="faq-q" onclick="toggleFAQ(this)">Wat zijn alle kosten bij een Franse vastgoedaankoop?</div>
+      <div class="faq-a">
+        Volledige breakdown van verplicht en facultatief — zie uitleg in jouw tool.
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q" onclick="toggleFAQ(this)">Hoe werkt de plus-value?</div>
+      <div class="faq-a">
+        19% belasting + 17,2% sociale lasten, met officiële Franse staffels tot volledige vrijstelling na 22 en 30 jaar.
+      </div>
+    </div>
+
+  </section>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
