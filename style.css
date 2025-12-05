@@ -1,0 +1,108 @@
+body {
+  background:#f4f4f4;
+  margin:0;
+  font-family:Inter,Arial,sans-serif;
+}
+
+.app-container {
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+.title {
+  text-align:center;
+  color:#800000;
+  margin-bottom:20px;
+}
+
+.block {
+  background:white;
+  padding:20px;
+  margin-bottom:20px;
+  border-radius:8px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.1);
+}
+
+label {
+  font-weight:600;
+  display:block;
+  margin-top:12px;
+}
+
+input, select {
+  width:100%;
+  padding:10px;
+  border-radius:6px;
+  border:1px solid #ccc;
+  margin-top:4px;
+  font-size:16px;
+}
+
+#calc-btn {
+  width:100%;
+  padding:15px;
+  font-size:18px;
+  background:#800000;
+  color:white;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+#calc-btn:hover {
+  background:#600000;
+}
+
+.opt {
+  position:relative;
+  margin:10px 0;
+  padding:10px;
+  background:#fafafa;
+  border-radius:6px;
+  border:1px solid #ddd;
+}
+
+.info-btn {
+  position:absolute;
+  right:10px;
+  top:10px;
+  background:#800000;
+  color:white;
+  border:none;
+  border-radius:50%;
+  width:22px;
+  height:22px;
+  cursor:pointer;
+}
+
+.info {
+  display:none;
+  margin-top:10px;
+  border-left:4px solid #800000;
+  padding:10px;
+  background:white;
+}
+
+.custom-block {
+  display:none;
+  margin-top:10px;
+}
+
+.faq {
+  border-bottom:1px solid #ddd;
+}
+
+.faq-q {
+  padding:10px;
+  font-weight:600;
+  cursor:pointer;
+  background:#fafafa;
+}
+
+.faq-a {
+  display:none;
+  padding:10px;
+  background:white;
+}
