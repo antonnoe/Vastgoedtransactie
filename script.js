@@ -1,272 +1,274 @@
-/* ==========================
-   HULPFUNCTIES
-========================== */
+/* ------------------------------------------------------
+   SCRIPT.JS – v4.1
+--------------------------------------------------------- */
 
-function qs(id){ return document.getElementById(id); }
+/* ------------------------------
+   INFOBOX TOGGLES
+------------------------------ */
+document.querySelectorAll(".info-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const target = document.getElementById(btn.dataset.target);
+        if (!target) return;
 
-function toggleInfo(id){
-  const box = qs(id);
-  box.style.display = box.style.display === "block" ? "none" : "block";
-}
-
-function toggleFAQ(el){
-  const ans = el.nextElementSibling;
-  ans.style.display = ans.style.display === "block" ? "none" : "block";
-}
-
-/* ==========================
-   ROL-UPDATES
-========================== */
-
-document.addEventListener("DOMContentLoaded", ()=>{
-  updateRoleUI();
-  showMutationInfo();
-  showNotaireHint();
+        if (target.style.display === "block") {
+            target.style.display = "none";
+        } else {
+            target.style.display = "block";
+        }
+    });
 });
 
-document.querySelectorAll("input[name='role']").forEach(r=>{
-  r.addEventListener("change", updateRoleUI);
+/* ------------------------------
+   FAQ TOGGLES
+------------------------------ */
+document.querySelectorAll(".faq-question").forEach(q => {
+    q.addEventListener("click", () => {
+        const ans = q.nextElementSibling;
+
+        if (ans.style.display === "block") {
+            ans.style.display = "none";
+        } else {
+            ans.style.display = "block";
+        }
+    });
 });
 
-function updateRoleUI(){
-  const isKoper = qs("role_koper").checked;
-  const isVerkoper = qs("role_verkoper").checked;
-  const isNotaris = qs("role_notaris").checked;
+/* ------------------------------
+   MAKELAAR-BUTTONS
+------------------------------ */
+let makelaarRol = "geen";
 
-  const fields = ["prix_achat","prix_vente","dept","type_bien","rp","annees"];
-  fields.forEach(f=> qs(f).disabled = false);
+document.querySelectorAll(".mk-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".mk-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        makelaarRol = btn.dataset.value; // "verkoper" | "koper" | "geen"
+    });
+});
 
-  if(isKoper){
-    qs("prix_achat").disabled = true;
-    qs("rp").disabled = true;
-    qs("annees").disabled = true;
-  }
-  if(isVerkoper){
-    qs("dept").disabled = true;
-    qs("type_bien").disabled = true;
-  }
+/* ------------------------------
+   MUTATIONSTARIEF OP BASIS VAN DEPARTEMENT
+------------------------------ */
+function mutationTarief(dept) {
+
+    dept = Number(dept);
+
+    // LAGE TARIEF DEPARTEMENTEN
+    const laagTarief = [36, 56, 976]; // Indre, Morbihan, Mayotte
+    if (laagTarief.includes(dept)) return 0.0509;
+
+    // HOGE TARIEF DEPARTEMENTEN
+    const hoogTarief = [75, 13, 31, 35]; // Paris, Bouches-du-Rhône, Haute-Garonne, Ille-et-Vilaine
+    if (hoogTarief.includes(dept)) return 0.0631;
+
+    // OVERIG
+    return 0.0581;
 }
 
-/* ==========================
-   MUTATION TARIEF
-========================== */
+/* ------------------------------
+   NOTARISKOSTEN – vereenvoudigd model
+   (Indicatie, niet exact conform barème)
+------------------------------ */
+function berekenNotariskosten(prijs, isNieuwbouw) {
 
-function mutationRate(dept){
-  const d = parseInt(dept);
-  const low = [36,56,976];
-  const high=[75,13,31,35,59,69,92,93,94,34,44];
-
-  if(low.includes(d)) return 0.0509006;
-  if(high.includes(d)) return 0.063185;
-  return 0.0580665;
-}
-
-function showMutationInfo(){
-  const d = qs("dept").value.trim();
-  if(!d){
-    qs("mutation_info").textContent="Landelijk tarief 5,81%";
-    return;
-  }
-  const r = mutationRate(d);
-  qs("mutation_info").textContent="Mutationstarief: "+(r*100).toFixed(3)+"%";
-}
-
-qs("dept").addEventListener("input", showMutationInfo);
-
-/* ==========================
-   NOTARISKOSTEN
-========================== */
-
-function calcNotaire(koopsom,typeBien,dept){
-  let droits = typeBien==="vefa" ? koopsom*0.00715 : koopsom*mutationRate(dept);
-  let emol_ht = koopsom*0.00799+397.25;
-  let emol_ttc = emol_ht*1.20;
-  let formal=1000, divers=400;
-  let secu = Math.max(15, koopsom*0.001);
-  return droits + emol_ttc + formal + divers + secu;
-}
-
-function showNotaireHint(){
-  const achat = parseFloat(qs("prix_achat").value)||0;
-  const t = qs("type_bien").value;
-  const d = qs("dept").value.trim()||"00";
-  const val = calcNotaire(achat,t,d);
-  qs("notaire_hint").textContent="Indicatieve notariskosten: €"+val.toLocaleString();
-}
-
-qs("prix_achat").addEventListener("input", showNotaireHint);
-qs("dept").addEventListener("input", showNotaireHint);
-qs("type_bien").addEventListener("change", showNotaireHint);
-
-/* ==========================
-   PLUS-VALUE
-========================== */
-
-function calcPlusValue(vente,achat,years,mode,achatCout,travaux){
-
-  const brut = vente - achat;
-  let costBuy=0, costWork=0;
-
-  if(mode==="forfait"){
-    costBuy = achat*0.075;
-    costWork = years>=5 ? achat*0.15 : 0;
-  } else {
-    costBuy = achatCout;
-    costWork = travaux;
-  }
-
-  const net = brut - costBuy - costWork;
-
-  function abbF(y){
-    if(y<6) return 0;
-    if(y<=21) return (y-5)*6;
-    if(y===22) return 100;
-    return 100;
-  }
-  function abbS(y){
-    if(y<6)return 0;
-    if(y<=21)return (y-5)*1.65;
-    if(y===22)return 16.6;
-    if(y<=30)return 16.6+(y-22)*9;
-    return 100;
-  }
-
-  const aF= Math.min(100,abbF(years));
-  const aS= Math.min(100,abbS(years));
-
-  const baseF = net*(1-aF/100);
-  const baseS = net*(1-aS/100);
-
-  let imp = baseF*0.19;
-  let soc = baseS*0.172;
-
-  if(net<=0){ imp=0; soc=0; }
-
-  return { brut, net, imp, soc, total: imp+soc };
-}
-
-/* ==========================
-   FACULTATIEVE KOSTEN
-========================== */
-
-function facultatieven(role, achat, vente, hyp, mainl, assain, geom){
-  let koper=0, verkoper=0;
-
-  if(role==="koper") koper += achat*0.05;
-  if(role==="verkoper") verkoper += vente*0.05;
-
-  if(hyp) koper += achat*0.012;
-  if(mainl) verkoper += 600;
-  if(assain) verkoper += 300;
-  if(geom) verkoper += 800;
-
-  return {
-    koper: {
-      makelaar: role==="koper" ? achat*0.05 : 0,
-      hypothee: hyp ? achat*0.012 : 0,
-      totaal: koper
-    },
-    verkoper: {
-      makelaar: role==="verkoper" ? vente*0.05 : 0,
-      mainlevee: mainl ? 600 : 0,
-      assain: assain ? 300 : 0,
-      geometre: geom ? 800 : 0,
-      totaal: verkoper
+    if (isNieuwbouw) {
+        // Nieuwbouw: 3–4%
+        return prijs * 0.035;
     }
-  };
+
+    // Bestaand: 7–8% → we nemen 7,5% indicatief
+    return prijs * 0.075;
 }
 
-/* ==========================
-   BEREKEN ALLES
-========================== */
+/* ------------------------------
+   PLUS-VALUE FORFAITAIR
+------------------------------ */
+function berekenPlusValue(aankoop, verkoop, jaren, isRP) {
 
-function calcAll(){
+    if (isRP === "ja") return 0;        // RESIDENCE PRINCIPALE → vrijstelling
+    if (verkoop <= aankoop) return 0;   // Geen winst → geen belasting
 
-  const achat = parseFloat(qs("prix_achat").value)||0;
-  const vente = parseFloat(qs("prix_vente").value)||0;
-  const dept = qs("dept").value.trim()||"00";
-  const type = qs("type_bien").value;
+    let winst = verkoop - aankoop;
 
-  const years = parseInt(qs("annees").value)||0;
-  const rp = qs("rp").value;
-  const pvMode = qs("pv_mode").value;
-  const pvA = parseFloat(qs("pv_achat_cout").value)||0;
-  const pvT = parseFloat(qs("pv_travaux").value)||0;
+    // STAFFEL VOOR VRIJSTELLING
+    // Fictief forfaitair – jouw eerdere instructie
+    let belastingPercentage = 0.362; // 19% + 17.2%
 
-  const makRol = qs("opt_makelaar_rol").value;
-  const hyp = qs("opt_hypotheek").checked;
-  const mainl = qs("opt_mainlevee").checked;
-  const assain = qs("opt_assainissement").checked;
-  const geom = qs("opt_geometre").checked;
+    // Vermindering naarmate jaren bezit
+    if (jaren >= 6 && jaren < 22) winst *= 0.7;
+    if (jaren >= 22 && jaren < 30) winst *= 0.4;
+    if (jaren >= 30) return 0;
 
-  const notKoper = calcNotaire(achat,type,dept);
-
-  const fac = facultatieven(makRol, achat, vente, hyp, mainl, assain, geom);
-
-  let pv = {total:0, imp:0, soc:0};
-  if(rp==="no") pv = calcPlusValue(vente,achat,years,pvMode,pvA,pvT);
-
-  const koperT = notKoper + fac.koper.totaal;
-  const verkoperT = pv.total + fac.verkoper.totaal;
-  const cumul = koperT + verkoperT;
-
-  qs("result-section").style.display="block";
-
-  qs("result-koper").innerHTML = `
-    <div class="result-block">
-      <h3>KOPER</h3>
-      <table class="result-table">
-        <tr><th colspan="2">Notariskosten</th></tr>
-        <tr><td>Notariskosten</td><td>€${notKoper.toLocaleString()}</td></tr>
-
-        <tr><th colspan="2">Facultatieve kosten</th></tr>
-        <tr><td>Makelaar</td><td>€${fac.koper.makelaar.toLocaleString()}</td></tr>
-        <tr><td>Hypotheekgarantie</td><td>€${fac.koper.hypothee.toLocaleString()}</td></tr>
-        <tr><td><strong>Totaal facultatief</strong></td><td><strong>€${fac.koper.totaal.toLocaleString()}</strong></td></tr>
-
-        <tr><th colspan="2">Totaal koper</th></tr>
-        <tr><td colspan="2"><strong>€${koperT.toLocaleString()}</strong></td></tr>
-      </table>
-    </div>
-  `;
-
-  qs("result-verkoper").innerHTML = `
-    <div class="result-block">
-      <h3>VERKOPER</h3>
-      <table class="result-table">
-        <tr><th colspan="2">Plus-Value</th></tr>
-        <tr><td>Belasting + Sociale lasten</td><td>€${pv.total.toLocaleString()}</td></tr>
-
-        <tr><th colspan="2">Facultatieve kosten</th></tr>
-        <tr><td>Makelaar</td><td>€${fac.verkoper.makelaar.toLocaleString()}</td></tr>
-        <tr><td>Mainlevée</td><td>€${fac.verkoper.mainlevee.toLocaleString()}</td></tr>
-        <tr><td>Assainissement</td><td>€${fac.verkoker?.assain || fac.verkoper.assain}</td></tr>
-        <tr><td>Géomètre</td><td>€${fac.verkoper.geometre.toLocaleString()}</td></tr>
-        <tr><td><strong>Totaal facultatief</strong></td><td><strong>€${fac.verkoper.totaal.toLocaleString()}</strong></td></tr>
-
-        <tr><th colspan="2">Totaal verkoper</th></tr>
-        <tr><td colspan="2"><strong>€${verkoperT.toLocaleString()}</strong></td></tr>
-      </table>
-    </div>
-  `;
-
-  qs("result-totaal").innerHTML = `
-    <div class="result-block">
-      <h3>CUMULATIEVE KOSTEN (koper + verkoper)</h3>
-      <p><strong>€${cumul.toLocaleString()}</strong></p>
-    </div>
-  `;
-
-  qs("result-advies").innerHTML = `
-    <div class="result-block">
-      <h3>Adviezen & Mogelijkheden om te besparen</h3>
-      <ul class="advice-list">
-        <li>Koper: Kies een caution bancaire i.p.v. hypothèque → lagere kosten + geen mainlevée.</li>
-        <li>Verkoper: Gebruik notaris i.p.v. makelaar → tot duizenden euro’s lagere kosten.</li>
-        <li>Verkoper: Doe assainissement-rapport vooraf → voorkomt prijsverlaging tijdens onderhandelingen.</li>
-        <li>Verkoper: Laat perceelcheck (géomètre) vroeg doen → minder risico op vertraging.</li>
-        <li>Algemeen: Check mutationstarief per département voor een realistische kosteninschatting.</li>
-      </ul>
-    </div>
-  `;
+    return winst * belastingPercentage;
 }
+
+/* ------------------------------
+   FACULTATIEVE KOSTEN MODEL
+------------------------------ */
+function facultatieveKosten(makelaarRol, prijs, checks) {
+
+    const result = {
+        koper: 0,
+        verkoper: 0,
+        detailsKoper: [],
+        detailsVerkoper: []
+    };
+
+    /* MAKELAARSKOSTEN */
+    if (makelaarRol !== "geen") {
+        const mk = prijs * 0.05; // 5% indicatief middenpunt
+        if (makelaarRol === "koper") {
+            result.koper += mk;
+            result.detailsKoper.push(`Makelaarskosten: €${mk.toLocaleString()}`);
+        } else {
+            result.verkoper += mk;
+            result.detailsVerkoper.push(`Makelaarskosten: €${mk.toLocaleString()}`);
+        }
+    }
+
+    /* CAUTION – koper */
+    if (checks.caution) {
+        result.koper += 1200; // indicatief
+        result.detailsKoper.push(`Caution bancaire: €1.200`);
+    }
+
+    /* MAINLEVEE – verkoper */
+    if (checks.mainlevee) {
+        result.verkoper += 700;
+        result.detailsVerkoper.push(`Mainlevée d’hypothèque: €700`);
+    }
+
+    /* SPANC – verkoper */
+    if (checks.spanc) {
+        result.verkover += 0; // Actually cost only if repairs needed — but listed as facultative
+        result.detailsVerkoper.push(`SPANC-inspectie: €0 (inspectie verplicht; eventuele werken apart)`);
+    }
+
+    /* GEOMETRE – verkoper */
+    if (checks.geometre) {
+        result.verkoper += 1200;
+        result.detailsVerkoper.push(`Géomètre: €1.200`);
+    }
+
+    return result;
+}
+
+/* ------------------------------
+   ROL LOCKING
+------------------------------ */
+function rolLock(role) {
+
+    const aankoop = document.getElementById("aankoopprijs");
+    const verkoop = document.getElementById("verkoopprijs");
+
+    if (role === "koper") {
+        aankoop.disabled = true;
+        verkoop.disabled = false;
+    }
+    if (role === "verkoper") {
+        aankoop.disabled = false;
+        verkoop.disabled = true;
+    }
+    if (role === "notaris") {
+        aankoop.disabled = false;
+        verkoop.disabled = false;
+    }
+}
+
+document.querySelectorAll("input[name='role']").forEach(r => {
+    r.addEventListener("change", () => rolLock(r.value));
+});
+
+/* INIT */
+rolLock("koper");
+
+/* ------------------------------
+   UPDATE NOTARIS INDICATIE
+------------------------------ */
+function updateIndicatie() {
+    const prijs = Number(document.getElementById("aankoopprijs").value);
+    const type = document.getElementById("woningtype").value;
+
+    const indicatie = berekenNotariskosten(prijs, type === "neuf");
+    document.getElementById("notarisIndicatie").innerText = indicatie.toLocaleString("nl-NL", { style: "currency", currency: "EUR" });
+}
+
+document.getElementById("aankoopprijs").addEventListener("input", updateIndicatie);
+
+/* ------------------------------
+   BEREKENING HOOFDFUNCTIE
+------------------------------ */
+document.getElementById("calculateBtn").addEventListener("click", () => {
+
+    const role = document.querySelector("input[name='role']:checked").value;
+
+    const aankoop = Number(document.getElementById("aankoopprijs").value);
+    const verkoop = Number(document.getElementById("verkoopprijs").value);
+    const dept = Number(document.getElementById("departement").value);
+    const type = document.getElementById("woningtype").value;
+    const isRP = document.getElementById("isRP").value;
+    const jaren = Number(document.getElementById("jarenBezit").value);
+
+    const mutRate = mutationTarief(dept);
+    document.getElementById("mutationTarief").innerText = (mutRate * 100).toFixed(3) + "%";
+
+    /* Notariskosten koper */
+    const notaris = berekenNotariskosten(verkoop, type === "neuf");
+
+    /* Mutationstarief koper */
+    const droits = verkoop * mutRate;
+
+    /* Facultatieve kosten */
+    const facult = facultatieveKosten(makelaarRol, verkoop, {
+        caution: document.getElementById("caution").checked,
+        mainlevee: document.getElementById("mainlevee").checked,
+        spanc: document.getElementById("spanc").checked,
+        geometre: document.getElementById("geometre").checked
+    });
+
+    /* Plus-value verkoper */
+    const plusValue = berekenPlusValue(aankoop, verkoop, jaren, isRP);
+
+    /* -----------------------------------------
+       TOTAAL PER PARTIJ
+    ------------------------------------------ */
+    let koperTotaal = notaris + droits + facult.koper;
+    let verkoperTotaal = facult.verkoper + plusValue;
+
+    /* -----------------------------------------
+       WEERGAVE
+    ------------------------------------------ */
+    const out = [];
+
+    out.push(`<h3>Koper betaalt</h3>`);
+    out.push(`<ul>
+        <li>Notariskosten: €${notaris.toLocaleString()}</li>
+        <li>Droits de mutation: €${droits.toLocaleString()}</li>
+        ${facult.detailsKoper.map(x => `<li>${x}</li>`).join("")}
+        <li><strong>Totaal koper: €${koperTotaal.toLocaleString()}</strong></li>
+    </ul>`);
+
+    out.push(`<h3>Verkoper betaalt</h3>`);
+    out.push(`<ul>
+        ${facult.detailsVerkoper.map(x => `<li>${x}</li>`).join("")}
+        <li>Plus-value (indien van toepassing): €${plusValue.toLocaleString()}</li>
+        <li><strong>Totaal verkoper: €${verkoperTotaal.toLocaleString()}</strong></li>
+    </ul>`);
+
+    out.push(`<h3>Cumulatieve kosten</h3>`);
+    out.push(`<p><strong>€${(koperTotaal + verkoperTotaal).toLocaleString()}</strong></p>`);
+
+    out.push(`<h3>Adviezen & mogelijkheden om te besparen</h3>`);
+    out.push(`<ul>
+        <li>Overweeg verkoop zonder makelaar (notariskantoor begeleidt transactie).</li>
+        <li>Voor verkopers: maak de woning tijdig uw résidence principale om plus-value te vermijden (zie wettelijke voorwaarden).</li>
+        <li>Voor kopers: een caution bancaire is niet altijd haalbaar voor niet-residenten.</li>
+        <li>Minimaliseer facultatieve kosten door vooraf dossier compleet te maken (SPANC, géomètre).</li>
+    </ul>`);
+
+    document.getElementById("result-output").innerHTML = out.join("");
+    document.getElementById("resultaten").style.display = "block";
+});
+
+/* INITIATE NOTARIS INDICATIE */
+updateIndicatie();
