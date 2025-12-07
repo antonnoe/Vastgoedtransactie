@@ -1,198 +1,214 @@
-// Wacht tot de pagina volledig geladen is
-document.addEventListener('DOMContentLoaded', function() {
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactiekosten Calculator Frankrijk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-    // --- CONFIGURATIE ---
-    const CONFIG = {
-        notaris_oud: 0.075,
-        notaris_nieuw: 0.03,
-        makelaar_pct: 0.05,
-        pv_tax_rate: 0.362, // 19% + 17.2%
-        forfait_aankoop: 0.075,
-        forfait_werk: 0.15
-    };
+<div class="container">
+    <header>
+        <h1>Transactiekosten Frankrijk</h1>
+        <p class="subtitle">Bereken notariskosten, plus-value en de totale transactie-impact.</p>
+    </header>
 
-    // --- DOM ELEMENTEN OPHALEN ---
-    const els = {
-        role: document.getElementsByName('role'),
-        verkoop: document.getElementById('verkoopprijs'),
-        aankoop: document.getElementById('aankoopprijs'),
-        dept: document.getElementById('dept'),
-        deptHint: document.getElementById('dept-hint'),
-        type: document.getElementById('typeWoning'),
-        jaren: document.getElementById('jaren'),
-        isRP: document.getElementById('isRP'),
-        makelaarWie: document.getElementsByName('makelaarWie'),
-        checks: {
-            caution: document.getElementById('opt_caution'),
-            mainlevee: document.getElementById('opt_mainlevee'),
-            spanc: document.getElementById('opt_spanc'),
-            geo: document.getElementById('opt_geo')
-        },
-        btn: document.getElementById('btnBereken'),
-        res: document.getElementById('resultaten'),
-        listKoper: document.getElementById('list-koper'),
-        listVerkoper: document.getElementById('list-verkoper'),
-        totKoper: document.getElementById('tot-koper'),
-        totVerkoper: document.getElementById('tot-verkoper'),
-        term: {
-            verkoop: document.getElementById('term-verkoop'),
-            kosten: document.getElementById('term-kosten'),
-            netto: document.getElementById('term-netto'),
-            aankoop: document.getElementById('term-aankoop'),
-            winst: document.getElementById('term-winst'),
-            frictie: document.getElementById('term-frictie')
-        }
-    };
+    <section class="panel">
+        <h2>1. Uw rol in de transactie</h2>
+        <div class="radio-group role-group">
+            <label><input type="radio" name="role" value="koper" checked> Koper</label>
+            <label><input type="radio" name="role" value="verkoper"> Verkoper</label>
+            <label><input type="radio" name="role" value="notaris"> Notaris (Scenario's)</label>
+        </div>
+    </section>
 
-    // --- HELPER FUNCTIES ---
-    const fmt = (n) => n.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' });
-    const safeFloat = (val) => {
-        const parsed = parseFloat(val);
-        return isNaN(parsed) ? 0 : parsed;
-    };
-
-    // --- LOGICA ---
-
-    function updateUI() {
-        // 1. Departement Hint
-        const d = parseInt(els.dept.value);
-        let rate = "5,81%";
-        if ([36, 56, 976].includes(d)) rate = "5,09%";
-        if ([75, 13, 31, 35, 59, 69, 92, 93, 94, 34, 44].includes(d)) rate = "6,31%";
-        if(els.deptHint) els.deptHint.innerText = `Tarief: ${rate}`;
-
-        // 2. Rol Locking
-        // Veilig ophalen van de checked role
-        let role = 'koper'; 
-        const checkedRole = document.querySelector('input[name="role"]:checked');
-        if(checkedRole) role = checkedRole.value;
-        
-        // Reset alles naar enabled
-        els.verkoop.disabled = false;
-        els.aankoopprijs.disabled = false;
-
-        // In deze versie laten we de velden open, maar we zouden ze kunnen disablen als we strikt willen zijn.
-        // Voor nu laten we ze open om verwarring en "vastlopers" te voorkomen.
-    }
-
-    function bereken() {
-        // Inputs ophalen (veilig)
-        const verkoop = safeFloat(els.verkoop.value);
-        const aankoop = safeFloat(els.aankoopprijs.value);
-        const type = els.type.value;
-        const jaren = safeFloat(els.jaren.value);
-        const isRP = els.isRP.value === 'ja';
-        
-        // Check of makelaar radio bestaat en geselecteerd is
-        const makelaarEl = document.querySelector('input[name="makelaarWie"]:checked');
-        const makelaarWie = makelaarEl ? makelaarEl.value : 'geen';
-
-        let koperKosten = 0;
-        let verkoperKosten = 0;
-        let koperLijst = "";
-        let verkoperLijst = "";
-
-        // --- BEREKENING KOPER ---
-        
-        // 1. Notaris
-        let notarisPct = (type === 'nieuw') ? CONFIG.notaris_nieuw : CONFIG.notaris_oud;
-        let notarisBedrag = verkoop * notarisPct;
-        koperKosten += notarisBedrag;
-        koperLijst += `<li><span>Notariskosten (indicatie)</span> <span>${fmt(notarisBedrag)}</span></li>`;
-
-        // 2. Makelaar (als Koper betaalt)
-        if (makelaarWie === 'koper') {
-            let mk = verkoop * CONFIG.makelaar_pct;
-            koperKosten += mk;
-            koperLijst += `<li><span>Makelaarscourtage</span> <span>${fmt(mk)}</span></li>`;
-        }
-
-        // 3. Caution
-        if (els.checks.caution && els.checks.caution.checked) {
-            let c = 1200; 
-            koperKosten += c;
-            koperLijst += `<li><span>Hypotheekgarantie</span> <span>${fmt(c)}</span></li>`;
-        }
-
-        // --- BEREKENING VERKOPER ---
-
-        // 1. Makelaar (als Verkoper betaalt)
-        if (makelaarWie === 'verkoper') {
-            let mk = verkoop * CONFIG.makelaar_pct;
-            verkoperKosten += mk;
-            verkoperLijst += `<li><span>Makelaarscourtage</span> <span>${fmt(mk)}</span></li>`;
-        }
-
-        // 2. Plus-Value (Optie B Forfaitair)
-        let pvTax = 0;
-        if (!isRP && verkoop > aankoop) {
-            // Bereken forfaitaire kosten
-            let kostenAankoop = aankoop * CONFIG.forfait_aankoop; // 7.5%
-            let kostenWerk = (jaren >= 5) ? (aankoop * CONFIG.forfait_werk) : 0; // 15% na 5 jaar
+    <section class="panel">
+        <h2>2. Financiële Gegevens</h2>
+        <div class="grid-2">
             
-            let totaleAankoopSom = aankoop + kostenAankoop + kostenWerk;
-            let brutoWinst = verkoop - totaleAankoopSom;
+            <div class="form-group">
+                <label>Huidige Verkoopprijs (€)</label>
+                <input type="number" id="verkoopprijs" value="350000" min="0">
+                <div class="hint">De prijs waarvoor het pand nu verkocht wordt.</div>
+            </div>
 
-            if (brutoWinst > 0) {
-                pvTax = brutoWinst * CONFIG.pv_tax_rate;
-            }
-        }
+            <div class="form-group">
+                <label>Oorspronkelijke Aankoopprijs (€)</label>
+                <input type="number" id="aankoopprijs" value="250000" min="0">
+                <div class="hint">Nodig voor Plus-Value berekening (Verkoper).</div>
+            </div>
 
-        if (isRP) {
-            verkoperLijst += `<li><span>Plus-Value</span> <span>Vrijgesteld (Hoofdverblijf)</span></li>`;
-        } else {
-            verkoperLijst += `<li><span>Plus-Value (Schatting)</span> <span>${fmt(pvTax)}</span></li>`;
-            verkoperKosten += pvTax;
-        }
+            <div class="form-group">
+                <label>Départementnummer (bv. 75)</label>
+                <input type="number" id="dept" value="75" placeholder="75">
+                <div class="hint" id="dept-hint">Tarief: 6,31%</div>
+            </div>
 
-        // 3. Overige kosten verkoper
-        if (els.checks.mainlevee && els.checks.mainlevee.checked) {
-            let v = 700; verkoperKosten += v;
-            verkoperLijst += `<li><span>Mainlevée</span> <span>${fmt(v)}</span></li>`;
-        }
-        if (els.checks.spanc && els.checks.spanc.checked) {
-            let v = 150; verkoperKosten += v;
-            verkoperLijst += `<li><span>SPANC Inspectie</span> <span>${fmt(v)}</span></li>`;
-        }
-        if (els.checks.geo && els.checks.geo.checked) {
-            let v = 1500; verkoperKosten += v;
-            verkoperLijst += `<li><span>Géomètre</span> <span>${fmt(v)}</span></li>`;
-        }
+            <div class="form-group">
+                <label>Type woning</label>
+                <select id="typeWoning">
+                    <option value="ancien">Bestaand (Ancien)</option>
+                    <option value="nieuw">Nieuwbouw (VEFA/Neuf)</option>
+                </select>
+            </div>
 
-        // --- TERMINAL DATA (Frictie & Netto) ---
-        // Netto in hand verkoper = Verkoop - Totale Kosten Verkoper
-        let nettoHand = verkoop - verkoperKosten;
-        let werkelijkeWinst = nettoHand - aankoop;
-        let totaleFrictie = koperKosten + verkoperKosten;
+            <div class="form-group">
+                <label>Jaren in bezit</label>
+                <input type="number" id="jaren" value="10" min="0">
+            </div>
 
-        // --- DOM UPDATES ---
-        els.listKoper.innerHTML = koperLijst;
-        els.listVerkoper.innerHTML = verkoperLijst;
-        els.totKoper.innerText = fmt(koperKosten);
-        els.totVerkoper.innerText = fmt(verkoperKosten);
+            <div class="form-group">
+                <label>Hoofdverblijf (Résidence Principale)?</label>
+                <select id="isRP">
+                    <option value="nee">Nee (Tweede woning/Belegging)</option>
+                    <option value="ja">Ja (Vrijgesteld van Plus-Value)</option>
+                </select>
+            </div>
+        </div>
+    </section>
 
-        // Terminal vullen
-        els.term.verkoop.innerText = fmt(verkoop);
-        els.term.kosten.innerText = "- " + fmt(verkoperKosten);
-        els.term.netto.innerText = fmt(nettoHand);
-        els.term.aankoop.innerText = "- " + fmt(aankoop);
-        els.term.winst.innerText = fmt(werkelijkeWinst);
-        els.term.frictie.innerText = fmt(totaleFrictie);
+    <section class="panel">
+        <h2>3. Facultatieve Kosten & Makelaar</h2>
+        
+        <div class="sub-panel">
+            <label class="bold-label">Makelaarskosten (ca. 5%)</label>
+            <div class="radio-group" id="makelaar-opties">
+                <label><input type="radio" name="makelaarWie" value="verkoper" checked> Verkoper betaalt</label>
+                <label><input type="radio" name="makelaarWie" value="koper"> Koper betaalt</label>
+                <label><input type="radio" name="makelaarWie" value="geen"> Geen makelaar</label>
+            </div>
+            <div class="hint">
+                <i class="icon-info">i</i> Tip: Via de notaris verkopen bespaart deze kosten.
+            </div>
+        </div>
 
-        // Winst kleur
-        els.term.winst.style.backgroundColor = werkelijkeWinst >= 0 ? "#00ff41" : "#ff4444";
-        els.term.winst.style.color = "#000";
+        <div class="checkbox-grid">
+            <div class="check-item">
+                <label>
+                    <input type="checkbox" id="opt_caution"> 
+                    <strong>Hypotheekgarantie (Caution)</strong>
+                </label>
+                <p class="mini-desc">Kosten koper. Goedkoper dan hypotheek, maar strengere eisen voor niet-residenten.</p>
+            </div>
 
-        els.res.style.display = 'grid';
-    }
+            <div class="check-item">
+                <label>
+                    <input type="checkbox" id="opt_mainlevee"> 
+                    <strong>Mainlevée d'hypothèque</strong>
+                </label>
+                <p class="mini-desc">Kosten verkoper. Verplicht als oude hypotheek nog loopt (€400-€900).</p>
+            </div>
 
-    // --- INITIALISATIE ---
-    // Event Listeners koppelen
-    els.role.forEach(r => r.addEventListener('change', updateUI));
-    if(els.dept) els.dept.addEventListener('input', updateUI);
-    if(els.btn) els.btn.addEventListener('click', bereken);
+            <div class="check-item">
+                <label>
+                    <input type="checkbox" id="opt_spanc"> 
+                    <strong>SPANC / Assainissement</strong>
+                </label>
+                <p class="mini-desc">Kosten verkoper. Verplicht bij septische tank.</p>
+            </div>
 
-    // Start
-    updateUI();
+            <div class="check-item">
+                <label>
+                    <input type="checkbox" id="opt_geo"> 
+                    <strong>Géomètre</strong>
+                </label>
+                <p class="mini-desc">Kosten verkoper. Verplicht bij splitsing/grensgeschil.</p>
+            </div>
+        </div>
+    </section>
 
-}); // Einde DOMContentLoaded
+    <div class="action-area">
+        <button id="btnBereken" type="button">Bereken Alle Kosten</button>
+    </div>
+
+    <div id="resultaten" class="results-area" style="display:none;">
+        
+        <div class="res-block koper-block">
+            <h3>Te betalen door KOPER</h3>
+            <ul id="list-koper"></ul>
+            <div class="total-row">Totaal Koper: <span id="tot-koper">€0</span></div>
+        </div>
+
+        <div class="res-block verkoper-block">
+            <h3>Te betalen door VERKOPER</h3>
+            <ul id="list-verkoper"></ul>
+            <div class="total-row">Totaal Verkoper: <span id="tot-verkoper">€0</span></div>
+        </div>
+
+        <div class="terminal-box">
+            <h4>> ANALYSE FRICTIE & RENDEMENT_</h4>
+            <div class="terminal-grid">
+                <div class="term-row">
+                    <span>VERKOOPPRIJS (Bruto):</span>
+                    <span id="term-verkoop">€ 0,00</span>
+                </div>
+                <div class="term-row text-red">
+                    <span>- KOSTEN VERKOPER (Makelaar/Belasting/Div):</span>
+                    <span id="term-kosten">- € 0,00</span>
+                </div>
+                <div class="term-line">----------------------------------------</div>
+                <div class="term-row highlight-blue">
+                    <span>NETTO CASH (In hand na verkoop):</span>
+                    <span id="term-netto">€ 0,00</span>
+                </div>
+                <div class="term-row dim">
+                    <span>- OORSPRONKELIJKE AANKOOP:</span>
+                    <span id="term-aankoop">- € 0,00</span>
+                </div>
+                <div class="term-line">========================================</div>
+                <div class="term-row highlight-green">
+                    <span>WERKELIJKE WINST:</span>
+                    <span id="term-winst">€ 0,00</span>
+                </div>
+                <br>
+                <div class="term-row">
+                    <span>CUMULATIEVE FRICTIE (Kosten Koper + Verkoper):</span>
+                    <span id="term-frictie" class="text-orange">€ 0,00</span>
+                </div>
+                <div class="term-sub">Dit bedrag "verdampt" aan belastingen en fees.</div>
+            </div>
+        </div>
+
+        <div class="strategy-box">
+            <h3>🛡️ Strategisch Advies: Voorkom onnodige kosten</h3>
+            
+            <details>
+                <summary><strong>1. Plus-Value (Winstbelasting): De regels</strong></summary>
+                <div class="advice-content">
+                    <p>Deze tool rekent met de forfaitaire methode (Aankoop + 7,5% kosten + 15% werkzaamheden). Er zijn 3 manieren om legaal aan deze belasting te ontkomen:</p>
+                    <ul class="check-list">
+                        <li><strong>Duur:</strong> Na 22 jaar vrijstelling inkomstenbelasting, na 30 jaar volledige vrijstelling.</li>
+                        <li><strong>Verkoopprijs:</strong> Verkoop onder de €15.000 is altijd vrijgesteld.</li>
+                        <li><strong>Herinvestering (Art. 150 U II 1° bis CGI):</strong> Als u geen eigenaar bent van uw hoofdwoning, en u verkoopt deze tweede woning om met dat geld (binnen 24 maanden) uw <em>eerste</em> hoofdwoning te kopen, kunt u vrijstelling krijgen.</li>
+                    </ul>
+                    <p><strong>⚠️ Waarschuwing (Abus de Droit):</strong> Er "even" gaan wonen vlak voor verkoop om vrijstelling te claimen is fraude. De fiscus controleert streng op daadwerkelijk, langdurig verblijf (school, belasting, energie).</p>
+                </div>
+            </details>
+
+            <details>
+                <summary><strong>2. Makelaarskosten besparen</strong></summary>
+                <div class="advice-content">
+                    <p>In het rekenvoorbeeld ziet u hoeveel de makelaar kost (gemiddeld 5%).</p>
+                    <p><strong>Optie:</strong> Verkoop zonder makelaar (<em>Particulier à Particulier</em>). De notaris kan de <em>compromis de vente</em> opstellen zonder extra kosten. Dit verhoogt uw netto opbrengst direct.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary><strong>3. Koper: Eigen notaris kost niets extra</strong></summary>
+                <div class="advice-content">
+                    <p>Veel kopers weten niet dat ze recht hebben op een eigen notaris. De notarissen delen het wettelijke honorarium. Het inschakelen van uw eigen vertrouwenspersoon maakt de transactie niet duurder, maar wel veiliger.</p>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <footer>
+        <p>© InfoFrankrijk.com - Indicatieve berekening gebaseerd op Franse wetgeving (CGI/Barème Notaires).</p>
+    </footer>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
