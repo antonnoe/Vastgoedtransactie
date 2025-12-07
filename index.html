@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transactiekosten Calculator Frankrijk</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
 <div class="container">
     <header>
         <h1>Transactiekosten Frankrijk</h1>
-        <p class="subtitle">Bereken notariskosten, plus-value en facultatieve kosten.</p>
+        <p class="subtitle">Bereken notariskosten, plus-value en de totale transactie-impact.</p>
     </header>
 
     <section class="panel">
@@ -22,7 +22,7 @@
             <label><input type="radio" name="role" value="verkoper"> Verkoper</label>
             <label><input type="radio" name="role" value="notaris"> Notaris (Scenario's)</label>
         </div>
-        <p class="small-text">Bij 'Notaris' zijn alle velden aanpasbaar voor simulaties.</p>
+        <p class="small-text" id="role-desc">U ziet de kosten voor de koper.</p>
     </section>
 
     <section class="panel">
@@ -31,20 +31,20 @@
             
             <div class="form-group">
                 <label>Huidige Verkoopprijs (€)</label>
-                <input type="number" id="verkoopprijs" value="350000">
-                <div class="hint">Grondslag voor notariskosten & commissie.</div>
+                <input type="number" id="verkoopprijs" value="350000" min="0">
+                <div class="hint">De prijs waarvoor het pand nu verkocht wordt.</div>
             </div>
 
             <div class="form-group">
                 <label>Oorspronkelijke Aankoopprijs (€)</label>
-                <input type="number" id="aankoopprijs" value="250000">
+                <input type="number" id="aankoopprijs" value="250000" min="0">
                 <div class="hint">Nodig voor Plus-Value berekening (Verkoper).</div>
             </div>
 
             <div class="form-group">
                 <label>Départementnummer (bv. 75)</label>
                 <input type="number" id="dept" value="75" placeholder="75">
-                <div class="hint" id="dept-hint">Standaard tarief: 5,81%</div>
+                <div class="hint" id="dept-hint">Tarief: 6,31%</div>
             </div>
 
             <div class="form-group">
@@ -57,7 +57,7 @@
 
             <div class="form-group">
                 <label>Jaren in bezit</label>
-                <input type="number" id="jaren" value="10">
+                <input type="number" id="jaren" value="10" min="0">
             </div>
 
             <div class="form-group">
@@ -81,7 +81,7 @@
                 <label><input type="radio" name="makelaarWie" value="geen"> Geen makelaar</label>
             </div>
             <div class="hint">
-                <i class="icon-info">i</i> Tip: Als de koper betaalt, is dit later aftrekbaar van de plus-value. Zonder makelaar (via notaris) bespaart u kosten.
+                <i class="icon-info">i</i> Tip: Via de notaris verkopen bespaart deze kosten.
             </div>
         </div>
 
@@ -107,7 +107,7 @@
                     <input type="checkbox" id="opt_spanc"> 
                     <strong>SPANC / Assainissement</strong>
                 </label>
-                <p class="mini-desc">Kosten verkoper. Verplicht bij septische tank. Non-conformiteit kan prijs drukken.</p>
+                <p class="mini-desc">Kosten verkoper. Verplicht bij septische tank.</p>
             </div>
 
             <div class="check-item">
@@ -115,13 +115,13 @@
                     <input type="checkbox" id="opt_geo"> 
                     <strong>Géomètre</strong>
                 </label>
-                <p class="mini-desc">Kosten verkoper. Verplicht bij splitsing of grensgeschil (€500-€2000).</p>
+                <p class="mini-desc">Kosten verkoper. Verplicht bij splitsing/grensgeschil.</p>
             </div>
         </div>
     </section>
 
     <div class="action-area">
-        <button id="btnBereken" onclick="berekenAlles()">Bereken Alle Kosten</button>
+        <button id="btnBereken" type="button">Bereken Alle Kosten</button>
     </div>
 
     <div id="resultaten" class="results-area" style="display:none;">
@@ -138,41 +138,75 @@
             <div class="total-row">Totaal Verkoper: <span id="tot-verkoper">€0</span></div>
         </div>
 
-        <div class="res-block totaal-block">
-            <h3>Cumulatieve Kosten (Frictie)</h3>
-            <div class="total-big" id="tot-generaal">€0</div>
-            <p class="small-text">Dit is het totaalbedrag dat aan kosten "verdampt" bij deze transactie.</p>
+        <div class="terminal-box">
+            <h4>> ANALYSE FRICTIE & RENDEMENT_</h4>
+            <div class="terminal-grid">
+                <div class="term-row">
+                    <span>VERKOOPPRIJS (Bruto):</span>
+                    <span id="term-verkoop">€ 0,00</span>
+                </div>
+                <div class="term-row text-red">
+                    <span>- KOSTEN VERKOPER (Makelaar/Belasting/Div):</span>
+                    <span id="term-kosten">- € 0,00</span>
+                </div>
+                <div class="term-line">----------------------------------------</div>
+                <div class="term-row highlight-blue">
+                    <span>NETTO CASH (In hand na verkoop):</span>
+                    <span id="term-netto">€ 0,00</span>
+                </div>
+                <div class="term-row dim">
+                    <span>- OORSPRONKELIJKE AANKOOP:</span>
+                    <span id="term-aankoop">- € 0,00</span>
+                </div>
+                <div class="term-line">========================================</div>
+                <div class="term-row highlight-green">
+                    <span>WERKELIJKE WINST:</span>
+                    <span id="term-winst">€ 0,00</span>
+                </div>
+                <br>
+                <div class="term-row">
+                    <span>CUMULATIEVE FRICTIE (Kosten Koper + Verkoper):</span>
+                    <span id="term-frictie" class="text-orange">€ 0,00</span>
+                </div>
+                <div class="term-sub">Dit bedrag "verdampt" aan belastingen en fees.</div>
+            </div>
         </div>
 
-        <div class="advice-box">
-            <h4>💡 Adviezen & Besparingen</h4>
-            <ul class="advice-list">
-                <li><strong>Plus-Value:</strong> Deze tool rekent met de forfaitaire methode (aankoop + 7,5% kosten + 15% werkzaamheden). Voor detailberekeningen, zie de simulator op InfoFrankrijk.</li>
-                <li><strong>Makelaar:</strong> Overweeg verkoop via de notaris om 3-8% makelaarskosten te besparen.</li>
-                <li><strong>Dossier:</strong> Verkoper, zorg dat SPANC en Géomètre dossiers op orde zijn vòòr verkoop om vertraging en prijsonderhandeling te voorkomen.</li>
-                <li><strong>Koper:</strong> Vraag naar 'Caution Bancaire' i.p.v. hypotheek om kosten en latere mainlevée te vermijden.</li>
-            </ul>
+        <div class="strategy-box">
+            <h3>🛡️ Strategisch Advies: Voorkom onnodige kosten</h3>
+            
+            <details>
+                <summary><strong>1. Plus-Value (Winstbelasting): De regels</strong></summary>
+                <div class="advice-content">
+                    <p>Deze tool rekent met de forfaitaire methode (Aankoop + 7,5% kosten + 15% werkzaamheden). Er zijn 3 manieren om legaal aan deze belasting te ontkomen:</p>
+                    <ul class="check-list">
+                        <li><strong>Duur:</strong> Na 22 jaar vrijstelling inkomstenbelasting, na 30 jaar volledige vrijstelling.</li>
+                        <li><strong>Verkoopprijs:</strong> Verkoop onder de €15.000 is altijd vrijgesteld.</li>
+                        <li><strong>Herinvestering (Art. 150 U II 1° bis CGI):</strong> Als u geen eigenaar bent van uw hoofdwoning, en u verkoopt deze tweede woning om met dat geld (binnen 24 maanden) uw <em>eerste</em> hoofdwoning te kopen, kunt u vrijstelling krijgen.</li>
+                    </ul>
+                    <p><strong>⚠️ Waarschuwing (Abus de Droit):</strong> Er "even" gaan wonen vlak voor verkoop om vrijstelling te claimen is fraude. De fiscus controleert streng op daadwerkelijk, langdurig verblijf (school, belasting, energie).</p>
+                </div>
+            </details>
+
+            <details>
+                <summary><strong>2. Makelaarskosten besparen</strong></summary>
+                <div class="advice-content">
+                    <p>In het rekenvoorbeeld ziet u hoeveel de makelaar kost (gemiddeld 5%).</p>
+                    <p><strong>Optie:</strong> Verkoop zonder makelaar (<em>Particulier à Particulier</em>). De notaris kan de <em>compromis de vente</em> opstellen zonder extra kosten. Dit verhoogt uw netto opbrengst direct.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary><strong>3. Koper: Eigen notaris kost niets extra</strong></summary>
+                <div class="advice-content">
+                    <p>Veel kopers weten niet dat ze recht hebben op een eigen notaris. De notarissen delen het wettelijke honorarium. Het inschakelen van uw eigen vertrouwenspersoon maakt de transactie niet duurder, maar wel veiliger.</p>
+                </div>
+            </details>
         </div>
     </div>
 
-    <section class="panel faq-panel">
-        <h2>Veelgestelde Vragen</h2>
-        <details>
-            <summary>Wie betaalt de notaris?</summary>
-            <p>De koper betaalt de "frais d'acquisition". Als beide partijen een eigen notaris nemen, worden de kosten gedeeld. Het wordt dus niet duurder.</p>
-        </details>
-        <details>
-            <summary>Hoe werkt de Plus-Value?</summary>
-            <p>Dit is winstbelasting voor de verkoper (secundaire woning). Vrijgesteld na 30 jaar (sociale lasten) of 22 jaar (fiscale lasten). Hoofdverblijf is altijd vrijgesteld.</p>
-        </details>
-        <details>
-            <summary>Wat is het mutationstarief?</summary>
-            <p>Dit is de overdrachtsbelasting die in de notariskosten zit. Afhankelijk van het departement is dit 5,09%, 5,81% of 6,31%.</p>
-        </details>
-    </section>
-
     <footer>
-        <p>© InfoFrankrijk.com - Indicatieve berekening, geen juridisch advies.</p>
+        <p>© InfoFrankrijk.com - Indicatieve berekening gebaseerd op Franse wetgeving (CGI/Barème Notaires).</p>
     </footer>
 </div>
 
