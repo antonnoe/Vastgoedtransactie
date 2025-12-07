@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transactiekosten Calculator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Courier+Prime:wght@700&display=swap" rel="stylesheet">
+    <title>Franse Vastgoed Calculator Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,57 +12,62 @@
 <div class="container">
     <header>
         <h1>Transactiekosten Frankrijk</h1>
-        <p class="subtitle">Calculator voor Koper & Verkoper</p>
+        <p class="subtitle">Calculator voor Koper & Verkoper (Realtime)</p>
     </header>
 
     <section class="panel">
-        <h2>1. Uw Situatie</h2>
-        <div class="radio-group">
-            <label><input type="radio" name="role" value="koper" checked> Koper</label>
-            <label><input type="radio" name="role" value="verkoper"> Verkoper</label>
-            <label><input type="radio" name="role" value="notaris"> Notaris (Scenario's)</label>
+        <h2>1. Eigenschappen Woning</h2>
+        
+        <div class="toggle-container">
+            <label class="toggle-label">Type Woning</label>
+            <div class="toggle-group">
+                <input type="radio" id="type_ancien" name="typeWoning" value="ancien" checked>
+                <label for="type_ancien" class="toggle-btn">Bestaand (Ancien)</label>
+                
+                <input type="radio" id="type_nieuw" name="typeWoning" value="nieuw">
+                <label for="type_nieuw" class="toggle-btn">Nieuwbouw (VEFA)</label>
+            </div>
+        </div>
+
+        <div class="toggle-container">
+            <label class="toggle-label">Status (voor Verkoper)</label>
+            <div class="toggle-group">
+                <input type="radio" id="rp_nee" name="isRP" value="nee" checked>
+                <label for="rp_nee" class="toggle-btn">2e Woning / Investering</label>
+                
+                <input type="radio" id="rp_ja" name="isRP" value="ja">
+                <label for="rp_ja" class="toggle-btn">Hoofdverblijf</label>
+            </div>
         </div>
     </section>
 
     <section class="panel">
-        <h2>2. Bedragen</h2>
+        <h2>2. Financiële Details</h2>
         <div class="grid-2">
             <div class="form-group">
                 <label>Verkoopprijs Nu (€)</label>
-                <input type="number" id="verkoopprijs" value="350000">
+                <input type="number" id="verkoopprijs" value="350000" step="1000">
             </div>
             <div class="form-group">
                 <label>Aankoopprijs Toen (€)</label>
-                <input type="number" id="aankoopprijs" value="250000">
-                <small>Alleen nodig voor Plus-Value (Verkoper)</small>
+                <input type="number" id="aankoopprijs" value="250000" step="1000">
+                <small class="hint">Nodig voor winstberekening</small>
             </div>
             <div class="form-group">
                 <label>Departement (Nr)</label>
-                <input type="number" id="dept" value="75">
+                <input type="number" id="dept" value="75" placeholder="bv. 75">
+                <small id="dept-hint" class="hint">Tarief Parijs: Normal</small>
             </div>
             <div class="form-group">
-                <label>Type Woning</label>
-                <select id="typeWoning">
-                    <option value="ancien">Bestaand (Ancien)</option>
-                    <option value="nieuw">Nieuwbouw (VEFA)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Jaren Bezit</label>
+                <label>Jaren in bezit</label>
                 <input type="number" id="jaren" value="10">
-            </div>
-            <div class="form-group">
-                <label>Hoofdverblijf?</label>
-                <select id="isRP">
-                    <option value="nee">Nee (2e woning)</option>
-                    <option value="ja">Ja (Hoofdverblijf)</option>
-                </select>
+                <small class="hint">Belangrijk voor belastingkorting</small>
             </div>
         </div>
     </section>
 
     <section class="panel">
-        <h2>3. Makelaar & Opties</h2>
+        <h2>3. Makelaar & Diensten</h2>
         
         <div class="form-group">
             <label>Wie betaalt de makelaar?</label>
@@ -75,64 +80,80 @@
 
         <div class="checkbox-grid">
             <label class="check-box">
-                <input type="checkbox" id="opt_caution"> Hypotheekgarantie (Koper)
+                <input type="checkbox" id="opt_caution"> Hypotheekgarantie
             </label>
             <label class="check-box">
-                <input type="checkbox" id="opt_mainlevee"> Mainlevée (Verkoper)
+                <input type="checkbox" id="opt_mainlevee"> Mainlevée (Hypotheek royement)
             </label>
             <label class="check-box">
-                <input type="checkbox" id="opt_spanc"> SPANC Inspectie (Verkoper)
+                <input type="checkbox" id="opt_spanc"> SPANC (Riolering)
             </label>
             <label class="check-box">
-                <input type="checkbox" id="opt_geo"> Géomètre (Verkoper)
+                <input type="checkbox" id="opt_geo" checked> Géomètre (Landmeter)
             </label>
         </div>
     </section>
 
-    <div class="center-btn">
-        <button id="btnBereken" type="button">Bereken Kosten</button>
-    </div>
-
-    <div id="resultaten" style="display:none;">
+    <div id="resultaten">
         
         <div class="res-card">
             <h3>Kosten Koper</h3>
-            <div id="out-koper"></div>
-            <div class="total-line">Totaal: <span id="tot-koper">€0</span></div>
+            <ul id="list-koper" class="cost-list">
+                </ul>
+            <div class="total-line">
+                Totaal Koper: <span id="tot-koper">€0</span>
+            </div>
         </div>
 
         <div class="res-card">
             <h3>Kosten Verkoper</h3>
-            <div id="out-verkoper"></div>
-            <div class="total-line">Totaal: <span id="tot-verkoper">€0</span></div>
+            <ul id="list-verkoper" class="cost-list">
+                </ul>
+            <div class="total-line">
+                Totaal Verkoper: <span id="tot-verkoper">€0</span>
+            </div>
         </div>
 
         <div class="terminal">
-            <h4>> TRANSACTIE ANALYSE_</h4>
-            <div class="term-row"><span>VERKOOPPRIJS:</span> <span id="t-verkoop">€0</span></div>
-            <div class="term-row red"><span>- KOSTEN VERKOPER:</span> <span id="t-kosten">€0</span></div>
+            <h4>> TRANSACTIE_ANALYSE_V2.5</h4>
+            
+            <div class="term-row">
+                <span>VERKOOPPRIJS:</span> 
+                <span id="term-verkoop">€0</span>
+            </div>
+            <div class="term-row red">
+                <span>- TOTALE KOSTEN VERKOPER:</span> 
+                <span id="term-kosten">€0</span>
+            </div>
+            
             <hr class="term-line">
-            <div class="term-row blue"><span>= NETTO OPBRENGST:</span> <span id="t-netto">€0</span></div>
-            <div class="term-row dim"><span>- AANKOOPPRIJS:</span> <span id="t-aankoop">€0</span></div>
+            
+            <div class="term-row blue">
+                <span>= NETTO OPBRENGST (BANK):</span> 
+                <span id="term-netto">€0</span>
+            </div>
+            <div class="term-row dim">
+                <span>- OORSPRONKELIJKE AANKOOP:</span> 
+                <span id="term-aankoop">€0</span>
+            </div>
+            
             <hr class="term-line">
-            <div class="term-row green"><span>= WERKELIJKE WINST:</span> <span id="t-winst">€0</span></div>
+            
+            <div class="term-row green" id="row-winst">
+                <span>= WERKELIJKE WINST:</span> 
+                <span id="term-winst">€0</span>
+            </div>
+            
             <br>
-            <div class="term-row orange"><span>CUMULATIEVE KOSTEN:</span> <span id="t-frictie">€0</span></div>
-        </div>
-
-        <div class="advice">
-            <h4>💡 Belangrijk Advies</h4>
-            <ul>
-                <li><strong>Plus-Value:</strong> Berekend via de forfaitaire methode. <a href="#">Zie de simulator op InfoFrankrijk</a> voor details.</li>
-                <li><strong>Vrijstelling:</strong> Alleen mogelijk bij verkoop van écht hoofdverblijf of bij herinvestering in eerste hoofdwoning (Art. 150 U II CGI).</li>
-                <li><strong>Makelaar:</strong> Via de notaris verkopen bespaart ca. 5% kosten.</li>
-                <li><strong>Notaris:</strong> Koper mag altijd eigen notaris meenemen (gratis).</li>
-            </ul>
+            <div class="term-row orange">
+                <span>> TOTAL LOSS (FRICTIE):</span> 
+                <span id="term-frictie">€0</span>
+            </div>
         </div>
 
     </div>
     
-    <footer>© InfoFrankrijk.com</footer>
+    <footer>© 2025 InfoFrankrijk Calculator</footer>
 </div>
 
 <script src="script.js"></script>
