@@ -1,86 +1,87 @@
-// Configuratie
-const TARIEVEN = {
-    notaris_oud: 0.075, // Indicatief 7.5%
-    notaris_nieuw: 0.03, // Indicatief 3%
-    makelaar_pct: 0.05, // 5%
-    plus_value_tax: 0.362, // 19% + 17.2%
-    forfait_aankoop: 0.075, // 7.5% forfait aankoopkosten
-    forfait_werk: 0.15 // 15% forfait werkzaamheden
+// --- CONFIGURATIE ---
+const CONFIG = {
+    notaris_oud: 0.075,
+    notaris_nieuw: 0.03,
+    makelaar_pct: 0.05,
+    pv_tax_rate: 0.362, // 19% + 17.2%
+    forfait_aankoop: 0.075,
+    forfait_werk: 0.15
 };
 
-// DOM Elementen
+// --- DOM ELEMENTEN (Caching) ---
 const els = {
     role: document.getElementsByName('role'),
-    verkoopprijs: document.getElementById('verkoopprijs'),
-    aankoopprijs: document.getElementById('aankoopprijs'),
+    roleDesc: document.getElementById('role-desc'),
+    verkoop: document.getElementById('verkoopprijs'),
+    aankoop: document.getElementById('aankoopprijs'),
     dept: document.getElementById('dept'),
     deptHint: document.getElementById('dept-hint'),
-    typeWoning: document.getElementById('typeWoning'),
+    type: document.getElementById('typeWoning'),
     jaren: document.getElementById('jaren'),
     isRP: document.getElementById('isRP'),
     makelaarWie: document.getElementsByName('makelaarWie'),
-    optCaution: document.getElementById('opt_caution'),
-    optMainlevee: document.getElementById('opt_mainlevee'),
-    optSpanc: document.getElementById('opt_spanc'),
-    optGeo: document.getElementById('opt_geo'),
-    resultaten: document.getElementById('resultaten'),
+    checks: {
+        caution: document.getElementById('opt_caution'),
+        mainlevee: document.getElementById('opt_mainlevee'),
+        spanc: document.getElementById('opt_spanc'),
+        geo: document.getElementById('opt_geo')
+    },
+    btn: document.getElementById('btnBereken'),
+    res: document.getElementById('resultaten'),
     listKoper: document.getElementById('list-koper'),
     listVerkoper: document.getElementById('list-verkoper'),
     totKoper: document.getElementById('tot-koper'),
     totVerkoper: document.getElementById('tot-verkoper'),
-    totGeneraal: document.getElementById('tot-generaal')
+    term: {
+        verkoop: document.getElementById('term-verkoop'),
+        kosten: document.getElementById('term-kosten'),
+        netto: document.getElementById('term-netto'),
+        aankoop: document.getElementById('term-aankoop'),
+        winst: document.getElementById('term-winst'),
+        frictie: document.getElementById('term-frictie')
+    }
 };
 
-// 1. Rol Logica (Wie mag wat invullen?)
-function updateRoleLock() {
-    let role = document.querySelector('input[name="role"]:checked').value;
-    
-    // Reset disables
-    els.verkoopprijs.disabled = false;
-    els.aankoopprijs.disabled = false;
+// --- HELPER FUNCTIES ---
+const fmt = (n) => n.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' });
+const safeFloat = (val) => {
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
+};
 
-    if (role === 'koper') {
-        // Koper weet meestal niet de historische aankoopprijs, maar voor de tool
-        // is het handig als het wel kan, of we locken het.
-        // Volgens jouw wens: Koper ziet zijn kosten. 
-        // We laten velden open zodat hij kan spelen, OF we locken historische aankoop.
-        // Gezien de frustratie: OPEN LATEN is veiliger voor scenario's, 
-        // maar strikt genomen weet koper aankoopbedrag niet. 
-        // Laten we het open laten (Scenario modus idee) tenzij je echt wil locken.
-        // In vorige chat wilde je locken.
-        els.aankoopprijs.disabled = true; // Koper koopt nu, historie onbekend
-    } else if (role === 'verkoper') {
-        // Verkoper moet alles kunnen invullen voor plus-value
-        // HIER ZAT DE BUG: Verkoper mag natuurlijk verkoopprijs bepalen!
-        els.verkoopprijs.disabled = false;
-        els.aankoopprijs.disabled = false;
-    } 
-    // Notaris: alles open
-}
+// --- LOGICA ---
 
-// Event Listeners voor Rol
-els.role.forEach(r => r.addEventListener('change', updateRoleLock));
-
-// Dept Lookup (Simpel)
-els.dept.addEventListener('input', function() {
-    const d = parseInt(this.value);
+function updateUI() {
+    // 1. Departement Hint
+    const d = parseInt(els.dept.value);
     let rate = "5,81%";
     if ([36, 56, 976].includes(d)) rate = "5,09%";
     if ([75, 13, 31, 35, 59, 69, 92, 93, 94, 34, 44].includes(d)) rate = "6,31%";
-    els.deptHint.innerText = `Tarief in dept ${this.value || '..'}: ${rate}`;
-});
+    els.deptHint.innerText = `Tarief: ${rate}`;
 
-// Helper: Format Euro
-const fmt = (n) => n.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' });
+    // 2. Rol Locking (Soft Lock - crasht niet, past alleen disabled status aan)
+    const role = document.querySelector('input[name="role"]:checked').value;
+    
+    // Reset alles naar enabled
+    els.verkoop.disabled = false;
+    els.aankoopprijs.disabled = false;
+    els.roleDesc.innerText = "Alle velden zijn open voor simulatie.";
 
-// 2. Hoofdberekening
-function berekenAlles() {
-    // Waarden ophalen
-    const verkoop = parseFloat(els.verkoopprijs.value) || 0;
-    const aankoop = parseFloat(els.aankoopprijs.value) || 0;
-    const dept = parseInt(els.dept.value) || 0;
-    const type = els.typeWoning.value;
-    const jaren = parseInt(els.jaren.value) || 0;
+    if (role === 'koper') {
+        els.roleDesc.innerText = "U ziet wat u moet betalen bovenop de koopsom.";
+        // We laten aankoop open, want koper kan willen simuleren wat de verkoper verdient
+        // Maar als je strikt wilt zijn: els.aankoop.disabled = true;
+    } else if (role === 'verkoper') {
+        els.roleDesc.innerText = "U ziet wat u overhoudt na aftrek van kosten.";
+    }
+}
+
+function bereken() {
+    // Inputs ophalen (veilig)
+    const verkoop = safeFloat(els.verkoop.value);
+    const aankoop = safeFloat(els.aankoopprijs.value);
+    const type = els.type.value;
+    const jaren = safeFloat(els.jaren.value);
     const isRP = els.isRP.value === 'ja';
     const makelaarWie = document.querySelector('input[name="makelaarWie"]:checked').value;
 
@@ -89,97 +90,105 @@ function berekenAlles() {
     let koperLijst = "";
     let verkoperLijst = "";
 
-    // --- A. KOSTEN KOPER ---
-
-    // 1. Notariskosten (Indicatief)
-    let notarisPct = (type === 'nieuw') ? TARIEVEN.notaris_nieuw : TARIEVEN.notaris_oud;
-    let notarisBedrag = verkoop * notarisPct;
+    // --- BEREKENING KOPER ---
     
-    // Mutatietarief correctie (zit vaak in notaris, maar voor precisie):
-    // We houden de simpele regel aan: 7.5% totaal voor oud, 3% voor nieuw.
-    // Dit dekt droits de mutation + emolumenten.
+    // 1. Notaris
+    let notarisPct = (type === 'nieuw') ? CONFIG.notaris_nieuw : CONFIG.notaris_oud;
+    let notarisBedrag = verkoop * notarisPct;
     koperKosten += notarisBedrag;
     koperLijst += `<li><span>Notariskosten (indicatie)</span> <span>${fmt(notarisBedrag)}</span></li>`;
 
     // 2. Makelaar (als Koper betaalt)
     if (makelaarWie === 'koper') {
-        let makelaar = verkoop * TARIEVEN.makelaar_pct;
-        koperKosten += makelaar;
-        koperLijst += `<li><span>Makelaarscourtage</span> <span>${fmt(makelaar)}</span></li>`;
+        let mk = verkoop * CONFIG.makelaar_pct;
+        koperKosten += mk;
+        koperLijst += `<li><span>Makelaarscourtage</span> <span>${fmt(mk)}</span></li>`;
     }
 
-    // 3. Facultatief Koper
-    if (els.optCaution.checked) {
-        let caution = 1200; // vast bedrag indicatie
-        koperKosten += caution;
-        koperLijst += `<li><span>Caution Bancaire</span> <span>${fmt(caution)}</span></li>`;
+    // 3. Caution
+    if (els.checks.caution.checked) {
+        let c = 1200; 
+        koperKosten += c;
+        koperLijst += `<li><span>Hypotheekgarantie</span> <span>${fmt(c)}</span></li>`;
     }
 
-    // --- B. KOSTEN VERKOPER ---
+    // --- BEREKENING VERKOPER ---
 
     // 1. Makelaar (als Verkoper betaalt)
     if (makelaarWie === 'verkoper') {
-        let makelaar = verkoop * TARIEVEN.makelaar_pct;
-        verkoperKosten += makelaar;
-        verkoperLijst += `<li><span>Makelaarscourtage</span> <span>${fmt(makelaar)}</span></li>`;
+        let mk = verkoop * CONFIG.makelaar_pct;
+        verkoperKosten += mk;
+        verkoperLijst += `<li><span>Makelaarscourtage</span> <span>${fmt(mk)}</span></li>`;
     }
 
-    // 2. Plus-Value (OPTIE B: Forfaitaire berekening)
-    // Formule: Winst = Verkoop - (Aankoop + 7.5% aankoopkosten + 15% werk)
-    let plusValueTax = 0;
+    // 2. Plus-Value (Optie B Forfaitair)
+    let pvTax = 0;
     if (!isRP && verkoop > aankoop) {
-        let forfaitAankoop = aankoop * TARIEVEN.forfait_aankoop;
-        let forfaitWerk = 0;
+        // Bereken forfaitaire kosten
+        let kostenAankoop = aankoop * CONFIG.forfait_aankoop; // 7.5%
+        let kostenWerk = (jaren >= 5) ? (aankoop * CONFIG.forfait_werk) : 0; // 15% na 5 jaar
         
-        // Werk forfait geldt alleen na 5 jaar
-        if (jaren >= 5) {
-            forfaitWerk = aankoop * TARIEVEN.forfait_werk;
-        }
-
-        let gecorrigeerdeAankoop = aankoop + forfaitAankoop + forfaitWerk;
-        let brutoWinst = verkoop - gecorrigeerdeAankoop;
+        let totaleAankoopSom = aankoop + kostenAankoop + kostenWerk;
+        let brutoWinst = verkoop - totaleAankoopSom;
 
         if (brutoWinst > 0) {
-            // Abattementen (vereenvoudigd voor deze tool, want de gebruiker wilde Optie B Forfait)
-            // Maar Optie B impliceert vaak een snelle berekening zonder complexe staffels
-            // Tenzij we de staffels toepassen op de bruto winst.
-            // Gezien de wens voor "Simpel Forfait":
-            plusValueTax = brutoWinst * TARIEVEN.plus_value_tax;
+            pvTax = brutoWinst * CONFIG.pv_tax_rate;
         }
     }
-    
-    if (!isRP && plusValueTax > 0) {
-        verkoperKosten += plusValueTax;
-        verkoperLijst += `<li><span>Plus-Value (Schatting)</span> <span>${fmt(plusValueTax)}</span></li>`;
-    } else if (isRP) {
+
+    if (isRP) {
         verkoperLijst += `<li><span>Plus-Value</span> <span>Vrijgesteld (Hoofdverblijf)</span></li>`;
     } else {
-        verkoperLijst += `<li><span>Plus-Value</span> <span>€ 0,00</span></li>`;
+        verkoperLijst += `<li><span>Plus-Value (Schatting)</span> <span>${fmt(pvTax)}</span></li>`;
+        verkoperKosten += pvTax;
     }
 
-    // 3. Facultatief Verkoper
-    if (els.optMainlevee.checked) {
+    // 3. Overige kosten verkoper
+    if (els.checks.mainlevee.checked) {
         let v = 700; verkoperKosten += v;
         verkoperLijst += `<li><span>Mainlevée</span> <span>${fmt(v)}</span></li>`;
     }
-    if (els.optSpanc.checked) {
-        let v = 150; verkoperKosten += v; // inspectie kost
+    if (els.checks.spanc.checked) {
+        let v = 150; verkoperKosten += v;
         verkoperLijst += `<li><span>SPANC Inspectie</span> <span>${fmt(v)}</span></li>`;
     }
-    if (els.optGeo.checked) {
+    if (els.checks.geo.checked) {
         let v = 1500; verkoperKosten += v;
         verkoperLijst += `<li><span>Géomètre</span> <span>${fmt(v)}</span></li>`;
     }
 
-    // --- OUTPUT ---
+    // --- TERMINAL DATA (Frictie & Netto) ---
+    // Netto in hand verkoper = Verkoop - Totale Kosten Verkoper
+    let nettoHand = verkoop - verkoperKosten;
+    let werkelijkeWinst = nettoHand - aankoop;
+    let totaleFrictie = koperKosten + verkoperKosten;
+
+    // --- DOM UPDATES ---
     els.listKoper.innerHTML = koperLijst;
     els.listVerkoper.innerHTML = verkoperLijst;
     els.totKoper.innerText = fmt(koperKosten);
     els.totVerkoper.innerText = fmt(verkoperKosten);
-    els.totGeneraal.innerText = fmt(koperKosten + verkoperKosten);
-    
-    els.resultaten.style.display = 'grid';
+
+    // Terminal vullen
+    els.term.verkoop.innerText = fmt(verkoop);
+    els.term.kosten.innerText = "- " + fmt(verkoperKosten);
+    els.term.netto.innerText = fmt(nettoHand);
+    els.term.aankoop.innerText = "- " + fmt(aankoop);
+    els.term.winst.innerText = fmt(werkelijkeWinst);
+    els.term.frictie.innerText = fmt(totaleFrictie);
+
+    // Winst kleur
+    els.term.winst.style.backgroundColor = werkelijkeWinst >= 0 ? "var(--terminal-green)" : "#ff4444";
+    els.term.winst.style.color = "#000";
+
+    els.res.style.display = 'grid';
 }
 
-// Initialiseer locks
-updateRoleLock();
+// --- INITIALISATIE ---
+// Event Listeners koppelen
+els.role.forEach(r => r.addEventListener('change', updateUI));
+els.dept.addEventListener('input', updateUI);
+els.btn.addEventListener('click', bereken);
+
+// Start
+updateUI();
