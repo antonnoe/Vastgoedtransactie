@@ -1,151 +1,191 @@
-window.onload = function() {
-    
-    // DOM Elementen ophalen
-    const btn = document.getElementById('btnBereken');
-    
-    // Configuratie
-    const RATES = {
-        notaris: 0.075, // 7.5% gem
-        nieuwbouw: 0.03, // 3% gem
-        makelaar: 0.05,
+document.addEventListener('DOMContentLoaded', function() {
+
+    // --- CONFIGURATIE ---
+    const CONFIG = {
+        notaris_oud: 0.075,
+        notaris_nieuw: 0.03,
+        makelaar_pct: 0.05,
+        pv_tax_rate: 0.362, // 19% + 17.2%
         forfait_aankoop: 0.075,
-        forfait_werk: 0.15,
-        tax: 0.362 // 19 + 17.2
+        forfait_werk: 0.15
     };
 
-    // Helper: Euro formatter
-    const money = (val) => val.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' });
-    const getNum = (id) => parseFloat(document.getElementById(id).value) || 0;
-
-    // Rol switch logica
-    const roles = document.getElementsByName('role');
-    const inpVerkoop = document.getElementById('verkoopprijs');
-    const inpAankoop = document.getElementById('aankoopprijs');
-
-    function updateRole() {
-        const r = document.querySelector('input[name="role"]:checked').value;
-        // Reset
-        inpVerkoop.disabled = false;
-        inpAankoop.disabled = false;
-        
-        if(r === 'koper') {
-            // Koper vult normaal geen historische aankoop in, maar we laten het open voor scenario
-        } else if (r === 'verkoper') {
-            // Verkoper mag alles zien
+    // --- DOM ELEMENTEN ---
+    const els = {
+        role: document.getElementsByName('role'),
+        verkoop: document.getElementById('verkoopprijs'),
+        aankoopprijs: document.getElementById('aankoopprijs'),
+        dept: document.getElementById('dept'),
+        deptHint: document.getElementById('dept-hint'),
+        type: document.getElementById('typeWoning'),
+        jaren: document.getElementById('jaren'),
+        isRP: document.getElementById('isRP'),
+        makelaarWie: document.getElementsByName('makelaarWie'),
+        checks: {
+            caution: document.getElementById('opt_caution'),
+            mainlevee: document.getElementById('opt_mainlevee'),
+            spanc: document.getElementById('opt_spanc'),
+            geo: document.getElementById('opt_geo')
+        },
+        btn: document.getElementById('btnBereken'),
+        res: document.getElementById('resultaten'),
+        listKoper: document.getElementById('list-koper'),
+        listVerkoper: document.getElementById('list-verkoper'),
+        totKoper: document.getElementById('tot-koper'),
+        totVerkoper: document.getElementById('tot-verkoper'),
+        term: {
+            verkoop: document.getElementById('term-verkoop'),
+            kosten: document.getElementById('term-kosten'),
+            netto: document.getElementById('term-netto'),
+            aankoop: document.getElementById('term-aankoop'),
+            winst: document.getElementById('term-winst'),
+            frictie: document.getElementById('term-frictie')
         }
+    };
+
+    // --- HELPER FUNCTIES ---
+    const fmt = (n) => n.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' });
+    const safeFloat = (val) => {
+        const parsed = parseFloat(val);
+        return isNaN(parsed) ? 0 : parsed;
+    };
+
+    // --- UI UPDATES & LOCKING ---
+    function updateUI() {
+        // 1. Departement Hint
+        if(els.dept) {
+            const d = parseInt(els.dept.value);
+            let rate = "5,81%";
+            if ([36, 56, 976].includes(d)) rate = "5,09%";
+            if ([75, 13, 31, 35, 59, 69, 92, 93, 94, 34, 44].includes(d)) rate = "6,31%";
+            if(els.deptHint) els.deptHint.innerText = `Tarief: ${rate}`;
+        }
+
+        // 2. Rol Locking
+        // We laten de velden open zodat scenario's altijd werken, 
+        // maar we triggeren wel een herberekening bij wisselen.
+        bereken();
     }
-    
-    // Event listeners voor rol
-    roles.forEach(r => r.addEventListener('change', updateRole));
 
-    // HOOFDBEREKENING
-    btn.addEventListener('click', function() {
+    // --- HOOFDBEREKENING ---
+    function bereken() {
+        // Inputs ophalen
+        const verkoop = safeFloat(els.verkoop.value);
+        const aankoop = safeFloat(els.aankoopprijs.value);
+        const type = els.type.value;
+        const jaren = safeFloat(els.jaren.value);
+        const isRP = els.isRP.value === 'ja';
         
-        // 1. Waarden ophalen
-        const verkoop = getNum('verkoopprijs');
-        const aankoop = getNum('aankoopprijs');
-        const dept = getNum('dept');
-        const jaren = getNum('jaren');
-        const type = document.getElementById('typeWoning').value;
-        const isRP = document.getElementById('isRP').value === 'ja';
-        const makelaarWie = document.querySelector('input[name="makelaarWie"]:checked').value;
+        const makelaarEl = document.querySelector('input[name="makelaarWie"]:checked');
+        const makelaarWie = makelaarEl ? makelaarEl.value : 'geen';
 
-        let koperK = 0;
-        let verkoperK = 0;
-        let koperHTML = "";
-        let verkoperHTML = "";
+        let koperKosten = 0;
+        let verkoperKosten = 0;
+        let koperLijst = "";
+        let verkoperLijst = "";
 
-        // --- KOPER KOSTEN ---
-        
-        // Notaris
-        let notarisPct = (type === 'nieuw') ? RATES.nieuwbouw : RATES.notaris;
-        // Dept correctie (simpel)
-        if([36,56,976].includes(dept)) notarisPct -= 0.007; // Iets lager
-        if([75,13,31].includes(dept)) notarisPct += 0.005; // Iets hoger
-        
-        const notarisBedrag = verkoop * notarisPct;
-        koperK += notarisBedrag;
-        koperHTML += `<div class="res-row"><span>Notariskosten (schatting)</span> <span>${money(notarisBedrag)}</span></div>`;
+        // --- BEREKENING KOPER ---
+        let notarisPct = (type === 'nieuw') ? CONFIG.notaris_nieuw : CONFIG.notaris_oud;
+        let notarisBedrag = verkoop * notarisPct;
+        koperKosten += notarisBedrag;
+        koperLijst += `<li><span>Notariskosten (indicatie)</span> <span>${fmt(notarisBedrag)}</span></li>`;
 
-        // Makelaar (als koper betaalt)
-        if(makelaarWie === 'koper') {
-            const mk = verkoop * RATES.makelaar;
-            koperK += mk;
-            koperHTML += `<div class="res-row"><span>Makelaarscourtage</span> <span>${money(mk)}</span></div>`;
+        if (makelaarWie === 'koper') {
+            let mk = verkoop * CONFIG.makelaar_pct;
+            koperKosten += mk;
+            koperLijst += `<li><span>Makelaarscourtage</span> <span>${fmt(mk)}</span></li>`;
         }
 
-        // Caution
-        if(document.getElementById('opt_caution').checked) {
-            koperK += 1200;
-            koperHTML += `<div class="res-row"><span>Hypotheekgarantie</span> <span>${money(1200)}</span></div>`;
+        if (els.checks.caution && els.checks.caution.checked) {
+            let c = 1200; 
+            koperKosten += c;
+            koperLijst += `<li><span>Hypotheekgarantie</span> <span>${fmt(c)}</span></li>`;
         }
 
-        // --- VERKOPER KOSTEN ---
-
-        // Makelaar (als verkoper betaalt)
-        if(makelaarWie === 'verkoper') {
-            const mk = verkoop * RATES.makelaar;
-            verkoperK += mk;
-            verkoperHTML += `<div class="res-row"><span>Makelaarscourtage</span> <span>${money(mk)}</span></div>`;
+        // --- BEREKENING VERKOPER ---
+        if (makelaarWie === 'verkoper') {
+            let mk = verkoop * CONFIG.makelaar_pct;
+            verkoperKosten += mk;
+            verkoperLijst += `<li><span>Makelaarscourtage</span> <span>${fmt(mk)}</span></li>`;
         }
 
-        // Plus-Value (Optie B Forfaitair)
-        let pv = 0;
-        if(!isRP && verkoop > aankoop) {
-            // Aankoop + 7.5%
-            const basis = aankoop * (1 + RATES.forfait_aankoop);
-            // Werken + 15% (als > 5 jaar)
-            const werk = (jaren >= 5) ? (aankoop * RATES.forfait_werk) : 0;
-            
-            const totaleAankoop = basis + werk;
-            const winst = verkoop - totaleAankoop;
+        // Plus-Value (Optie B)
+        let pvTax = 0;
+        if (!isRP && verkoop > aankoop) {
+            let kostenAankoop = aankoop * CONFIG.forfait_aankoop; 
+            let kostenWerk = (jaren >= 5) ? (aankoop * CONFIG.forfait_werk) : 0; 
+            let totaleAankoopSom = aankoop + kostenAankoop + kostenWerk;
+            let brutoWinst = verkoop - totaleAankoopSom;
 
-            if(winst > 0) {
-                pv = winst * RATES.tax;
+            if (brutoWinst > 0) {
+                pvTax = brutoWinst * CONFIG.pv_tax_rate;
             }
         }
 
-        if(isRP) {
-            verkoperHTML += `<div class="res-row"><span>Plus-Value</span> <span>Vrijgesteld</span></div>`;
+        if (isRP) {
+            verkoperLijst += `<li><span>Plus-Value</span> <span>Vrijgesteld (Hoofdverblijf)</span></li>`;
         } else {
-            verkoperK += pv;
-            verkoperHTML += `<div class="res-row"><span>Plus-Value (Forfait)</span> <span>${money(pv)}</span></div>`;
+            verkoperLijst += `<li><span>Plus-Value (Schatting)</span> <span>${fmt(pvTax)}</span></li>`;
+            verkoperKosten += pvTax;
         }
 
-        // Opties Verkoper
-        if(document.getElementById('opt_mainlevee').checked) {
-            verkoperK += 700;
-            verkoperHTML += `<div class="res-row"><span>Mainlevée</span> <span>${money(700)}</span></div>`;
+        // Overige kosten
+        if (els.checks.mainlevee && els.checks.mainlevee.checked) {
+            let v = 700; verkoperKosten += v;
+            verkoperLijst += `<li><span>Mainlevée</span> <span>${fmt(v)}</span></li>`;
         }
-        if(document.getElementById('opt_spanc').checked) {
-            verkoperK += 150;
-            verkoperHTML += `<div class="res-row"><span>SPANC</span> <span>${money(150)}</span></div>`;
+        if (els.checks.spanc && els.checks.spanc.checked) {
+            let v = 150; verkoperKosten += v;
+            verkoperLijst += `<li><span>SPANC Inspectie</span> <span>${fmt(v)}</span></li>`;
         }
-        if(document.getElementById('opt_geo').checked) {
-            verkoperK += 1500;
-            verkoperHTML += `<div class="res-row"><span>Géomètre</span> <span>${money(1500)}</span></div>`;
+        if (els.checks.geo && els.checks.geo.checked) {
+            let v = 1500; verkoperKosten += v;
+            verkoperLijst += `<li><span>Géomètre</span> <span>${fmt(v)}</span></li>`;
         }
 
-        // --- OUTPUT NAAR SCHERM ---
-        document.getElementById('out-koper').innerHTML = koperHTML;
-        document.getElementById('out-verkoper').innerHTML = verkoperHTML;
-        document.getElementById('tot-koper').innerText = money(koperK);
-        document.getElementById('tot-verkoper').innerText = money(verkoperK);
+        // --- TERMINAL DATA ---
+        let nettoHand = verkoop - verkoperKosten;
+        let werkelijkeWinst = nettoHand - aankoop;
+        let totaleFrictie = koperKosten + verkoperKosten;
 
-        // Matrix vullen
-        const netto = verkoop - verkoperK;
-        const winstEcht = netto - aankoop;
-        const frictie = koperK + verkoperK;
+        // --- OUTPUT UPDATES ---
+        if(els.listKoper) els.listKoper.innerHTML = koperLijst;
+        if(els.listVerkoper) els.listVerkoper.innerHTML = verkoperLijst;
+        if(els.totKoper) els.totKoper.innerText = fmt(koperKosten);
+        if(els.totVerkoper) els.totVerkoper.innerText = fmt(verkoperKosten);
 
-        document.getElementById('t-verkoop').innerText = money(verkoop);
-        document.getElementById('t-kosten').innerText = "- " + money(verkoperK);
-        document.getElementById('t-netto').innerText = money(netto);
-        document.getElementById('t-aankoop').innerText = "- " + money(aankoop);
-        document.getElementById('t-winst').innerText = money(winstEcht);
-        document.getElementById('t-frictie').innerText = money(frictie);
+        if(els.term.verkoop) {
+            els.term.verkoop.innerText = fmt(verkoop);
+            els.term.kosten.innerText = "- " + fmt(verkoperKosten);
+            els.term.netto.innerText = fmt(nettoHand);
+            els.term.aankoop.innerText = "- " + fmt(aankoop);
+            els.term.winst.innerText = fmt(werkelijkeWinst);
+            els.term.frictie.innerText = fmt(totaleFrictie);
+            
+            els.term.winst.style.color = werkelijkeWinst >= 0 ? "#00ff41" : "#ff4444";
+        }
 
-        // Toon resultaten
-        document.getElementById('resultaten').style.display = 'block';
+        if(els.res) els.res.style.display = 'grid';
+    }
+
+    // --- LIVE LISTENERS TOEVOEGEN ---
+    // Dit zorgt ervoor dat ALLES direct reageert
+    const inputs = [
+        els.verkoop, els.aankoopprijs, els.dept, els.type, els.jaren, els.isRP,
+        els.checks.caution, els.checks.mainlevee, els.checks.spanc, els.checks.geo
+    ];
+
+    inputs.forEach(el => {
+        if(el) {
+            el.addEventListener('input', bereken);
+            el.addEventListener('change', bereken);
+        }
     });
 
-};
+    els.makelaarWie.forEach(r => r.addEventListener('change', bereken));
+    els.role.forEach(r => r.addEventListener('change', updateUI));
+    if(els.btn) els.btn.addEventListener('click', bereken);
+
+    // Eerste start
+    updateUI();
+});
