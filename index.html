@@ -1,151 +1,140 @@
-window.onload = function() {
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactiekosten Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Courier+Prime:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Transactiekosten Frankrijk</h1>
+        <p class="subtitle">Calculator voor Koper & Verkoper</p>
+    </header>
+
+    <section class="panel">
+        <h2>1. Uw Situatie</h2>
+        <div class="radio-group">
+            <label><input type="radio" name="role" value="koper" checked> Koper</label>
+            <label><input type="radio" name="role" value="verkoper"> Verkoper</label>
+            <label><input type="radio" name="role" value="notaris"> Notaris (Scenario's)</label>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>2. Bedragen</h2>
+        <div class="grid-2">
+            <div class="form-group">
+                <label>Verkoopprijs Nu (€)</label>
+                <input type="number" id="verkoopprijs" value="350000">
+            </div>
+            <div class="form-group">
+                <label>Aankoopprijs Toen (€)</label>
+                <input type="number" id="aankoopprijs" value="250000">
+                <small>Alleen nodig voor Plus-Value (Verkoper)</small>
+            </div>
+            <div class="form-group">
+                <label>Departement (Nr)</label>
+                <input type="number" id="dept" value="75">
+            </div>
+            <div class="form-group">
+                <label>Type Woning</label>
+                <select id="typeWoning">
+                    <option value="ancien">Bestaand (Ancien)</option>
+                    <option value="nieuw">Nieuwbouw (VEFA)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Jaren Bezit</label>
+                <input type="number" id="jaren" value="10">
+            </div>
+            <div class="form-group">
+                <label>Hoofdverblijf?</label>
+                <select id="isRP">
+                    <option value="nee">Nee (2e woning)</option>
+                    <option value="ja">Ja (Hoofdverblijf)</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>3. Makelaar & Opties</h2>
+        
+        <div class="form-group">
+            <label>Wie betaalt de makelaar?</label>
+            <div class="radio-group">
+                <label><input type="radio" name="makelaarWie" value="verkoper" checked> Verkoper</label>
+                <label><input type="radio" name="makelaarWie" value="koper"> Koper</label>
+                <label><input type="radio" name="makelaarWie" value="geen"> Geen makelaar</label>
+            </div>
+        </div>
+
+        <div class="checkbox-grid">
+            <label class="check-box">
+                <input type="checkbox" id="opt_caution"> Hypotheekgarantie (Koper)
+            </label>
+            <label class="check-box">
+                <input type="checkbox" id="opt_mainlevee"> Mainlevée (Verkoper)
+            </label>
+            <label class="check-box">
+                <input type="checkbox" id="opt_spanc"> SPANC Inspectie (Verkoper)
+            </label>
+            <label class="check-box">
+                <input type="checkbox" id="opt_geo"> Géomètre (Verkoper)
+            </label>
+        </div>
+    </section>
+
+    <div class="center-btn">
+        <button id="btnBereken" type="button">Bereken Kosten</button>
+    </div>
+
+    <div id="resultaten" style="display:none;">
+        
+        <div class="res-card">
+            <h3>Kosten Koper</h3>
+            <div id="out-koper"></div>
+            <div class="total-line">Totaal: <span id="tot-koper">€0</span></div>
+        </div>
+
+        <div class="res-card">
+            <h3>Kosten Verkoper</h3>
+            <div id="out-verkoper"></div>
+            <div class="total-line">Totaal: <span id="tot-verkoper">€0</span></div>
+        </div>
+
+        <div class="terminal">
+            <h4>> TRANSACTIE ANALYSE_</h4>
+            <div class="term-row"><span>VERKOOPPRIJS:</span> <span id="t-verkoop">€0</span></div>
+            <div class="term-row red"><span>- KOSTEN VERKOPER:</span> <span id="t-kosten">€0</span></div>
+            <hr class="term-line">
+            <div class="term-row blue"><span>= NETTO OPBRENGST:</span> <span id="t-netto">€0</span></div>
+            <div class="term-row dim"><span>- AANKOOPPRIJS:</span> <span id="t-aankoop">€0</span></div>
+            <hr class="term-line">
+            <div class="term-row green"><span>= WERKELIJKE WINST:</span> <span id="t-winst">€0</span></div>
+            <br>
+            <div class="term-row orange"><span>CUMULATIEVE KOSTEN:</span> <span id="t-frictie">€0</span></div>
+        </div>
+
+        <div class="advice">
+            <h4>💡 Belangrijk Advies</h4>
+            <ul>
+                <li><strong>Plus-Value:</strong> Berekend via de forfaitaire methode. <a href="#">Zie de simulator op InfoFrankrijk</a> voor details.</li>
+                <li><strong>Vrijstelling:</strong> Alleen mogelijk bij verkoop van écht hoofdverblijf of bij herinvestering in eerste hoofdwoning (Art. 150 U II CGI).</li>
+                <li><strong>Makelaar:</strong> Via de notaris verkopen bespaart ca. 5% kosten.</li>
+                <li><strong>Notaris:</strong> Koper mag altijd eigen notaris meenemen (gratis).</li>
+            </ul>
+        </div>
+
+    </div>
     
-    // DOM Elementen ophalen
-    const btn = document.getElementById('btnBereken');
-    
-    // Configuratie
-    const RATES = {
-        notaris: 0.075, // 7.5% gem
-        nieuwbouw: 0.03, // 3% gem
-        makelaar: 0.05,
-        forfait_aankoop: 0.075,
-        forfait_werk: 0.15,
-        tax: 0.362 // 19 + 17.2
-    };
+    <footer>© InfoFrankrijk.com</footer>
+</div>
 
-    // Helper: Euro formatter
-    const money = (val) => val.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' });
-    const getNum = (id) => parseFloat(document.getElementById(id).value) || 0;
-
-    // Rol switch logica
-    const roles = document.getElementsByName('role');
-    const inpVerkoop = document.getElementById('verkoopprijs');
-    const inpAankoop = document.getElementById('aankoopprijs');
-
-    function updateRole() {
-        const r = document.querySelector('input[name="role"]:checked').value;
-        // Reset
-        inpVerkoop.disabled = false;
-        inpAankoop.disabled = false;
-        
-        if(r === 'koper') {
-            // Koper vult normaal geen historische aankoop in, maar we laten het open voor scenario
-        } else if (r === 'verkoper') {
-            // Verkoper mag alles zien
-        }
-    }
-    
-    // Event listeners voor rol
-    roles.forEach(r => r.addEventListener('change', updateRole));
-
-    // HOOFDBEREKENING
-    btn.addEventListener('click', function() {
-        
-        // 1. Waarden ophalen
-        const verkoop = getNum('verkoopprijs');
-        const aankoop = getNum('aankoopprijs');
-        const dept = getNum('dept');
-        const jaren = getNum('jaren');
-        const type = document.getElementById('typeWoning').value;
-        const isRP = document.getElementById('isRP').value === 'ja';
-        const makelaarWie = document.querySelector('input[name="makelaarWie"]:checked').value;
-
-        let koperK = 0;
-        let verkoperK = 0;
-        let koperHTML = "";
-        let verkoperHTML = "";
-
-        // --- KOPER KOSTEN ---
-        
-        // Notaris
-        let notarisPct = (type === 'nieuw') ? RATES.nieuwbouw : RATES.notaris;
-        // Dept correctie (simpel)
-        if([36,56,976].includes(dept)) notarisPct -= 0.007; // Iets lager
-        if([75,13,31].includes(dept)) notarisPct += 0.005; // Iets hoger
-        
-        const notarisBedrag = verkoop * notarisPct;
-        koperK += notarisBedrag;
-        koperHTML += `<div class="res-row"><span>Notariskosten (schatting)</span> <span>${money(notarisBedrag)}</span></div>`;
-
-        // Makelaar (als koper betaalt)
-        if(makelaarWie === 'koper') {
-            const mk = verkoop * RATES.makelaar;
-            koperK += mk;
-            koperHTML += `<div class="res-row"><span>Makelaarscourtage</span> <span>${money(mk)}</span></div>`;
-        }
-
-        // Caution
-        if(document.getElementById('opt_caution').checked) {
-            koperK += 1200;
-            koperHTML += `<div class="res-row"><span>Hypotheekgarantie</span> <span>${money(1200)}</span></div>`;
-        }
-
-        // --- VERKOPER KOSTEN ---
-
-        // Makelaar (als verkoper betaalt)
-        if(makelaarWie === 'verkoper') {
-            const mk = verkoop * RATES.makelaar;
-            verkoperK += mk;
-            verkoperHTML += `<div class="res-row"><span>Makelaarscourtage</span> <span>${money(mk)}</span></div>`;
-        }
-
-        // Plus-Value (Optie B Forfaitair)
-        let pv = 0;
-        if(!isRP && verkoop > aankoop) {
-            // Aankoop + 7.5%
-            const basis = aankoop * (1 + RATES.forfait_aankoop);
-            // Werken + 15% (als > 5 jaar)
-            const werk = (jaren >= 5) ? (aankoop * RATES.forfait_werk) : 0;
-            
-            const totaleAankoop = basis + werk;
-            const winst = verkoop - totaleAankoop;
-
-            if(winst > 0) {
-                pv = winst * RATES.tax;
-            }
-        }
-
-        if(isRP) {
-            verkoperHTML += `<div class="res-row"><span>Plus-Value</span> <span>Vrijgesteld</span></div>`;
-        } else {
-            verkoperK += pv;
-            verkoperHTML += `<div class="res-row"><span>Plus-Value (Forfait)</span> <span>${money(pv)}</span></div>`;
-        }
-
-        // Opties Verkoper
-        if(document.getElementById('opt_mainlevee').checked) {
-            verkoperK += 700;
-            verkoperHTML += `<div class="res-row"><span>Mainlevée</span> <span>${money(700)}</span></div>`;
-        }
-        if(document.getElementById('opt_spanc').checked) {
-            verkoperK += 150;
-            verkoperHTML += `<div class="res-row"><span>SPANC</span> <span>${money(150)}</span></div>`;
-        }
-        if(document.getElementById('opt_geo').checked) {
-            verkoperK += 1500;
-            verkoperHTML += `<div class="res-row"><span>Géomètre</span> <span>${money(1500)}</span></div>`;
-        }
-
-        // --- OUTPUT NAAR SCHERM ---
-        document.getElementById('out-koper').innerHTML = koperHTML;
-        document.getElementById('out-verkoper').innerHTML = verkoperHTML;
-        document.getElementById('tot-koper').innerText = money(koperK);
-        document.getElementById('tot-verkoper').innerText = money(verkoperK);
-
-        // Matrix vullen
-        const netto = verkoop - verkoperK;
-        const winstEcht = netto - aankoop;
-        const frictie = koperK + verkoperK;
-
-        document.getElementById('t-verkoop').innerText = money(verkoop);
-        document.getElementById('t-kosten').innerText = "- " + money(verkoperK);
-        document.getElementById('t-netto').innerText = money(netto);
-        document.getElementById('t-aankoop').innerText = "- " + money(aankoop);
-        document.getElementById('t-winst').innerText = money(winstEcht);
-        document.getElementById('t-frictie').innerText = money(frictie);
-
-        // Toon resultaten
-        document.getElementById('resultaten').style.display = 'block';
-    });
-
-};
+<script src="script.js"></script>
+</body>
+</html>
