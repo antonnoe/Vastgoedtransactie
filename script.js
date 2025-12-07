@@ -9,9 +9,9 @@ const CONFIG = {
 };
 
 // --- DOM ELEMENTEN (Caching) ---
+// Let op: roleDesc is hier verwijderd om crashes te voorkomen
 const els = {
     role: document.getElementsByName('role'),
-    roleDesc: document.getElementById('role-desc'),
     verkoop: document.getElementById('verkoopprijs'),
     aankoop: document.getElementById('aankoopprijs'),
     dept: document.getElementById('dept'),
@@ -59,21 +59,18 @@ function updateUI() {
     if ([75, 13, 31, 35, 59, 69, 92, 93, 94, 34, 44].includes(d)) rate = "6,31%";
     els.deptHint.innerText = `Tarief: ${rate}`;
 
-    // 2. Rol Locking (Soft Lock - crasht niet, past alleen disabled status aan)
+    // 2. Rol Locking (alleen de velden disablen, geen tekst updates meer)
     const role = document.querySelector('input[name="role"]:checked').value;
     
     // Reset alles naar enabled
     els.verkoop.disabled = false;
     els.aankoopprijs.disabled = false;
-    els.roleDesc.innerText = "Alle velden zijn open voor simulatie.";
 
     if (role === 'koper') {
-        els.roleDesc.innerText = "U ziet wat u moet betalen bovenop de koopsom.";
-        // We laten aankoop open, want koper kan willen simuleren wat de verkoper verdient
-        // Maar als je strikt wilt zijn: els.aankoop.disabled = true;
-    } else if (role === 'verkoper') {
-        els.roleDesc.innerText = "U ziet wat u overhoudt na aftrek van kosten.";
-    }
+        // Koper kan aankoop historie vaak niet weten of invullen, maar voor scenario laten we het open.
+        // Optioneel: els.aankoopprijs.disabled = true;
+    } 
+    // Verkoper en Notaris hebben alles open.
 }
 
 function bereken() {
@@ -83,7 +80,10 @@ function bereken() {
     const type = els.type.value;
     const jaren = safeFloat(els.jaren.value);
     const isRP = els.isRP.value === 'ja';
-    const makelaarWie = document.querySelector('input[name="makelaarWie"]:checked').value;
+    
+    // Check of makelaar radio bestaat en geselecteerd is
+    const makelaarEl = document.querySelector('input[name="makelaarWie"]:checked');
+    const makelaarWie = makelaarEl ? makelaarEl.value : 'geen';
 
     let koperKosten = 0;
     let verkoperKosten = 0;
@@ -178,7 +178,7 @@ function bereken() {
     els.term.frictie.innerText = fmt(totaleFrictie);
 
     // Winst kleur
-    els.term.winst.style.backgroundColor = werkelijkeWinst >= 0 ? "var(--terminal-green)" : "#ff4444";
+    els.term.winst.style.backgroundColor = werkelijkeWinst >= 0 ? "#00ff41" : "#ff4444";
     els.term.winst.style.color = "#000";
 
     els.res.style.display = 'grid';
