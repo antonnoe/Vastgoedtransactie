@@ -10,19 +10,16 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS: Professionele styling (InfoFrankrijk stijl)
+# Custom CSS
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
 
-    /* Algemene font settings */
     html, body, [class*="css"] {
         font-family: 'Montserrat', sans-serif;
         color: #333333;
     }
-
-    /* Headers */
     h1, h2, h3 {
         color: #800000 !important;
         font-weight: 700 !important;
@@ -31,8 +28,6 @@ st.markdown(
         color: #555 !important;
         font-weight: 600 !important;
     }
-
-    /* BUTTONS */
     .stButton>button {
         background-color: #800000;
         color: white;
@@ -45,23 +40,18 @@ st.markdown(
     .stButton>button:hover {
         background-color: #5a0000;
         color: white;
-        border-color: #5a0000;
     }
-
-    /* INPUTS & SELECTBOXES */
-    /* Zorg voor consistente styling van invoervelden */
+    /* Inputs styling */
     div[data-baseweb="input"] > div, div[data-baseweb="select"] > div {
         background-color: #ffffff;
         border-radius: 6px;
         border: 1px solid #d1d5db;
     }
-    /* Focus kleur (Bordeaux) */
     div[data-baseweb="input"] > div:focus-within, div[data-baseweb="select"] > div:focus-within {
         border-color: #800000 !important;
         box-shadow: 0 0 0 1px #800000 !important;
     }
-
-    /* TABEL STYLING (Belangrijk voor professionele look) */
+    /* Tabel styling */
     div[data-testid="stTable"] table {
         width: 100%;
         border-collapse: collapse;
@@ -80,12 +70,10 @@ st.markdown(
         border-bottom: 1px solid #eeeeee;
         color: #333;
     }
-    /* Zebra striping voor leesbaarheid */
     div[data-testid="stTable"] tbody tr:nth-of-type(even) {
         background-color: #f9f9f9;
     }
-
-    /* RESULTAAT CARDS */
+    /* Resultaat Cards */
     .result-card {
         background-color: #ffffff;
         border-radius: 8px;
@@ -107,17 +95,14 @@ st.markdown(
         font-weight: 700;
         color: #333;
     }
-    .result-value.green {
-        color: #2e7d32; /* Winst groen */
-    }
+    .result-value.green { color: #2e7d32; }
     .result-sub {
         font-size: 0.8rem;
         color: #888;
         font-style: italic;
         margin-top: 5px;
     }
-
-    /* ANALYSIS BOX (De validatie sectie) */
+    /* Analysis Box */
     .analysis-container {
         background-color: #f8fbff;
         border: 1px solid #cce5ff;
@@ -130,8 +115,6 @@ st.markdown(
         font-weight: bold;
         font-size: 1.1rem;
     }
-
-    /* Footer styling */
     .footer {
         text-align: center;
         padding: 20px;
@@ -140,8 +123,6 @@ st.markdown(
         border-top: 1px solid #eee;
         margin-top: 40px;
     }
-    
-    /* Verminder witruimte bovenaan */
     .block-container {
         padding-top: 2rem;
         padding-bottom: 5rem;
@@ -152,73 +133,48 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# 2. LOGICA: DATABASES & REKENREGELS
+# 2. LOGICA FUNCTIES
 # -----------------------------------------------------------------------------
 
 def get_dmto_tarief(postcode_input):
-    """
-    Bepaalt het tarief voor de overdrachtsbelasting (onderdeel notaris).
-    Standaard 5.81%, maar sommige departementen (Indre 36, Morbihan 56, Mayotte 976) zijn lager (5.09%).
-    """
     if not postcode_input or len(postcode_input) < 2:
         return 5.81
-    
     dept = postcode_input[:2]
-    low_rate_depts = ['36', '56', '976']
-    
-    if dept in low_rate_depts:
+    if dept in ['36', '56', '976']:
         return 5.09
     return 5.81
 
 def bereken_abattement(jaren_bezit):
-    """
-    Berekent de korting (abattement) op de plus-value belasting 
-    op basis van jaren bezit voor IR (Inkomsten) en PS (Sociale lasten).
-    """
     if jaren_bezit < 6:
         return 0.0, 0.0
+    
+    # IR
+    if jaren_bezit >= 22: abat_ir = 100.0
+    else: abat_ir = (jaren_bezit - 5) * 6.0
 
-    # 1. Impôt sur le Revenu (IR) - Vrij na 22 jaar
-    if jaren_bezit >= 22:
-        abat_ir = 100.0
-    else:
-        abat_ir = (jaren_bezit - 5) * 6.0
-
-    # 2. Prélèvements Sociaux (PS) - Vrij na 30 jaar
-    if jaren_bezit >= 30:
-        abat_ps = 100.0
+    # PS
+    if jaren_bezit >= 30: abat_ps = 100.0
     elif jaren_bezit >= 23:
-        # Eerst 22 jaar berekenen
         basis_22 = (16 * 1.65) + 1.60 
         extra_jaren = jaren_bezit - 22
         abat_ps = basis_22 + (extra_jaren * 9.0)
     else:
-        # Tussen 6 en 22
         abat_ps = (jaren_bezit - 5) * 1.65
-        if jaren_bezit == 22: 
-             abat_ps += 1.60 
+        if jaren_bezit == 22: abat_ps += 1.60 
 
     return min(abat_ir, 100.0), min(abat_ps, 100.0)
 
 def bereken_notariskosten(prijs_voor_notaris, postcode, is_nieuwbouw):
-    """Berekent notariskosten. Bij nieuwbouw (VEFA) ca. 2.5%, anders staffel."""
-    if prijs_voor_notaris <= 0:
-        return 0.0
+    if prijs_voor_notaris <= 0: return 0.0
     
-    # VEFA (Nieuwbouw) scenario
     if is_nieuwbouw:
+        # VEFA: ca 2.5%
         return prijs_voor_notaris * 0.025
 
-    # Bestaande bouw (Ancien) scenario
+    # Ancien
     dmto_tarief = get_dmto_tarief(postcode)
+    tranches = [(6500, 0.03870), (17000, 0.01596), (60000, 0.01064), (float('inf'), 0.00799)]
     
-    # Émoluments staffel (Loon notaris)
-    tranches = [
-        (6500, 0.03870),
-        (17000, 0.01596),
-        (60000, 0.01064),
-        (float('inf'), 0.00799)
-    ]
     emoluments = 0.0
     vorige_grens = 0
     for grens, percentage in tranches:
@@ -226,18 +182,16 @@ def bereken_notariskosten(prijs_voor_notaris, postcode, is_nieuwbouw):
             schijf = min(prijs_voor_notaris, grens) - vorige_grens
             emoluments += schijf * percentage
             vorige_grens = grens
-        else:
-            break
+        else: break
             
     tva = emoluments * 0.20
     dmto = prijs_voor_notaris * (dmto_tarief / 100.0)
     csi = prijs_voor_notaris * 0.0010
     frais_divers = 1200.00 
-    
     return emoluments + tva + dmto + csi + frais_divers
 
 # -----------------------------------------------------------------------------
-# 3. SIDEBAR & INPUTS
+# 3. SIDEBAR & INPUTS (MET TOOLTIPS)
 # -----------------------------------------------------------------------------
 
 if st.sidebar.button("🔄 RESET SCENARIO"):
@@ -248,14 +202,28 @@ st.sidebar.title("Instellingen")
 
 # A. Locatie & Makelaar
 st.sidebar.subheader("1. Locatie & Makelaar")
-postcode = st.sidebar.text_input("Postcode (bepaalt notaris-regio)", value="58000", max_chars=5)
 
-type_woning_optie = st.sidebar.radio("Type Woning", ["Bestaand (Ancien)", "Nieuwbouw (VEFA)"], index=0)
+postcode = st.sidebar.text_input(
+    "Postcode (bepaalt notaris-regio)", 
+    value="58000", 
+    max_chars=5,
+    help="Vul de postcode in van het te verkopen object. In enkele departementen (zoals 36 en 56) geldt een verlaagd tarief voor overdrachtsbelasting."
+)
+
+type_woning_optie = st.sidebar.radio(
+    "Type Woning", 
+    ["Bestaand (Ancien)", "Nieuwbouw (VEFA)"], 
+    index=0,
+    help="Kies 'Nieuwbouw' alleen als het gaat om een verkoop op plan (VEFA) of een net opgeleverde, nooit bewoonde woning. Een woning van >5 jaar oud is fiscaal gezien vrijwel altijd 'Bestaand'."
+)
 is_nieuwbouw = (type_woning_optie == "Nieuwbouw (VEFA)")
 
-makelaar_optie = st.sidebar.radio("Wie betaalt de makelaar?", 
-                                  ["Verkoper (Charge Vendeur)", "Koper (Charge Acquéreur)", "Geen makelaar"],
-                                  index=0)
+makelaar_optie = st.sidebar.radio(
+    "Wie betaalt de makelaar?", 
+    ["Verkoper (Charge Vendeur)", "Koper (Charge Acquéreur)", "Geen makelaar"],
+    index=0,
+    help="Staat in het 'mandat de vente' dat de makelaar 'charge acquéreur' is? Dan betaalt de koper de courtage en hoeft er geen overdrachtsbelasting over de commissie betaald te worden. Dit scheelt de koper geld."
+)
 
 if makelaar_optie == "Geen makelaar":
     makelaar_perc = 0.0
@@ -264,7 +232,11 @@ else:
 
 # B. Transactiecijfers
 st.sidebar.subheader("2. Bedragen & Data")
-verkoopprijs_input = st.sidebar.number_input("Totale Verkoopprijs (incl. makelaar) €", value=400000.0, step=1000.0)
+verkoopprijs_input = st.sidebar.number_input(
+    "Totale Verkoopprijs (incl. makelaar) €", 
+    value=400000.0, step=1000.0,
+    help="De prijs zoals die in de advertentie staat (FAI - Frais d'Agence Inclus)."
+)
 
 col_j1, col_j2 = st.sidebar.columns(2)
 with col_j1:
@@ -277,17 +249,39 @@ if jaren_bezit < 0: jaren_bezit = 0
 
 aankoopprijs = st.sidebar.number_input("Oorspronkelijke Aankoopprijs €", value=200000.0, step=1000.0)
 
+# LOGICA CHECK: Nieuwbouw vs Jaren Bezit
+if is_nieuwbouw and jaren_bezit > 5:
+    st.sidebar.warning(f"⚠️ Let op: U heeft 'Nieuwbouw' geselecteerd maar bezit de woning al {jaren_bezit} jaar. Voor de fiscus is dit waarschijnlijk 'Bestaande bouw'. Dit geeft een vertekend beeld van de notariskosten voor de koper.")
+
 # C. Kosten & Belastingen
 st.sidebar.subheader("3. Kosten & Belastingen")
 
-hoofdverblijf_optie = st.sidebar.radio("Was dit uw hoofdverblijf?", ["Nee (2de woning)", "Ja (Hoofdverblijf)"], index=0)
+hoofdverblijf_optie = st.sidebar.radio(
+    "Was dit uw hoofdverblijf?", 
+    ["Nee (2de woning)", "Ja (Hoofdverblijf)"], 
+    index=0,
+    help="Indien het uw hoofdverblijf (Résidence Principale) betreft op moment van verkoop, bent u volledig vrijgesteld van Plus-Value belasting."
+)
 is_hoofdverblijf = (hoofdverblijf_optie == "Ja (Hoofdverblijf)")
 
-landmeter = st.sidebar.number_input("Landmeter / Diagnostics €", value=1500.0, step=100.0)
+landmeter = st.sidebar.number_input(
+    "Landmeter / Diagnostics €", 
+    value=1500.0, step=100.0,
+    help="Kosten voor verplichte rapporten (DDT) zoals asbest, lood, energieprestatie, etc. Deze zijn aftrekbaar van de winst."
+)
 
 if not is_hoofdverblijf:
-    de_ruyter = st.sidebar.checkbox("Toepassing Arrest de Ruyter", value=True, help="Verlaagt sociale lasten naar 7,5% indien verkoper in NL sociaal verzekerd is.")
-    pv_methode = st.sidebar.radio("Plus-value berekening", ["Automatisch (obv jaren)", "Handmatige invoer"], index=0)
+    de_ruyter = st.sidebar.checkbox(
+        "Toepassing Arrest de Ruyter", 
+        value=True, 
+        help="Bent u sociaal verzekerd in een andere EU-lidstaat (bijv. Nederland) en niet in Frankrijk? Vink dit aan. Uw sociale lasten dalen dan van 17,2% naar 7,5%."
+    )
+    pv_methode = st.sidebar.radio(
+        "Plus-value berekening", 
+        ["Automatisch (obv jaren)", "Handmatige invoer"], 
+        index=0,
+        help="De automatische berekening past de officiële Franse aftrekstaffels (abattements) toe op basis van uw bezitsduur."
+    )
 else:
     de_ruyter = False
     pv_methode = "Automatisch (obv jaren)"
@@ -334,7 +328,7 @@ elif pv_methode == "Handmatige invoer":
     plus_value_tax = st.sidebar.number_input("Bedrag Plus-value belasting €", value=0.0)
     pv_toelichting = "Handmatige invoer"
 else:
-    # A. Correctie Aankoopsom (Forfaits)
+    # A. Correctie Aankoopsom
     forfait_aankoop = aankoopprijs * 0.075
     forfait_verbouwing = aankoopprijs * 0.15 if jaren_bezit > 5 else 0.0
     
@@ -350,7 +344,6 @@ else:
     else:
         # C. Abattements
         abat_ir_perc, abat_ps_perc = bereken_abattement(jaren_bezit)
-        
         belastbaar_ir = bruto_meerwaarde * (1.0 - (abat_ir_perc / 100.0))
         belastbaar_ps = bruto_meerwaarde * (1.0 - (abat_ps_perc / 100.0))
         
@@ -368,13 +361,12 @@ else:
 
 # 4. Totalen
 totaal_kosten_verkoper = makelaarskosten + plus_value_tax + landmeter
-
 netto_opbrengst = verkoopprijs_input - totaal_kosten_verkoper
 werkelijke_winst = netto_opbrengst - aankoopprijs
 frictiekosten = notariskosten + totaal_kosten_verkoper
 
 # -----------------------------------------------------------------------------
-# 5. UI OUTPUT (VERBETERDE LAYOUT)
+# 5. UI OUTPUT
 # -----------------------------------------------------------------------------
 
 st.title("Vastgoedtransactieanalyse")
@@ -397,7 +389,6 @@ df_data.append(["", "", ""])
 
 # VERKOPER
 df_data.append(["2. Kosten Verkoper / Afhoudingen", "", ""])
-
 makelaar_tekst = f"{makelaar_perc:.2f}% ({makelaar_optie})"
 df_data.append(["Makelaarscourtage", makelaar_tekst, f"€ {makelaarskosten:,.2f}"])
 
@@ -414,16 +405,12 @@ df_data.append(["Landmeter / Diagnostics", "", f"€ {landmeter:,.2f}"])
 
 df_data.append(["Totaal afhoudingen", "", f"€ {totaal_kosten_verkoper:,.2f}"])
 
-# Render Tabel (Nu met CSS styling uit Stap 1)
 st.table(pd.DataFrame(df_data, columns=["Onderdeel", "Specificatie", "Bedrag"]))
 
 st.markdown("---")
-
 st.subheader("Resultaat")
 
-# NIEUWE KAART-STIJL VOOR RESULTATEN
 col_res1, col_res2, col_res3 = st.columns(3)
-
 with col_res1:
     st.markdown(f"""
     <div class="result-card">
@@ -432,7 +419,6 @@ with col_res1:
         <div class="result-sub">Op bankrekening verkoper</div>
     </div>
     """, unsafe_allow_html=True)
-
 with col_res2:
     st.markdown(f"""
     <div class="result-card">
@@ -441,7 +427,6 @@ with col_res2:
         <div class="result-sub">Netto - Aankoop</div>
     </div>
     """, unsafe_allow_html=True)
-
 with col_res3:
     st.markdown(f"""
     <div class="result-card">
@@ -450,7 +435,6 @@ with col_res3:
         <div class="result-sub">Verdwenen in de keten</div>
     </div>
     """, unsafe_allow_html=True)
-
 
 # -----------------------------------------------------------------------------
 # 6. ANALYSE & VALIDATIE
@@ -485,7 +469,6 @@ with st.expander("🔎 Bekijk fiscale analyse & validatie"):
     if not is_hoofdverblijf and pv_methode == "Automatisch (obv jaren)" and bruto_meerwaarde > 0:
         st.markdown(f"#### 2. Plus-Value Berekening ({jaren_bezit} jaar bezit)")
         
-        # IR
         st.markdown("**A. Inkomstenbelasting (IR)**")
         st.markdown(f"""
         * Regel: 6% aftrek per jaar (vanaf jaar 6).
@@ -493,7 +476,6 @@ with st.expander("🔎 Bekijk fiscale analyse & validatie"):
         * <span class="check-icon">✓</span> <strong>Validatie:</strong> € {bruto_meerwaarde:,.0f} × {abat_ir_perc/100:.2f} = € {bruto_meerwaarde * (abat_ir_perc/100):,.2f} aftrek.
         """, unsafe_allow_html=True)
 
-        # Soc
         st.markdown("**B. Sociale Lasten (Prélèvements Sociaux)**")
         st.markdown(f"""
         * Regel: Variabel tarief (1,65% tot jaar 21, daarna hoger).
@@ -501,7 +483,6 @@ with st.expander("🔎 Bekijk fiscale analyse & validatie"):
         * <span class="check-icon">✓</span> <strong>Validatie:</strong> € {bruto_meerwaarde:,.0f} × {abat_ps_perc/100:.3f} = € {bruto_meerwaarde * (abat_ps_perc/100):,.2f} aftrek.
         """, unsafe_allow_html=True)
 
-        # De Ruyter
         st.markdown("**C. Tariefstelling**")
         tarief_tekst = "7,5% (Verlaagd tarief 'De Ruyter')" if de_ruyter else "17,2% (Standaard tarief)"
         st.markdown(f"""
@@ -517,7 +498,6 @@ with st.expander("🔎 Bekijk fiscale analyse & validatie"):
     st.markdown("**Conclusie:** De rekenkern is 100% consistent met de huidige Franse fiscale wetgeving.")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Footer
 st.markdown(
     """
     <div class="footer">
