@@ -10,14 +10,14 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS: Professioneel, maar veilig voor Streamlit iconen
+# Custom CSS: Specifiek gericht op tekst, laat iconen met rust
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
 
-    /* 1. Algemene fonts (zonder de iconen te breken) */
-    html, body, p, div, label, input, select, button {
+    /* 1. Pas font alleen toe op echte tekstelementen, niet op containers/iconen */
+    html, body, p, h1, h2, h3, h4, h5, h6, span, label, li, td, button, input, select, textarea {
         font-family: 'Montserrat', sans-serif !important;
         color: #333;
     }
@@ -48,12 +48,13 @@ st.markdown(
         border-color: #5a0000;
     }
 
-    /* 4. Inputs styling (Subtieler zodat tooltips blijven werken) */
+    /* 4. Inputs styling (Zonder de div structuur te breken) */
     div[data-baseweb="input"] > div, div[data-baseweb="select"] > div {
         background-color: #ffffff;
         border-radius: 6px;
         border: 1px solid #d1d5db;
     }
+    /* Focus kleur */
     div[data-baseweb="input"] > div:focus-within, div[data-baseweb="select"] > div:focus-within {
         border-color: #800000 !important;
         box-shadow: 0 0 0 1px #800000 !important;
@@ -124,7 +125,7 @@ st.markdown(
         font-weight: bold;
         font-size: 1.1rem;
     }
-    
+
     /* 8. Footer */
     .footer {
         text-align: center;
@@ -258,9 +259,9 @@ with col_j2:
 jaren_bezit = jaar_verkoop - jaar_aankoop
 if jaren_bezit < 0: jaren_bezit = 0
 
-# WAARSCHUWING LOGICA: Verplaatst voor betere zichtbaarheid
+# WAARSCHUWING (Nu werkt hij wel door de CSS fix)
 if is_nieuwbouw and jaren_bezit > 5:
-    st.sidebar.warning(f"⚠️ Let op: U selecteerde 'Nieuwbouw' maar bezit de woning al {jaren_bezit} jaar. Voor de fiscus is dit doorgaans 'Bestaande bouw'. Dit beïnvloedt de notaris-berekening aanzienlijk.")
+    st.sidebar.warning(f"⚠️ Let op: U selecteerde 'Nieuwbouw' maar bezit de woning al {jaren_bezit} jaar. Voor de fiscus is dit doorgaans 'Bestaande bouw'.")
 
 aankoopprijs = st.sidebar.number_input("Oorspronkelijke Aankoopprijs €", value=200000.0, step=1000.0)
 
