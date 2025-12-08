@@ -10,16 +10,19 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS
+# Custom CSS: Professioneel, maar veilig voor Streamlit iconen
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'Montserrat', sans-serif;
-        color: #333333;
+    /* 1. Algemene fonts (zonder de iconen te breken) */
+    html, body, p, div, label, input, select, button {
+        font-family: 'Montserrat', sans-serif !important;
+        color: #333;
     }
+
+    /* 2. Headers styling */
     h1, h2, h3 {
         color: #800000 !important;
         font-weight: 700 !important;
@@ -28,6 +31,8 @@ st.markdown(
         color: #555 !important;
         font-weight: 600 !important;
     }
+
+    /* 3. Buttons */
     .stButton>button {
         background-color: #800000;
         color: white;
@@ -40,8 +45,10 @@ st.markdown(
     .stButton>button:hover {
         background-color: #5a0000;
         color: white;
+        border-color: #5a0000;
     }
-    /* Inputs styling */
+
+    /* 4. Inputs styling (Subtieler zodat tooltips blijven werken) */
     div[data-baseweb="input"] > div, div[data-baseweb="select"] > div {
         background-color: #ffffff;
         border-radius: 6px;
@@ -51,11 +58,11 @@ st.markdown(
         border-color: #800000 !important;
         box-shadow: 0 0 0 1px #800000 !important;
     }
-    /* Tabel styling */
+
+    /* 5. Tabel styling */
     div[data-testid="stTable"] table {
         width: 100%;
         border-collapse: collapse;
-        font-family: 'Montserrat', sans-serif;
         font-size: 0.95rem;
     }
     div[data-testid="stTable"] thead tr th {
@@ -73,7 +80,8 @@ st.markdown(
     div[data-testid="stTable"] tbody tr:nth-of-type(even) {
         background-color: #f9f9f9;
     }
-    /* Resultaat Cards */
+
+    /* 6. Resultaat Cards */
     .result-card {
         background-color: #ffffff;
         border-radius: 8px;
@@ -102,7 +110,8 @@ st.markdown(
         font-style: italic;
         margin-top: 5px;
     }
-    /* Analysis Box */
+
+    /* 7. Analysis Box */
     .analysis-container {
         background-color: #f8fbff;
         border: 1px solid #cce5ff;
@@ -115,6 +124,8 @@ st.markdown(
         font-weight: bold;
         font-size: 1.1rem;
     }
+    
+    /* 8. Footer */
     .footer {
         text-align: center;
         padding: 20px;
@@ -191,7 +202,7 @@ def bereken_notariskosten(prijs_voor_notaris, postcode, is_nieuwbouw):
     return emoluments + tva + dmto + csi + frais_divers
 
 # -----------------------------------------------------------------------------
-# 3. SIDEBAR & INPUTS (MET TOOLTIPS)
+# 3. SIDEBAR & INPUTS (MET WERKENDE TOOLTIPS)
 # -----------------------------------------------------------------------------
 
 if st.sidebar.button("🔄 RESET SCENARIO"):
@@ -247,11 +258,11 @@ with col_j2:
 jaren_bezit = jaar_verkoop - jaar_aankoop
 if jaren_bezit < 0: jaren_bezit = 0
 
-aankoopprijs = st.sidebar.number_input("Oorspronkelijke Aankoopprijs €", value=200000.0, step=1000.0)
-
-# LOGICA CHECK: Nieuwbouw vs Jaren Bezit
+# WAARSCHUWING LOGICA: Verplaatst voor betere zichtbaarheid
 if is_nieuwbouw and jaren_bezit > 5:
-    st.sidebar.warning(f"⚠️ Let op: U heeft 'Nieuwbouw' geselecteerd maar bezit de woning al {jaren_bezit} jaar. Voor de fiscus is dit waarschijnlijk 'Bestaande bouw'. Dit geeft een vertekend beeld van de notariskosten voor de koper.")
+    st.sidebar.warning(f"⚠️ Let op: U selecteerde 'Nieuwbouw' maar bezit de woning al {jaren_bezit} jaar. Voor de fiscus is dit doorgaans 'Bestaande bouw'. Dit beïnvloedt de notaris-berekening aanzienlijk.")
+
+aankoopprijs = st.sidebar.number_input("Oorspronkelijke Aankoopprijs €", value=200000.0, step=1000.0)
 
 # C. Kosten & Belastingen
 st.sidebar.subheader("3. Kosten & Belastingen")
