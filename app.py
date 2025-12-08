@@ -10,93 +10,141 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS: Steunkleur #800000 en Montserrat font
+# Custom CSS: Professionele styling (InfoFrankrijk stijl)
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
 
+    /* Algemene font settings */
     html, body, [class*="css"] {
         font-family: 'Montserrat', sans-serif;
-        font-weight: 300;
         color: #333333;
     }
-    h1, h2, h3, h4 {
+
+    /* Headers */
+    h1, h2, h3 {
         color: #800000 !important;
-        font-weight: 600;
+        font-weight: 700 !important;
     }
+    h4, h5, h6 {
+        color: #555 !important;
+        font-weight: 600 !important;
+    }
+
+    /* BUTTONS */
     .stButton>button {
         background-color: #800000;
         color: white;
-        border-radius: 5px;
+        border-radius: 6px;
         border: none;
-        width: 100%;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        transition: background-color 0.3s ease;
     }
     .stButton>button:hover {
-        background-color: #600000;
+        background-color: #5a0000;
         color: white;
+        border-color: #5a0000;
     }
-    /* Resultaat blokken styling */
-    .result-box {
-        background-color: #f9f9f9; 
-        padding: 20px; 
-        border-radius: 10px; 
-        border-left: 5px solid #800000;
-        margin-top: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+
+    /* INPUTS & SELECTBOXES */
+    /* Zorg voor consistente styling van invoervelden */
+    div[data-baseweb="input"] > div, div[data-baseweb="select"] > div {
+        background-color: #ffffff;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
     }
-    .metric-label {
-        font-size: 1rem;
+    /* Focus kleur (Bordeaux) */
+    div[data-baseweb="input"] > div:focus-within, div[data-baseweb="select"] > div:focus-within {
+        border-color: #800000 !important;
+        box-shadow: 0 0 0 1px #800000 !important;
+    }
+
+    /* TABEL STYLING (Belangrijk voor professionele look) */
+    div[data-testid="stTable"] table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.95rem;
+    }
+    div[data-testid="stTable"] thead tr th {
+        background-color: #800000 !important;
+        color: #ffffff !important;
         font-weight: 600;
-        color: #555;
+        border-bottom: 2px solid #5a0000;
+        padding: 12px;
+    }
+    div[data-testid="stTable"] tbody tr td {
+        padding: 10px;
+        border-bottom: 1px solid #eeeeee;
+        color: #333;
+    }
+    /* Zebra striping voor leesbaarheid */
+    div[data-testid="stTable"] tbody tr:nth-of-type(even) {
+        background-color: #f9f9f9;
+    }
+
+    /* RESULTAAT CARDS */
+    .result-card {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-top: 4px solid #800000;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .result-label {
+        font-size: 0.9rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         margin-bottom: 5px;
     }
-    .metric-sub {
-        font-size: 0.85rem;
+    .result-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #333;
+    }
+    .result-value.green {
+        color: #2e7d32; /* Winst groen */
+    }
+    .result-sub {
+        font-size: 0.8rem;
         color: #888;
         font-style: italic;
-        margin-bottom: 10px;
+        margin-top: 5px;
     }
-    .metric-value {
-        font-size: 1.8rem !important;
-        color: #800000 !important;
-        font-weight: 700;
-    }
-    .metric-value-green {
-        font-size: 1.8rem !important;
-        color: #2e7d32 !important;
-        font-weight: 700;
-    }
-    /* Analyse box styling */
-    .analysis-box {
-        background-color: #e3f2fd;
-        border: 1px solid #bbdefb;
+
+    /* ANALYSIS BOX (De validatie sectie) */
+    .analysis-container {
+        background-color: #f8fbff;
+        border: 1px solid #cce5ff;
         border-radius: 8px;
-        padding: 15px;
-        font-size: 0.9rem;
-        color: #0d47a1;
-        margin-top: 10px;
+        padding: 20px;
+        margin-top: 20px;
     }
-    .check-green { color: #2e7d32; font-weight: bold; }
-    
-    /* Tabel styling */
-    thead tr th:first-child { display:none }
-    tbody th { display:none }
-    
+    .check-icon {
+        color: #2e7d32;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
     /* Footer styling */
     .footer {
-        position: fixed;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        background-color: #f1f1f1;
-        color: #555;
         text-align: center;
-        padding: 10px;
+        padding: 20px;
         font-size: 0.8rem;
-        border-top: 1px solid #ddd;
-        z-index: 999;
+        color: #888;
+        border-top: 1px solid #eee;
+        margin-top: 40px;
+    }
+    
+    /* Verminder witruimte bovenaan */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 5rem;
     }
     </style>
     """,
@@ -326,7 +374,7 @@ werkelijke_winst = netto_opbrengst - aankoopprijs
 frictiekosten = notariskosten + totaal_kosten_verkoper
 
 # -----------------------------------------------------------------------------
-# 5. UI OUTPUT
+# 5. UI OUTPUT (VERBETERDE LAYOUT)
 # -----------------------------------------------------------------------------
 
 st.title("Vastgoedtransactieanalyse")
@@ -340,7 +388,7 @@ st.subheader("Financiële Specificatie")
 df_data = []
 
 # KOPER
-df_data.append(["**1. Kosten Koper**", "", ""])
+df_data.append(["1. Kosten Koper", "", ""])
 notaris_label = f"Over € {prijs_voor_notaris:,.0f} (Grondslag)"
 if is_nieuwbouw:
     notaris_label += " - VEFA Tarief"
@@ -348,7 +396,7 @@ df_data.append(["Notariskosten", notaris_label, f"€ {notariskosten:,.2f}"])
 df_data.append(["", "", ""])
 
 # VERKOPER
-df_data.append(["**2. Kosten Verkoper / Afhoudingen**", "", ""])
+df_data.append(["2. Kosten Verkoper / Afhoudingen", "", ""])
 
 makelaar_tekst = f"{makelaar_perc:.2f}% ({makelaar_optie})"
 df_data.append(["Makelaarscourtage", makelaar_tekst, f"€ {makelaarskosten:,.2f}"])
@@ -364,43 +412,58 @@ else:
 df_data.append(["Plus-value belasting", pv_spec, f"€ {plus_value_tax:,.2f}"])
 df_data.append(["Landmeter / Diagnostics", "", f"€ {landmeter:,.2f}"])
 
-df_data.append(["**Totaal afhoudingen**", "", f"**€ {totaal_kosten_verkoper:,.2f}**"])
+df_data.append(["Totaal afhoudingen", "", f"€ {totaal_kosten_verkoper:,.2f}"])
 
+# Render Tabel (Nu met CSS styling uit Stap 1)
 st.table(pd.DataFrame(df_data, columns=["Onderdeel", "Specificatie", "Bedrag"]))
 
 st.markdown("---")
 
 st.subheader("Resultaat")
 
-st.markdown(f"""
-<div class="result-box">
-    <div class="metric-label">Netto Opbrengst</div>
-    <div class="metric-sub">(Op bankrekening verkoper)</div>
-    <div class="metric-value">€ {netto_opbrengst:,.2f}</div>
-    <hr style="margin: 15px 0; border-top: 1px solid #ddd;">
-    <div class="metric-label">Werkelijke Winst</div>
-    <div class="metric-sub">(Netto - Oorspronkelijke aankoop)</div>
-    <div class="metric-value-green">€ {werkelijke_winst:,.2f}</div>
-</div>
-""", unsafe_allow_html=True)
+# NIEUWE KAART-STIJL VOOR RESULTATEN
+col_res1, col_res2, col_res3 = st.columns(3)
 
-st.markdown("### Frictiekosten")
-st.markdown(f"**€ {frictiekosten:,.2f}**")
-st.info("Som van notariskosten, makelaarscourtage en belastingen die 'verdwijnen' in de transactieketen.")
+with col_res1:
+    st.markdown(f"""
+    <div class="result-card">
+        <div class="result-label">Netto Opbrengst</div>
+        <div class="result-value">€ {netto_opbrengst:,.0f}</div>
+        <div class="result-sub">Op bankrekening verkoper</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col_res2:
+    st.markdown(f"""
+    <div class="result-card">
+        <div class="result-label">Werkelijke Winst</div>
+        <div class="result-value green">€ {werkelijke_winst:,.0f}</div>
+        <div class="result-sub">Netto - Aankoop</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col_res3:
+    st.markdown(f"""
+    <div class="result-card">
+        <div class="result-label">Frictiekosten</div>
+        <div class="result-value" style="color:#d32f2f;">€ {frictiekosten:,.0f}</div>
+        <div class="result-sub">Verdwenen in de keten</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 
 # -----------------------------------------------------------------------------
-# 6. ANALYSE & VALIDATIE (NIEUWE SECTIE)
+# 6. ANALYSE & VALIDATIE
 # -----------------------------------------------------------------------------
 
-st.markdown("---")
 with st.expander("🔎 Bekijk fiscale analyse & validatie"):
+    st.markdown('<div class="analysis-container">', unsafe_allow_html=True)
     st.markdown("### Validatie van berekening")
     st.write("De onderstaande analyse toont hoe de Franse fiscale regels (2025) zijn toegepast op uw specifieke scenario.")
 
     # 1. Analyse Notarisgrondslag
     st.markdown("#### 1. Grondslag Notaris & Makelaar")
     if makelaar_optie == "Koper (Charge Acquéreur)" and makelaarskosten > 0:
-        besparing_indicatie = (verkoopprijs_input * get_dmto_tarief(postcode)/100) - (prijs_voor_notaris * get_dmto_tarief(postcode)/100)
         st.markdown(f"""
         **Situatie:** U heeft gekozen voor *Charge Acquéreur*. 
         De totale verkoopprijs (FAI) is € {verkoopprijs_input:,.0f}.
@@ -408,7 +471,7 @@ with st.expander("🔎 Bekijk fiscale analyse & validatie"):
         **Berekening:** De notaris berekent belastingen over de 'netto' prijs (€ {prijs_voor_notaris:,.0f}) in plaats van het totaalbedrag. 
         De makelaarscourtage (€ {makelaarskosten:,.0f}) is dus vrijgesteld van overdrachtsbelasting.
         
-        **Resultaat:** <span class='check-green'>✅ Correct toegepast.</span> Dit bespaart de koper belasting over de makelaarskosten.
+        <span class="check-icon">✓</span> <strong>Correct toegepast.</strong>
         """, unsafe_allow_html=True)
     elif makelaar_optie == "Verkoper (Charge Vendeur)":
         st.markdown(f"""
@@ -421,14 +484,13 @@ with st.expander("🔎 Bekijk fiscale analyse & validatie"):
     # 2. Analyse Plus-Value
     if not is_hoofdverblijf and pv_methode == "Automatisch (obv jaren)" and bruto_meerwaarde > 0:
         st.markdown(f"#### 2. Plus-Value Berekening ({jaren_bezit} jaar bezit)")
-        st.write(f"U bezit het pand {jaren_bezit} jaar. De aftrek (abattement) geldt vanaf het 6e jaar.")
         
         # IR
         st.markdown("**A. Inkomstenbelasting (IR)**")
         st.markdown(f"""
         * Regel: 6% aftrek per jaar (vanaf jaar 6).
         * Uw aftrekpercentage: **{abat_ir_perc:.1f}%**
-        * <span class='check-green'>✅ Validatie:</span> € {bruto_meerwaarde:,.0f} × {abat_ir_perc/100:.2f} = € {bruto_meerwaarde * (abat_ir_perc/100):,.2f} aftrek.
+        * <span class="check-icon">✓</span> <strong>Validatie:</strong> € {bruto_meerwaarde:,.0f} × {abat_ir_perc/100:.2f} = € {bruto_meerwaarde * (abat_ir_perc/100):,.2f} aftrek.
         """, unsafe_allow_html=True)
 
         # Soc
@@ -436,7 +498,7 @@ with st.expander("🔎 Bekijk fiscale analyse & validatie"):
         st.markdown(f"""
         * Regel: Variabel tarief (1,65% tot jaar 21, daarna hoger).
         * Uw aftrekpercentage: **{abat_ps_perc:.1f}%**
-        * <span class='check-green'>✅ Validatie:</span> € {bruto_meerwaarde:,.0f} × {abat_ps_perc/100:.3f} = € {bruto_meerwaarde * (abat_ps_perc/100):,.2f} aftrek.
+        * <span class="check-icon">✓</span> <strong>Validatie:</strong> € {bruto_meerwaarde:,.0f} × {abat_ps_perc/100:.3f} = € {bruto_meerwaarde * (abat_ps_perc/100):,.2f} aftrek.
         """, unsafe_allow_html=True)
 
         # De Ruyter
@@ -444,7 +506,7 @@ with st.expander("🔎 Bekijk fiscale analyse & validatie"):
         tarief_tekst = "7,5% (Verlaagd tarief 'De Ruyter')" if de_ruyter else "17,2% (Standaard tarief)"
         st.markdown(f"""
         * Toegepast tarief sociale lasten: **{tarief_tekst}**
-        * <span class='check-green'>✅ Correct.</span>
+        * <span class="check-icon">✓</span> <strong>Correct.</strong>
         """, unsafe_allow_html=True)
 
     elif is_hoofdverblijf:
@@ -453,6 +515,7 @@ with st.expander("🔎 Bekijk fiscale analyse & validatie"):
     
     st.markdown("---")
     st.markdown("**Conclusie:** De rekenkern is 100% consistent met de huidige Franse fiscale wetgeving.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Footer
 st.markdown(
