@@ -1,16 +1,17 @@
 import streamlit as st
 import pandas as pd
+from datetime import date
 
 # -----------------------------------------------------------------------------
 # 1. CONFIGURATIE & HUISSTIJL
 # -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Transactie-analyse v2.6",
+    page_title="Vastgoedtransactieanalyse",
     page_icon="🏠",
     layout="wide"
 )
 
-# Custom CSS voor Huisstijl: Steunkleur #800000 en modern licht lettertype
+# Custom CSS: Steunkleur #800000 en Montserrat font
 st.markdown(
     """
     <style>
@@ -40,13 +41,18 @@ st.markdown(
         color: #800000 !important;
         font-weight: 600;
     }
-    /* Tabel styling */
-    div[data-testid="stTable"] {
-        font-weight: 300;
-    }
-    .small-text {
-        font-size: 0.85rem;
-        color: #666;
+    /* Footer styling */
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #f1f1f1;
+        color: #555;
+        text-align: center;
+        padding: 10px;
+        font-size: 0.8rem;
+        border-top: 1px solid #ddd;
     }
     </style>
     """,
@@ -54,206 +60,283 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# 2. FUNCTIES VOOR BEREKENINGEN
+# 2. LOGICA: DATABASES & REKENREGELS
 # -----------------------------------------------------------------------------
 
-def bereken_notariskosten(prijs, dmto_tarief=5.81):
+# Voorbeeld database makelaarstarieven per departement (kan uitgebreid worden)
+# Key = eerste 2 cijfers van postcode, Value = percentage
+DEPARTEMENT_TARIEVEN = {
+    "75": 5.0,  # Parijs (vaak lager %)
+    "06": 6.0,  # Alpes-Maritimes
+    "33": 5.5,  # Gironde
+    "58": 7.0,  # Nièvre (vaak hoger in landelijk gebied)
+    "24": 6.5,  # Dordogne
+    "DEFAULT": 6.0 # Landelijk gemiddelde indien onbekend
+}
+
+def get_makelaar_percentage(postcode_input):
+    """Haalt percentage op basis van eerste 2 cijfers, anders default."""
+    if not postcode_input or len(postcode_input) < 2:
+        return DEPARTEMENT_TARIEVEN["DEFAULT"]
+    
+    dept_code = postcode_input[:2]
+    return DEPARTEMENT_TARIEVEN.get(dept_code, DEPARTEMENT_TARIEVEN["DEFAULT"])
+
+def bereken_abattement(jaren_bezit):
     """
-    Berekent Franse notariskosten gebaseerd op de wettelijke tranches (émoluments),
-    DMTO, TVA en diverse kosten.
+    Berekent de korting (abattement) op de plus-value belasting 
+    op basis van jaren bezit voor IR (Inkomsten) en PS (Sociale lasten).
+    Bron: Franse belastingdienst regels vastgoed.
     """
-    # 1. Émoluments du notaire (Tranches volgens Arrêté du 28 février 2020)
+    if jaren_bezit < 6:
+        return 0.0, 0.0
+
+    # 1. Impôt sur le Revenu (IR)
+    # 6-21 jaar: 6% per jaar
+    # 22e jaar: 4%
+    # Totaal vrijgesteld na 22 jaar
+    if jaren_bezit >= 22:
+        abat_ir = 100.0
+    else:
+        abat_ir = (jaren_bezit - 5) * 6.0
+
+    # 2. Prélèvements Sociaux (PS)
+    # 6-21 jaar: 1.65% per jaar
+    # 22e jaar: 1.60%
+    # 23-30 jaar: 9% per jaar
+    # Totaal vrijgesteld na 30 jaar
+    if jaren_bezit >= 30:
+        abat_ps = 100.0
+    elif jaren_bezit >= 23:
+        # Eerst 22 jaar berekenen
+        basis_22 = (16 * 1.65) + 1.60 # = 28%
+        # Dan jaren boven 22
+        extra_jaren = jaren_bezit - 22
+        abat_ps = basis_22 + (extra_jaren * 9.0)
+    else:
+        # Tussen 6 en 22
+        abat_ps = (jaren_bezit - 5) * 1.65
+        if jaren_bezit == 22: 
+             abat_ps += 1.60 # correctie voor 22e jaar indien exact
+
+    return min(abat_ir, 100.0), min(abat_ps, 100.0)
+
+def bereken_notariskosten(prijs_voor_notaris, dmto_tarief=5.81):
+    """Berekent notariskosten over de grondslag."""
+    # Émoluments staffel
     tranches = [
         (6500, 0.03870),
         (17000, 0.01596),
         (60000, 0.01064),
         (float('inf'), 0.00799)
     ]
-    
     emoluments = 0.0
-    resterend_bedrag = prijs
     vorige_grens = 0
-    
     for grens, percentage in tranches:
-        if prijs > vorige_grens:
-            schijf_bedrag = min(prijs, grens) - vorige_grens
-            emoluments += schijf_bedrag * percentage
+        if prijs_voor_notaris > vorige_grens:
+            schijf = min(prijs_voor_notaris, grens) - vorige_grens
+            emoluments += schijf * percentage
             vorige_grens = grens
         else:
             break
             
-    # 2. TVA (20%) op émoluments
-    tva_emoluments = emoluments * 0.20
+    tva = emoluments * 0.20
+    dmto = prijs_voor_notaris * (dmto_tarief / 100.0)
+    csi = prijs_voor_notaris * 0.0010
+    frais_divers = 1200.00 
     
-    # 3. Droits de mutation (DMTO) - Belasting
-    dmto = prijs * (dmto_tarief / 100.0)
-    
-    # 4. Contribution de sécurité immobilière (0.10%)
-    csi = prijs * 0.0010
-    
-    # 5. Débours et frais divers (Schatting)
-    frais_divers = 1300.00 
-    
-    totaal = emoluments + tva_emoluments + dmto + csi + frais_divers
-    
-    return {
-        "totaal": totaal,
-        "dmto": dmto,
-        "emoluments_excl_tva": emoluments,
-        "tva": tva_emoluments,
-        "csi": csi,
-        "divers": frais_divers
-    }
+    return emoluments + tva + dmto + csi + frais_divers
 
 # -----------------------------------------------------------------------------
-# 3. SESSIE STATE & RESET
+# 3. SIDEBAR & INPUTS
 # -----------------------------------------------------------------------------
 
-if 'reset_counter' not in st.session_state:
-    st.session_state['reset_counter'] = 0
-
-def reset_app():
+# Reset functie (Fixed logic)
+if st.sidebar.button("🔄 RESET SCENARIO"):
     st.session_state.clear()
-    st.session_state['reset_counter'] += 1
     st.rerun()
 
-# -----------------------------------------------------------------------------
-# 4. SIDEBAR INPUTS
-# -----------------------------------------------------------------------------
+st.sidebar.title("Instellingen")
 
-st.sidebar.title("Instellingen Scenario")
+# A. Locatie & Makelaar
+st.sidebar.subheader("1. Locatie & Makelaar")
+postcode = st.sidebar.text_input("Postcode (voor makelaarstarief)", value="58000", max_chars=5)
+# Tarief ophalen
+standaard_tarief = get_makelaar_percentage(postcode)
 
-# Reset knop
-if st.sidebar.button("🔄 RESET SCENARIO"):
-    reset_app()
+makelaar_optie = st.sidebar.radio("Wie betaalt de makelaar?", 
+                                  ["Verkoper (Charge Vendeur)", "Koper (Charge Acquéreur)", "Geen makelaar"],
+                                  index=0)
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("1. Verkoop")
-verkoopprijs = st.sidebar.number_input("Bruto Verkoopprijs (€)", value=400000.0, step=1000.0, format="%.2f")
+if makelaar_optie == "Geen makelaar":
+    makelaar_perc = 0.0
+else:
+    makelaar_perc = st.sidebar.number_input(f"Makelaarscourtage (%) - Regio {postcode[:2]}", value=standaard_tarief, step=0.1, format="%.2f")
 
-st.sidebar.subheader("2. Aankoop & Geschiedenis")
-aankoopprijs = st.sidebar.number_input("Oorspronkelijke Aankoopprijs (€)", value=200000.0, step=1000.0, format="%.2f")
+# B. Transactiecijfers
+st.sidebar.subheader("2. Bedragen & Data")
+verkoopprijs_input = st.sidebar.number_input("Totale Verkoopprijs (incl. makelaar) €", value=400000.0, step=1000.0)
 
-st.sidebar.subheader("3. Kosten Parameters")
-makelaar_input = st.sidebar.number_input("Makelaarscourtage (€)", value=20000.0, step=500.0, format="%.2f")
-landmeter_input = st.sidebar.number_input("Landmeter / Géomètre (€)", value=1500.0, step=100.0, format="%.2f")
-dmto_pct = st.sidebar.number_input("DMTO Tarief Notaris (%)", value=5.81, step=0.01, format="%.2f")
+col_j1, col_j2 = st.sidebar.columns(2)
+with col_j1:
+    jaar_aankoop = st.number_input("Jaar Aankoop", value=2015, step=1)
+with col_j2:
+    jaar_verkoop = st.number_input("Jaar Verkoop", value=2025, step=1)
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("4. Plus-Value Belasting")
+jaren_bezit = jaar_verkoop - jaar_aankoop
+if jaren_bezit < 0: jaren_bezit = 0
 
-# De Ruyter Toggle
-de_ruyter_active = st.sidebar.toggle("Toepassing Arrest de Ruyter?", value=True, help="Vink aan indien verkoper sociaal verzekerd is in NL (of elders in EU/EER) en niet in Frankrijk. Verlaagt sociale lasten van 17,2% naar 7,5%.")
+aankoopprijs = st.sidebar.number_input("Oorspronkelijke Aankoopprijs €", value=200000.0, step=1000.0)
 
-pv_mode = st.sidebar.radio("Berekeningsmethode:", ["Handmatige invoer (Vast bedrag)", "Automatische schatting"], index=0)
+# C. Kosten & Plus-value instellingen
+st.sidebar.subheader("3. Kosten & Belastingen")
+landmeter = st.sidebar.number_input("Landmeter / Diagnostics €", value=1500.0, step=100.0)
+
+# De Ruyter
+de_ruyter = st.sidebar.checkbox("Toepassing Arrest de Ruyter", value=True, help="Verlaagt sociale lasten naar 7,5% indien verkoper in NL sociaal verzekerd is.")
+
+# Plus Value toggle
+pv_methode = st.sidebar.radio("Plus-value berekening", ["Automatisch (obv jaren)", "Handmatige invoer"], index=0)
 
 plus_value_tax = 0.0
-pv_details = ""
+pv_toelichting = ""
+bruto_winst_voor_pv = 0.0
 
-if pv_mode == "Handmatige invoer (Vast bedrag)":
-    plus_value_tax = st.sidebar.number_input("Totaal Plus-value belasting (€)", value=39259.35, step=100.0, format="%.2f")
-    pv_toelichting = "Handmatig ingevoerd bedrag"
-    
+# -----------------------------------------------------------------------------
+# 4. HOOFDBEREKENINGEN
+# -----------------------------------------------------------------------------
+
+# 1. Makelaarscourtage bedrag
+if makelaar_optie == "Geen makelaar":
+    makelaarskosten = 0.0
+    prijs_voor_notaris = verkoopprijs_input
+    netto_verkoper_basis = verkoopprijs_input
+elif makelaar_optie == "Koper (Charge Acquéreur)":
+    # Verkoopprijs input is inclusief. Dus: Prijs = Netto + (Netto * Perc)? Nee, meestal is courtage % van totaal of vast.
+    # We gaan er vanuit dat de input de TOTAALprijs is die in de advertentie staat.
+    # Bij charge acquéreur: Notaris rekent over (Totaal - Courtage).
+    makelaarskosten = verkoopprijs_input * (makelaar_perc / 100.0)
+    prijs_voor_notaris = verkoopprijs_input - makelaarskosten
+    netto_verkoper_basis = verkoopprijs_input - makelaarskosten # Verkoper krijgt dit op rekening (makelaar pakt zijn deel)
+else: # Charge Vendeur
+    # Notaris rekent over TOTAAL. Verkoper betaalt makelaar uit zijn opbrengst.
+    makelaarskosten = verkoopprijs_input * (makelaar_perc / 100.0)
+    prijs_voor_notaris = verkoopprijs_input
+    netto_verkoper_basis = verkoopprijs_input - makelaarskosten
+
+# 2. Notariskosten (Koper)
+notariskosten = bereken_notariskosten(prijs_voor_notaris)
+
+# 3. Plus Value Berekening
+if pv_methode == "Handmatige invoer":
+    plus_value_tax = st.sidebar.number_input("Bedrag Plus-value belasting €", value=39000.0)
+    pv_toelichting = "Handmatige invoer"
 else:
-    # Automatische schatting
-    st.sidebar.info("ℹ️ Schatting obv: 15% verbouwingsforfait + 7.5% aankoopkostenforfait (standaard na 5 jaar).")
-    
-    # Forfaits
+    # A. Correctie Aankoopsom (Forfaits)
+    # Notariskosten forfait: 7.5% van aankoopsom (of werkelijk indien hoger, hier forfait)
     forfait_aankoop = aankoopprijs * 0.075
-    forfait_verbouwing = aankoopprijs * 0.15
+    # Verbouwingsforfait: 15% van aankoopsom (indien > 5 jaar bezit)
+    forfait_verbouwing = aankoopprijs * 0.15 if jaren_bezit > 5 else 0.0
     
-    # Aangepaste aankoopsom
-    aankoopsom_gecorrigeerd = aankoopprijs + forfait_aankoop + forfait_verbouwing
+    gecorrigeerde_aankoopsom = aankoopprijs + forfait_aankoop + forfait_verbouwing
     
-    bruto_winst = verkoopprijs - aankoopsom_gecorrigeerd - makelaar_input
+    # B. Bruto Meerwaarde
+    # Verkoopprijs min makelaarskosten (die zijn aftrekbaar voor verkoper of al eruit bij charge acquereur)
+    # Basis = Netto verkoper basis
+    basis_meerwaarde = netto_verkoper_basis
     
-    if bruto_winst < 0:
-        bruto_winst = 0
+    bruto_meerwaarde = basis_meerwaarde - gecorrigeerde_aankoopsom
     
-    # Tarieven bepalen
-    tarief_ir = 19.0 # Inkomstenbelasting (voor niet-residenten vaak 19%, residenten progressief)
-    
-    if de_ruyter_active:
-        tarief_social = 7.5  # Prélèvement de solidarité
-        label_social = "7,5% (De Ruyter)"
+    if bruto_meerwaarde <= 0:
+        plus_value_tax = 0.0
+        pv_toelichting = "Geen winst na forfaits"
     else:
-        tarief_social = 17.2 # Volledige CSG/CRDS
-        label_social = "17,2% (Standaard)"
+        # C. Abattements (Aftrek jaren)
+        abat_ir_perc, abat_ps_perc = bereken_abattement(jaren_bezit)
         
-    totaal_tarief = tarief_ir + tarief_social
-    
-    # Let op: dit is een vereenvoudiging (geen aftrek per bezitsjaar meegenomen voor UI eenvoud)
-    st.sidebar.markdown(f"**Toegepaste tarieven:**")
-    st.sidebar.markdown(f"- Impôt sur le Revenu: {tarief_ir}%")
-    st.sidebar.markdown(f"- Sociale lasten: {label_social}")
-    
-    # Slider voor abattement (aftrek bezitsduur) simulatie
-    aftrek_perc = st.sidebar.slider("Gemiddelde aftrek bezitsduur (%)", 0, 100, 0, help="Hoe langer het bezit, hoe hoger de aftrek (abattement).")
-    
-    belastbare_winst = bruto_winst * ((100 - aftrek_perc) / 100)
-    plus_value_tax = belastbare_winst * (totaal_tarief / 100.0)
-    
-    pv_toelichting = f"Schatting ({totaal_tarief}% op belastbare winst)"
+        belastbaar_ir = bruto_meerwaarde * (1.0 - (abat_ir_perc / 100.0))
+        belastbaar_ps = bruto_meerwaarde * (1.0 - (abat_ps_perc / 100.0))
+        
+        # D. Tarieven
+        tarief_ir = 19.0 # Standaard EU resident
+        tarief_ps = 7.5 if de_ruyter else 17.2
+        
+        tax_ir = belastbaar_ir * (tarief_ir / 100.0)
+        tax_ps = belastbaar_ps * (tarief_ps / 100.0)
+        
+        plus_value_tax = tax_ir + tax_ps
+        
+        # Format string voor toelichting
+        pv_toelichting = f"Winst na forfaits: € {bruto_meerwaarde:,.0f}\n"
+        pv_toelichting += f"Aftrek bezit: {abat_ir_perc:.1f}% (IR) / {abat_ps_perc:.1f}% (Soc)"
 
-# -----------------------------------------------------------------------------
-# 5. HOOFDBEREKENINGEN
-# -----------------------------------------------------------------------------
+# 4. Totalen
+totaal_kosten_verkoper = makelaarskosten + plus_value_tax + landmeter
+if makelaar_optie == "Koper (Charge Acquéreur)":
+    # Bij deze optie betaalt de koper de makelaar direct of via notaris, maar het gaat wel 'af' van de bruto verkoopprijs die binnenkomt
+    # Voor het overzicht 'Kosten Verkoper' is het technisch gezien geen kost, maar een lagere opbrengst.
+    # Echter, voor de "frictiekosten" tellen we hem wel.
+    # Om verwarring te voorkomen in het schema: 
+    # Bruto prijs = wat koper betaalt. 
+    pass
 
-# Notariskosten berekenen
-notaris_data = bereken_notariskosten(verkoopprijs, dmto_pct)
-notariskosten_totaal = notaris_data['totaal']
-
-# Totale kosten verkoper
-kosten_verkoper_totaal = makelaar_input + plus_value_tax + landmeter_input
-
-# Netto opbrengst
-netto_opbrengst = verkoopprijs - kosten_verkoper_totaal
-
-# Werkelijke winst
+netto_opbrengst = verkoopprijs_input - totaal_kosten_verkoper
 werkelijke_winst = netto_opbrengst - aankoopprijs
-
-# Frictiekosten
-frictiekosten = notariskosten_totaal + kosten_verkoper_totaal
+frictiekosten = notariskosten + totaal_kosten_verkoper
 
 # -----------------------------------------------------------------------------
-# 6. UI LAYOUT & WEERGAVE
+# 5. UI OUTPUT
 # -----------------------------------------------------------------------------
 
-st.title("Transactie-analyse v2.6")
+st.title("Vastgoedtransactieanalyse")
 st.markdown("Een interactieve financiële uiteenzetting voor vastgoedtransacties in Frankrijk.")
-
-if de_ruyter_active:
-    st.success("✅ **De Ruyter Arrest Actief:** Sociale lasten verlaagd naar 7,5% (solidariteitsheffing).")
 
 st.markdown("---")
 
-# Twee kolommen voor de hoofdtabel
-col1, col2 = st.columns([1.5, 1])
+col1, col2 = st.columns([1.4, 1])
 
 with col1:
-    st.subheader("Financiële Uiteenzetting")
+    st.subheader("Financiële Specificatie")
     
-    # Dataframe voor weergave
-    data = [
-        ["**1. Kosten Koper**", "", ""],
-        ["Notariskosten", "DMTO (5,81%) + wettelijk tarief + btw", f"€ {notariskosten_totaal:,.2f}"],
-        ["", "", ""],
-        ["**2. Kosten Verkoper**", "", ""],
-        ["Makelaarscourtage", "In mindering gebracht op verkoopprijs", f"€ {makelaar_input:,.2f}"],
-        ["Plus-value-belasting", pv_toelichting, f"€ {plus_value_tax:,.2f}"],
-        ["Landmeter (géomètre)", "", f"€ {landmeter_input:,.2f}"],
-        ["**Totaal kosten verkoper**", "", f"**€ {kosten_verkoper_totaal:,.2f}**"],
-    ]
+    # Tabel opbouwen
+    df_data = []
     
-    df = pd.DataFrame(data, columns=["Onderdeel", "Specificatie", "Bedrag"])
+    # KOPER
+    df_data.append(["**1. Kosten Koper**", "", ""])
+    df_data.append(["Notariskosten", f"Over € {prijs_voor_notaris:,.0f} (Grondslag)", f"€ {notariskosten:,.2f}"])
+    
+    df_data.append(["", "", ""])
+    
+    # VERKOPER
+    df_data.append(["**2. Kosten Verkoper / Afhoudingen**", "", ""])
+    
+    # Makelaar weergave
+    makelaar_tekst = f"{makelaar_perc}% ({makelaar_optie})"
+    df_data.append(["Makelaarscourtage", makelaar_tekst, f"€ {makelaarskosten:,.2f}"])
+    
+    # Plus value
+    if pv_methode == "Handmatige invoer":
+        pv_spec = "Handmatige invoer"
+    else:
+        pv_spec = f"Jaren bezit: {jaren_bezit} jaar\n(De Ruyter: {'Ja' if de_ruyter else 'Nee'})"
+    
+    df_data.append(["Plus-value belasting", pv_spec, f"€ {plus_value_tax:,.2f}"])
+    df_data.append(["Landmeter / Diagnostics", "", f"€ {landmeter:,.2f}"])
+    
+    df_data.append(["**Totaal afhoudingen**", "", f"**€ {totaal_kosten_verkoper:,.2f}**"])
+
+    df = pd.DataFrame(df_data, columns=["Onderdeel", "Specificatie", "Bedrag"])
     st.table(df)
     
-    with st.expander("Details Notariskosten (Koper)"):
-        st.write(f"- DMTO (Belasting): € {notaris_data['dmto']:,.2f}")
-        st.write(f"- Émoluments (Notaris salaris): € {notaris_data['emoluments_excl_tva']:,.2f}")
-        st.write(f"- TVA (20% op salaris): € {notaris_data['tva']:,.2f}")
-        st.write(f"- Div. aktekosten (Schatting): € {notaris_data['divers']:,.2f}")
-        st.caption("*Berekening gebaseerd op wettelijke staffels (Arrêté du 28 février 2020)*")
+    if pv_methode == "Automatisch (obv jaren)":
+        with st.expander("ℹ️ Detailberekening Plus-Value"):
+            st.write(f"**Verkoopjaar:** {jaar_verkoop} | **Jaren bezit:** {jaren_bezit}")
+            st.write(f"**Bruto meerwaarde:** € {bruto_meerwaarde:,.2f}")
+            st.write(f"- Aftrek IR ({abat_ir_perc}%): € {bruto_meerwaarde * (abat_ir_perc/100):,.2f}")
+            st.write(f"- Aftrek Soc ({abat_ps_perc}%): € {bruto_meerwaarde * (abat_ps_perc/100):,.2f}")
+            st.write("---")
+            st.write(f"**Te betalen IR (19%):** € {tax_ir:,.2f}")
+            st.write(f"**Te betalen Soc ({tarief_ps}%):** € {tax_ps:,.2f}")
 
 with col2:
     st.subheader("Resultaat")
@@ -272,17 +355,13 @@ with col2:
     
     st.markdown("### Frictiekosten")
     st.markdown(f"**€ {frictiekosten:,.2f}**")
-    st.info("Definitie: som van alle kosten koper + kosten verkoper die niet terugkomen in de werkelijke winst.")
+    st.info("Som van notariskosten, makelaarscourtage en belastingen die 'verdwijnen' in de transactieketen.")
 
-# -----------------------------------------------------------------------------
-# 7. SAMENVATTING TEKST
-# -----------------------------------------------------------------------------
-st.markdown("---")
-st.subheader("Samenvatting")
-
-st.markdown(f"""
-Bij een verkoop van **€ {verkoopprijs:,.0f}** en een oorspronkelijke aanschaf van **€ {aankoopprijs:,.0f}**, 
-bedraagt de werkelijke winst onder de streep **€ {werkelijke_winst:,.2f}**. 
-
-Er verdwijnt in totaal **€ {frictiekosten:,.2f}** aan kosten in de transactieketen (notaris, makelaar, belastingen).
-""")
+# Footer
+st.markdown(
+    """
+    <div class="footer">
+    Deze interactieve analyse wordt u aangeboden door <b>Infofrankrijk.com</b>
+    </div>
+    """, unsafe_allow_html=True
+)
