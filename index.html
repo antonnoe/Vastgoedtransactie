@@ -3,159 +3,576 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Franse Vastgoed Calculator Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Courier+Prime:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<div class="container">
-    <header>
-        <h1>Transactiekosten Frankrijk</h1>
-        <p class="subtitle">Calculator voor Koper & Verkoper (Realtime)</p>
-    </header>
-
-    <section class="panel">
-        <h2>1. Eigenschappen Woning</h2>
-        
-        <div class="toggle-container">
-            <label class="toggle-label">Type Woning</label>
-            <div class="toggle-group">
-                <input type="radio" id="type_ancien" name="typeWoning" value="ancien" checked>
-                <label for="type_ancien" class="toggle-btn">Bestaand (Ancien)</label>
-                
-                <input type="radio" id="type_nieuw" name="typeWoning" value="nieuw">
-                <label for="type_nieuw" class="toggle-btn">Nieuwbouw (VEFA)</label>
-            </div>
-        </div>
-
-        <div class="toggle-container">
-            <label class="toggle-label">Status (voor Verkoper)</label>
-            <div class="toggle-group">
-                <input type="radio" id="rp_nee" name="isRP" value="nee" checked>
-                <label for="rp_nee" class="toggle-btn">2e Woning / Investering</label>
-                
-                <input type="radio" id="rp_ja" name="isRP" value="ja">
-                <label for="rp_ja" class="toggle-btn">Hoofdverblijf</label>
-            </div>
-        </div>
-    </section>
-
-    <section class="panel">
-        <h2>2. Financiële Details</h2>
-        <div class="grid-2">
-            <div class="form-group">
-                <label>Verkoopprijs Nu (€)</label>
-                <input type="number" id="verkoopprijs" value="350000" step="1000">
-            </div>
-            <div class="form-group">
-                <label>Aankoopprijs Toen (€)</label>
-                <input type="number" id="aankoopprijs" value="250000" step="1000">
-                <small class="hint">Nodig voor winstberekening</small>
-            </div>
-            <div class="form-group">
-                <label>Departement (Nr)</label>
-                <input type="number" id="dept" value="75" placeholder="bv. 75">
-                <small id="dept-hint" class="hint">Tarief Parijs: Normal</small>
-            </div>
-            <div class="form-group">
-                <label>Jaren in bezit</label>
-                <input type="number" id="jaren" value="10">
-                <small class="hint">Belangrijk voor belastingkorting</small>
-            </div>
-        </div>
-    </section>
-
-    <section class="panel">
-        <h2>3. Makelaar & Diensten</h2>
-        
-        <div class="form-group">
-            <label>Wie betaalt de makelaar?</label>
-            <div class="radio-group">
-                <label><input type="radio" name="makelaarWie" value="verkoper" checked> Verkoper</label>
-                <label><input type="radio" name="makelaarWie" value="koper"> Koper</label>
-                <label><input type="radio" name="makelaarWie" value="geen"> Geen makelaar</label>
-            </div>
-        </div>
-
-        <div class="checkbox-grid">
-            <label class="check-box">
-                <input type="checkbox" id="opt_caution"> Hypotheekgarantie
-            </label>
-            <label class="check-box">
-                <input type="checkbox" id="opt_mainlevee"> Mainlevée (Hypotheek royement)
-            </label>
-            <label class="check-box">
-                <input type="checkbox" id="opt_spanc"> SPANC (Riolering)
-            </label>
-            <label class="check-box">
-                <input type="checkbox" id="opt_geo" checked> Géomètre (Landmeter)
-            </label>
-        </div>
-    </section>
-
-    <div id="resultaten">
-        
-        <div class="res-card">
-            <h3>Kosten Koper</h3>
-            <ul id="list-koper" class="cost-list">
-                </ul>
-            <div class="total-line">
-                Totaal Koper: <span id="tot-koper">€0</span>
-            </div>
-        </div>
-
-        <div class="res-card">
-            <h3>Kosten Verkoper</h3>
-            <ul id="list-verkoper" class="cost-list">
-                </ul>
-            <div class="total-line">
-                Totaal Verkoper: <span id="tot-verkoper">€0</span>
-            </div>
-        </div>
-
-        <div class="terminal">
-            <h4>> TRANSACTIE_ANALYSE_V2.5</h4>
-            
-            <div class="term-row">
-                <span>VERKOOPPRIJS:</span> 
-                <span id="term-verkoop">€0</span>
-            </div>
-            <div class="term-row red">
-                <span>- TOTALE KOSTEN VERKOPER:</span> 
-                <span id="term-kosten">€0</span>
-            </div>
-            
-            <hr class="term-line">
-            
-            <div class="term-row blue">
-                <span>= NETTO OPBRENGST (BANK):</span> 
-                <span id="term-netto">€0</span>
-            </div>
-            <div class="term-row dim">
-                <span>- OORSPRONKELIJKE AANKOOP:</span> 
-                <span id="term-aankoop">€0</span>
-            </div>
-            
-            <hr class="term-line">
-            
-            <div class="term-row green" id="row-winst">
-                <span>= WERKELIJKE WINST:</span> 
-                <span id="term-winst">€0</span>
-            </div>
-            
-            <br>
-            <div class="term-row orange">
-                <span>> TOTAL LOSS (FRICTIE):</span> 
-                <span id="term-frictie">€0</span>
-            </div>
-        </div>
-
-    </div>
+    <title>Franse Plus-Value Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <footer>© 2025 InfoFrankrijk Calculator</footer>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+        }
+        .calculator-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .input-group label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            color: #3b82f6;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 220px;
+            background-color: #1f2937;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            font-weight: normal;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        /* Subtielere resultaat box */
+        .result-highlight {
+            border: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 1rem; 
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        .result-title {
+            color: #991b1b; /* Donkerrood */
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .result-amount {
+            color: #7f1d1d; /* Iets donkerder rood */
+            font-size: 1.5rem; /* Minder groot dan voorheen */
+            font-weight: 800;
+        }
+        .section-header {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            margin-top: 1.5rem;
+            color: #111827;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        /* Toggle Switch styling */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #10b981;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #10b981;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-4xl mx-auto calculator-card p-6 md:p-8">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2 text-center">Franse Vermogenswinstbelasting</h1>
+    <p class="text-center text-gray-500 mb-8 text-sm">Bereken uw Plus-Value en netto opbrengst bij verkoop van een tweede huis in Frankrijk.</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <div>
+            <h2 class="section-header mt-0"><i class="fas fa-home mr-2 text-blue-600"></i>Verkoopgegevens</h2>
+            
+            <div class="mb-4 input-group">
+                <label class="block mb-1">Datum Verkoop (Ondertekening Acte)</label>
+                <input type="date" id="saleDate" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition" onchange="calculate()">
+            </div>
+
+            <div class="mb-4 input-group">
+                <label class="block mb-1">Verkoopprijs in Akte (€)</label>
+                <input type="number" id="sellingPrice" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition" placeholder="Bijv. 450000" oninput="calculate()">
+            </div>
+
+            <div class="mb-4 p-4 bg-gray-50 rounded border border-gray-200">
+                <label class="block mb-2 font-semibold text-sm text-gray-700">Makelaarskosten</label>
+                
+                <div class="mb-3">
+                    <label class="text-xs text-gray-500 block mb-1">Wie betaalt de makelaar?</label>
+                    <select id="brokerPayer" class="w-full p-2 border border-gray-300 rounded text-sm bg-white" onchange="toggleBrokerInput()">
+                        <option value="vendeur">Verkoper (Charge Vendeur)</option>
+                        <option value="acquereur">Koper (Charge Acquéreur)</option>
+                        <option value="none">Geen makelaar</option>
+                    </select>
+                </div>
+
+                <div id="brokerAmountDiv">
+                    <label class="text-xs text-gray-500 block mb-1">Bedrag Makelaarskosten (€)</label>
+                    <input type="number" id="brokerFee" class="w-full p-2 border border-gray-300 rounded text-sm" placeholder="Bijv. 20000" oninput="calculate()">
+                    <p class="text-xs text-gray-400 mt-1 italic" id="brokerHelpText">Wordt afgetrokken van verkoopprijs.</p>
+                </div>
+            </div>
+
+            <h2 class="section-header"><i class="fas fa-history mr-2 text-blue-600"></i>Aankoopgegevens</h2>
+
+            <div class="mb-4 input-group">
+                <label class="block mb-1">Datum Aankoop</label>
+                <input type="date" id="purchaseDate" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition" onchange="calculate()">
+            </div>
+
+            <div class="mb-4 input-group">
+                <label class="block mb-1">Aankoopprijs (€)</label>
+                <input type="number" id="purchasePrice" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition" placeholder="Bijv. 250000" oninput="calculate()">
+            </div>
+            
+            <div class="mb-4 input-group">
+                <label class="block mb-1">Postcode / Departement</label>
+                <input type="text" id="postalCode" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none transition" placeholder="Bijv. 24000" oninput="checkDepartment()">
+                <p id="deptName" class="text-xs text-gray-500 mt-1 h-4"></p>
+            </div>
+
+            <div class="mb-4 input-group">
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block">Aankoopkosten (Notaris)</label>
+                    <div class="tooltip"><i class="fas fa-info-circle"></i>
+                        <span class="tooltiptext">Standaard 7,5% forfait of werkelijke kosten indien hoger en aantoonbaar.</span>
+                    </div>
+                </div>
+                <select id="acquisitionCostType" class="w-full p-2 border border-gray-300 rounded mb-2 bg-white" onchange="toggleAcquisitionInput()">
+                    <option value="forfait">Forfaitair (7,5%)</option>
+                    <option value="actual">Werkelijk bedrag</option>
+                </select>
+                <input type="number" id="acquisitionCostActual" class="w-full p-2 border border-gray-300 rounded hidden" placeholder="Vul werkelijk bedrag in" oninput="calculate()">
+                <div id="acquisitionCostDisplay" class="text-sm text-gray-600 font-medium bg-gray-100 p-2 rounded">€ 0.00</div>
+            </div>
+
+            <div class="mb-4 input-group">
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block">Verbouwingen/Renovatie</label>
+                    <div class="tooltip"><i class="fas fa-info-circle"></i>
+                        <span class="tooltiptext">Na 5 jaar bezit: 15% forfait of werkelijke kosten (indien facturen van erkende aannemers).</span>
+                    </div>
+                </div>
+                <select id="renovationType" class="w-full p-2 border border-gray-300 rounded mb-2 bg-white" onchange="toggleRenovationInput()">
+                    <option value="forfait">Forfaitair (15% - mits >5 jaar)</option>
+                    <option value="actual">Werkelijke kosten</option>
+                </select>
+                <input type="number" id="renovationCostActual" class="w-full p-2 border border-gray-300 rounded hidden" placeholder="Vul totaalbedrag facturen in" oninput="calculate()">
+                <div id="renovationCostDisplay" class="text-sm text-gray-600 font-medium bg-gray-100 p-2 rounded">€ 0.00</div>
+                <p id="renovationWarning" class="text-xs text-orange-600 mt-1 hidden"><i class="fas fa-exclamation-triangle"></i> Bezit < 5 jaar: geen forfait mogelijk.</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg">
+            <h2 class="section-header mt-0"><i class="fas fa-calculator mr-2 text-blue-600"></i>Berekening</h2>
+
+            <div class="space-y-3 text-sm text-gray-700">
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span>Verkoopjaar:</span>
+                    <span id="resSaleYear" class="font-bold">-</span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span>Aankoopjaar:</span>
+                    <span id="resPurchaseYear" class="font-bold">-</span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span>Jaren bezit:</span>
+                    <span id="resYearsOwned" class="font-bold">-</span>
+                </div>
+                
+                <div class="flex justify-between items-center pt-2">
+                    <span>Netto Verkoopprijs:</span>
+                    <span id="resNetSelling" class="font-semibold">€ 0.00</span>
+                </div>
+                <div class="flex justify-between items-center text-gray-500 text-xs mb-2">
+                    <span class="italic pl-2" id="resBrokerNote">(excl. makelaar)</span>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <span>Gecorrigeerde Aankoopprijs:</span>
+                    <span id="resAdjustedPurchase" class="font-semibold">€ 0.00</span>
+                </div>
+                <div class="text-xs text-gray-500 pl-2">
+                    <div class="flex justify-between"><span>+ Aankoopkosten:</span> <span id="resAcqCost">€ 0</span></div>
+                    <div class="flex justify-between"><span>+ Verbouwing:</span> <span id="resRenovation">€ 0</span></div>
+                </div>
+
+                <div class="flex justify-between items-center border-t border-gray-200 pt-3 mt-2">
+                    <span class="text-base font-bold text-gray-800">Bruto Meerwaarde:</span>
+                    <span id="resGrossGain" class="text-base font-bold text-gray-800">€ 0.00</span>
+                </div>
+            </div>
+
+            <div class="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <h3 class="font-bold text-blue-800 mb-3 text-sm uppercase">Te betalen belasting</h3>
+                
+                <div class="mb-3">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="font-semibold text-gray-700">Inkomstenbelasting (IR)</span>
+                        <div class="tooltip text-gray-400 text-xs"><i class="fas fa-question-circle"></i>
+                            <span class="tooltiptext">Impôt sur le Revenu (19%). Vrijstelling stijgt per jaar, volledig vrij na 22 jaar.</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>Korting wegens bezitsduur:</span>
+                        <span id="discountIRPercentage">0%</span>
+                    </div>
+                    <div class="flex justify-between font-mono text-gray-800">
+                        <span>Te betalen:</span>
+                        <span id="taxIR">€ 0.00</span>
+                    </div>
+                </div>
+
+                <div class="mb-3 border-t border-blue-200 pt-3">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="font-semibold text-gray-700">Sociale Lasten (CSG/CRDS)</span>
+                        <div class="tooltip text-gray-400 text-xs"><i class="fas fa-question-circle"></i>
+                            <span class="tooltiptext">Prélèvements Sociaux (17,2%). Vrijstelling stijgt per jaar, volledig vrij na 30 jaar.</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>Korting wegens bezitsduur:</span>
+                        <span id="discountSocPercentage">0%</span>
+                    </div>
+                    <div class="flex justify-between font-mono text-gray-800">
+                        <span>Te betalen:</span>
+                        <span id="taxSoc">€ 0.00</span>
+                    </div>
+                </div>
+
+                <div class="mb-1 border-t border-blue-200 pt-3 hidden" id="surtaxeRow">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="font-semibold text-orange-700">Surtaxe (Hoge winst)</span>
+                        <div class="tooltip text-gray-400 text-xs"><i class="fas fa-question-circle"></i>
+                            <span class="tooltiptext">Extra heffing bij belastbare meerwaarde > € 50.000.</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between font-mono text-orange-800">
+                        <span>Te betalen:</span>
+                        <span id="taxSurtaxe">€ 0.00</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center border-t-2 border-blue-200 pt-3 mt-3">
+                    <span class="font-bold text-blue-900">Totaal Belasting:</span>
+                    <span id="totalTax" class="font-bold text-blue-900">€ 0.00</span>
+                </div>
+            </div>
+
+            <div class="result-highlight">
+                <div class="result-title">Netto Opbrengst</div>
+                <div class="text-xs text-gray-400 mb-1">(Op bankrekening verkoper)</div>
+                <div id="netProceeds" class="result-amount">€ 0.00</div>
+            </div>
+
+            <div class="mt-4 text-center">
+                <div class="text-gray-800 font-bold text-lg mb-1">Werkelijke Winst</div>
+                <div class="text-xs text-gray-400 mb-1">(Netto Opbrengst - Oorspronkelijke aankoop)</div>
+                <div id="realProfit" class="text-xl font-bold text-green-700">€ 0.00</div>
+            </div>
+
+        </div>
+    </div>
 </div>
 
-<script src="script.js"></script>
+<script>
+    // Configuratie en data
+    const TAX_RATE_IR = 0.19;
+    const TAX_RATE_SOC = 0.172;
+
+    // Tabel voor aftrekpercentages (Abattements)
+    // Jaar 0-5 = 0%. Vanaf jaar 6 begint de teller.
+    // Index 0 = jaar 0, index 5 = jaar 5, index 6 = jaar 6 etc.
+    function getAbattement(yearsOwned) {
+        let rateIR = 0;
+        let rateSoc = 0;
+
+        // IR Regels (Vrij na 22 jaar)
+        if (yearsOwned >= 6 && yearsOwned <= 21) {
+            rateIR = (yearsOwned - 5) * 0.06;
+        } else if (yearsOwned === 22) {
+            rateIR = 16 * 0.06 + 0.04; // 100%
+        } else if (yearsOwned > 22) {
+            rateIR = 1.0;
+        }
+
+        // Sociale Lasten Regels (Vrij na 30 jaar)
+        if (yearsOwned >= 6 && yearsOwned <= 21) {
+            rateSoc = (yearsOwned - 5) * 0.0165;
+        } else if (yearsOwned === 22) {
+            rateSoc = 16 * 0.0165 + 0.0160;
+        } else if (yearsOwned >= 23 && yearsOwned <= 30) {
+            // Totale opbouw tot jaar 22 is ~28%. Daarna 9% per jaar.
+            let base = (16 * 0.0165 + 0.0160); 
+            rateSoc = base + ((yearsOwned - 22) * 0.09);
+        } else if (yearsOwned > 30) {
+            rateSoc = 1.0;
+        }
+
+        // Cap op 100% (1.0)
+        return {
+            ir: Math.min(rateIR, 1.0),
+            soc: Math.min(rateSoc, 1.0)
+        };
+    }
+
+    // Surtaxe berekening (simpel model voor indicatie)
+    // Surtaxe wordt berekend over de belastbare meerwaarde NA aftrek IR (PV Imposable IR)
+    function calculateSurtaxe(pvImposable) {
+        if (pvImposable <= 50000) return 0;
+        
+        // Exacte formule is complex en trapsgewijs, hier gebruiken we de schijven indicatief
+        // Bron: BOI-RFPI-PVI-20-20
+        let rate = 0;
+        if (pvImposable <= 60000) rate = 0.02 * ((pvImposable - 50000) / 10000) + 0; // lissage
+        else if (pvImposable <= 100000) rate = 0.02;
+        else if (pvImposable <= 110000) rate = 0.03 * ((pvImposable - 100000) / 10000) + 0.02; // lissage
+        else if (pvImposable <= 150000) rate = 0.03;
+        else if (pvImposable <= 160000) rate = 0.04 * ((pvImposable - 150000) / 10000) + 0.03; // lissage
+        else if (pvImposable <= 200000) rate = 0.04;
+        else if (pvImposable <= 210000) rate = 0.05 * ((pvImposable - 200000) / 10000) + 0.04; // lissage
+        else if (pvImposable <= 250000) rate = 0.05;
+        else if (pvImposable <= 260000) rate = 0.06 * ((pvImposable - 250000) / 10000) + 0.05; // lissage
+        else rate = 0.06;
+
+        return pvImposable * rate;
+    }
+
+    // UI Helpers
+    function toggleBrokerInput() {
+        const payer = document.getElementById('brokerPayer').value;
+        const helpText = document.getElementById('brokerHelpText');
+        
+        if (payer === 'none') {
+            document.getElementById('brokerAmountDiv').classList.add('hidden');
+            document.getElementById('brokerFee').value = 0;
+        } else {
+            document.getElementById('brokerAmountDiv').classList.remove('hidden');
+        }
+
+        if (payer === 'vendeur') {
+            helpText.innerText = "Wordt afgetrokken van verkoopprijs (verlaagt belasting).";
+        } else if (payer === 'acquereur') {
+            helpText.innerText = "Koper betaalt apart. Geen invloed op uw bruto verkoopbedrag.";
+        }
+        calculate();
+    }
+
+    function toggleAcquisitionInput() {
+        const type = document.getElementById('acquisitionCostType').value;
+        const input = document.getElementById('acquisitionCostActual');
+        const display = document.getElementById('acquisitionCostDisplay');
+        
+        if (type === 'actual') {
+            input.classList.remove('hidden');
+            display.classList.add('hidden');
+        } else {
+            input.classList.add('hidden');
+            display.classList.remove('hidden');
+        }
+        calculate();
+    }
+
+    function toggleRenovationInput() {
+        const type = document.getElementById('renovationType').value;
+        const input = document.getElementById('renovationCostActual');
+        const display = document.getElementById('renovationCostDisplay');
+        
+        if (type === 'actual') {
+            input.classList.remove('hidden');
+            display.classList.add('hidden');
+        } else {
+            input.classList.add('hidden');
+            display.classList.remove('hidden');
+        }
+        calculate();
+    }
+
+    function checkDepartment() {
+        const input = document.getElementById('postalCode').value;
+        const display = document.getElementById('deptName');
+        if (input.length >= 2) {
+            const deptCode = input.substring(0, 2);
+            // Simpele weergave, geen database nodig voor de berekening zelf
+            display.innerText = `Departement code: ${deptCode} (Geen invloed op 7.5% forfait)`;
+        } else {
+            display.innerText = "";
+        }
+    }
+
+    function formatCurrency(num) {
+        return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(num);
+    }
+    
+    function formatPercent(num) {
+         // Rond af op 1 decimaal (bijv. 19.8%)
+        return (num * 100).toFixed(1) + '%';
+    }
+
+    // Hoofdberekening
+    function calculate() {
+        // 1. Ophalen waarden
+        const saleDateStr = document.getElementById('saleDate').value;
+        const purchaseDateStr = document.getElementById('purchaseDate').value;
+        const sellingPrice = parseFloat(document.getElementById('sellingPrice').value) || 0;
+        const purchasePrice = parseFloat(document.getElementById('purchasePrice').value) || 0;
+        const brokerFee = parseFloat(document.getElementById('brokerFee').value) || 0;
+        const brokerPayer = document.getElementById('brokerPayer').value;
+
+        // Reset outputs als data incompleet
+        if (!saleDateStr || !purchaseDateStr || sellingPrice === 0 || purchasePrice === 0) return;
+
+        // Datum logica
+        const saleDate = new Date(saleDateStr);
+        const purchaseDate = new Date(purchaseDateStr);
+        
+        // Bereken verschil in jaren (exact)
+        let yearsOwned = saleDate.getFullYear() - purchaseDate.getFullYear();
+        const m = saleDate.getMonth() - purchaseDate.getMonth();
+        if (m < 0 || (m === 0 && saleDate.getDate() < purchaseDate.getDate())) {
+            yearsOwned--;
+        }
+        
+        // Update UI Jaren
+        document.getElementById('resSaleYear').innerText = saleDate.getFullYear();
+        document.getElementById('resPurchaseYear').innerText = purchaseDate.getFullYear();
+        document.getElementById('resYearsOwned').innerText = Math.max(0, yearsOwned);
+
+        // --- STAP A: Bepaal Netto Verkoopprijs ---
+        let netSellingPrice = sellingPrice;
+        let brokerNote = "(excl. makelaar)";
+        
+        if (brokerPayer === 'vendeur') {
+            netSellingPrice = sellingPrice - brokerFee;
+            brokerNote = "(na aftrek makelaar)";
+        } else if (brokerPayer === 'acquereur') {
+            // Verkoopprijs is al netto voor verkoper, koper betaalt makelaar erbovenop
+            netSellingPrice = sellingPrice;
+            brokerNote = "(makelaar betaald door koper)";
+        }
+        
+        document.getElementById('resNetSelling').innerText = formatCurrency(netSellingPrice);
+        document.getElementById('resBrokerNote').innerText = brokerNote;
+
+        // --- STAP B: Bepaal Gecorrigeerde Aankoopprijs ---
+        // 1. Aankoopkosten (Notaris)
+        let acqCost = 0;
+        const acqType = document.getElementById('acquisitionCostType').value;
+        if (acqType === 'actual') {
+            acqCost = parseFloat(document.getElementById('acquisitionCostActual').value) || 0;
+        } else {
+            acqCost = purchasePrice * 0.075;
+            document.getElementById('acquisitionCostDisplay').innerText = formatCurrency(acqCost);
+        }
+
+        // 2. Verbouwingen
+        let renCost = 0;
+        const renType = document.getElementById('renovationType').value;
+        const renWarning = document.getElementById('renovationWarning');
+        
+        if (yearsOwned < 5) {
+            // Geen forfait mogelijk < 5 jaar
+            renWarning.classList.remove('hidden');
+            if (renType === 'forfait') {
+                renCost = 0; 
+                document.getElementById('renovationCostDisplay').innerText = "€ 0.00 (Nog geen 5 jaar bezit)";
+            } else {
+                renCost = parseFloat(document.getElementById('renovationCostActual').value) || 0;
+            }
+        } else {
+            renWarning.classList.add('hidden');
+            if (renType === 'forfait') {
+                renCost = purchasePrice * 0.15;
+                document.getElementById('renovationCostDisplay').innerText = formatCurrency(renCost);
+            } else {
+                renCost = parseFloat(document.getElementById('renovationCostActual').value) || 0;
+            }
+        }
+
+        const adjustedPurchasePrice = purchasePrice + acqCost + renCost;
+        
+        document.getElementById('resAdjustedPurchase').innerText = formatCurrency(adjustedPurchasePrice);
+        document.getElementById('resAcqCost').innerText = formatCurrency(acqCost);
+        document.getElementById('resRenovation').innerText = formatCurrency(renCost);
+
+        // --- STAP C: Bruto Meerwaarde ---
+        const grossGain = Math.max(0, netSellingPrice - adjustedPurchasePrice);
+        document.getElementById('resGrossGain').innerText = formatCurrency(grossGain);
+
+        // --- STAP D: Belastingberekening met Abattement ---
+        const discounts = getAbattement(yearsOwned);
+        
+        // 1. Inkomstenbelasting (IR) Basis = Bruto Meerwaarde * (1 - korting)
+        const taxableBaseIR = grossGain * (1 - discounts.ir);
+        const taxIRAmount = taxableBaseIR * TAX_RATE_IR;
+
+        // 2. Sociale Lasten (CSG) Basis = Bruto Meerwaarde * (1 - korting)
+        const taxableBaseSoc = grossGain * (1 - discounts.soc);
+        const taxSocAmount = taxableBaseSoc * TAX_RATE_SOC;
+
+        // 3. Surtaxe
+        const surtaxeAmount = calculateSurtaxe(taxableBaseIR);
+
+        // Update UI Belastingen
+        document.getElementById('discountIRPercentage').innerText = formatPercent(discounts.ir);
+        document.getElementById('taxIR').innerText = formatCurrency(taxIRAmount);
+        
+        document.getElementById('discountSocPercentage').innerText = formatPercent(discounts.soc);
+        document.getElementById('taxSoc').innerText = formatCurrency(taxSocAmount);
+
+        if (surtaxeAmount > 0) {
+            document.getElementById('surtaxeRow').classList.remove('hidden');
+            document.getElementById('taxSurtaxe').innerText = formatCurrency(surtaxeAmount);
+        } else {
+            document.getElementById('surtaxeRow').classList.add('hidden');
+        }
+
+        const totalTax = taxIRAmount + taxSocAmount + surtaxeAmount;
+        document.getElementById('totalTax').innerText = formatCurrency(totalTax);
+
+        // --- STAP E: Eindresultaten ---
+        // Netto Opbrengst (Cash in hand)
+        // Wat komt er op de bank?
+        // Als verkoper makelaar betaalt: Verkoopprijs - Makelaar - Belasting
+        // Als koper makelaar betaalt: Verkoopprijs (is al netto) - Belasting
+        
+        let cashInHand = 0;
+        if (brokerPayer === 'vendeur') {
+             // Let op: netSellingPrice is al (Selling - Broker), dus we hoeven broker niet nogmaals af te trekken hier
+             cashInHand = netSellingPrice - totalTax;
+        } else {
+             // netSellingPrice = SellingPrice
+             cashInHand = netSellingPrice - totalTax;
+        }
+
+        document.getElementById('netProceeds').innerText = formatCurrency(cashInHand);
+
+        // Werkelijke Winst
+        const realProfit = cashInHand - purchasePrice;
+        document.getElementById('realProfit').innerText = formatCurrency(realProfit);
+    }
+    
+    // Initiele call om nullen te tonen
+    calculate();
+</script>
+
 </body>
 </html>
