@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 
 # -----------------------------------------------------------------------------
-# 1. CONFIGURATIE & HUISSTIJL (lichte achtergrond, Poppins / Mulish, kleur #800000)
-# --- Prioriteit: maximale leesbaarheid, geen zwarte invoervelden ----------
+# 1. CONFIGURATIE & HUISSTIJL (prioriteit: leesbare, lichte invoervelden)
+# -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Vastgoedtransactieanalyse",
     page_icon="🏠",
@@ -23,16 +23,16 @@ st.markdown(
         font-family: 'Poppins', 'Mulish', system-ui, -apple-system, "Segoe UI", Roboto, Arial;
     }
 
-    /* Block container: meer top-padding zodat h1 niet in de topbar zit */
+    /* Block container top padding so H1 is clearly visible */
     .block-container {
-        padding-top: 2.5rem;
+        padding-top: 2.25rem;
         padding-bottom: 1.25rem;
         padding-left: 2rem;
         padding-right: 2rem;
         max-width: 1400px;
     }
 
-    /* Sidebar: duidelijk lichte achtergrond en donkere tekst */
+    /* Sidebar base */
     [data-testid="stSidebar"] {
         width: 320px !important;
         min-width: 300px !important;
@@ -45,30 +45,55 @@ st.markdown(
     }
     [data-testid="stSidebar"] * { color: #222 !important; }
 
-    /* Zorg dat sidebar intern scrollt (voorkomt pagina-scroll) */
+    /* Ensure sidebar content scrolls internally */
     [data-testid="stSidebar"] > div:first-child {
         max-height: calc(100vh - 48px);
         overflow-y: auto;
         padding-right: 6px;
     }
 
-    /* Verwijder donkere/zwart-achtige invoervelden: maak inputs licht met duidelijke rand */
-    div[data-baseweb="input"] > div,
-    .stTextInput>div, .stNumberInput>div, input[type="text"], input[type="number"] {
+    /* FORCE: make ALL input-like controls light and readable */
+    /* text inputs, number inputs, textarea, selects, and their wrappers */
+    input, textarea, select,
+    .stTextInput input, .stNumberInput input, .stTextArea textarea {
         background-color: #ffffff !important;
-        color: #222 !important;
-        border: 1px solid #e8e8e8 !important;
-        border-radius: 8px;
-    }
-    /* Radio / checkbox labels: donker genoeg */
-    div[role="radiogroup"] label, .stCheckbox label, .stRadio label {
-        color: #222 !important;
+        color: #222222 !important;
+        border: 1px solid #e6e6e6 !important;
+        border-radius: 8px !important;
     }
 
-    /* Expander header (voorkom donkere blokken) */
-    .streamlit-expanderHeader, .css-1v3fvcr { background: transparent !important; color: #222 !important; }
+    /* Specific override inside the sidebar to be extra safe */
+    [data-testid="stSidebar"] input,
+    [data-testid="stSidebar"] textarea,
+    [data-testid="stSidebar"] select,
+    [data-testid="stSidebar"] .stNumberInput input {
+        background-color: #ffffff !important;
+        color: #222222 !important;
+        border: 1px solid #e6e6e6 !important;
+        border-radius: 8px !important;
+    }
 
-    /* H1 en headers: accentkleur en voldoende margin-top */
+    /* NumberInput stepper buttons: neutral, visible */
+    .stNumberInput > div > button, .stNumberInput button {
+        background-color: transparent !important;
+        color: #222222 !important;
+        border: 1px solid rgba(0,0,0,0.06) !important;
+        border-radius: 6px !important;
+        padding: 4px 8px !important;
+    }
+
+    /* Radio/checkbox labels readable */
+    .stRadio label, .stCheckbox label, [data-testid="stSidebar"] .stRadio label, [data-testid="stSidebar"] .stCheckbox label {
+        color: #222222 !important;
+    }
+
+    /* Expander header - avoid dark background */
+    .streamlit-expanderHeader, .stExpanderHeader {
+        background: transparent !important;
+        color: #222222 !important;
+    }
+
+    /* H1 and headers */
     .stApp h1 {
         color: #800000 !important;
         font-family: 'Mulish', 'Poppins', sans-serif !important;
@@ -83,38 +108,42 @@ st.markdown(
 
     /* Buttons accent */
     .stButton>button {
-        background-color: #800000;
-        color: #ffffff;
-        border-radius: 8px;
-        padding: 0.45rem 0.7rem;
-        font-weight: 600;
+        background-color: #800000 !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+        padding: 0.45rem 0.7rem !important;
+        font-weight: 600 !important;
     }
-    .stButton>button:hover { background-color: #5d0000; }
+    .stButton>button:hover { background-color: #5d0000 !important; }
 
-    /* Table header */
+    /* Table header & body contrast */
     div[data-testid="stTable"] thead tr th {
         background-color: #800000 !important;
         color: #ffffff !important;
-        font-weight: 600;
-        padding: 10px 12px;
+        font-weight: 600 !important;
+        padding: 10px 12px !important;
     }
     div[data-testid="stTable"] tbody tr td {
-        padding: 8px 12px;
-        color: #222;
+        padding: 8px 12px !important;
+        color: #222222 !important;
+        background: transparent !important;
     }
 
-    /* Result cards: licht en compact */
+    /* Result cards */
     .result-card {
-        background: linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%);
-        border: 1px solid #f1e9e9;
-        border-left: 6px solid #800000;
-        border-radius: 10px;
-        padding: 12px;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.04);
-        min-height: 100px;
+        background: linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%) !important;
+        border: 1px solid #f1e9e9 !important;
+        border-left: 6px solid #800000 !important;
+        border-radius: 10px !important;
+        padding: 12px !important;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.04) !important;
+        min-height: 100px !important;
     }
 
-    /* Small screens */
+    /* Reduce unnecessary vertical margins */
+    .stHeader, .stBetaFooter { margin-top: 0 !important; margin-bottom: 0 !important; }
+
+    /* Small screens adjustments */
     @media (max-width: 1024px) {
         .block-container { padding-left: 1rem; padding-right: 1rem; padding-top: 1.5rem; }
         [data-testid="stSidebar"] { width: 300px !important; }
@@ -163,6 +192,7 @@ def bereken_notariskosten(prijs_voor_notaris, postcode, is_nieuwbouw):
     if prijs_voor_notaris <= 0: return 0.0
     
     if is_nieuwbouw:
+        # VEFA: ca 2.5%
         return prijs_voor_notaris * 0.025
 
     dmto_tarief = get_dmto_tarief(postcode)
@@ -185,7 +215,7 @@ def bereken_notariskosten(prijs_voor_notaris, postcode, is_nieuwbouw):
     return emoluments + tva + dmto + csi + frais_divers
 
 # -----------------------------------------------------------------------------
-# 3. SIDEBAR & INPUTS (leesbaarheid verbeterd; default de_ruyter=False)
+# 3. SIDEBAR & INPUTS (readability + de_ruyter default False)
 # -----------------------------------------------------------------------------
 
 if st.sidebar.button("🔄 RESET SCENARIO"):
@@ -194,7 +224,7 @@ if st.sidebar.button("🔄 RESET SCENARIO"):
 
 st.sidebar.title("Instellingen")
 
-with st.sidebar.expander("1. Locatie & Notaris", expanded=True):  # aangepast label
+with st.sidebar.expander("1. Locatie & Notaris", expanded=True):
     postcode = st.text_input("Postcode (bepaalt notaris-regio)", value="58000", max_chars=5)
     type_woning_optie = st.radio("Type Woning", ["Bestaand (Ancien)", "Nieuwbouw (VEFA)"], index=0)
     is_nieuwbouw = (type_woning_optie == "Nieuwbouw (VEFA)")
@@ -216,19 +246,18 @@ with st.sidebar.expander("3. Kosten & Belastingen", expanded=False):
     is_hoofdverblijf = (hoofdverblijf_optie == "Ja (Hoofdverblijf)")
     landmeter = st.number_input("Landmeter / Diagnostics €", value=1500.0, step=100.0)
 
-    # Default gezet op False: gebruiker moet expliciet aanvinken
+    # Default de_ruyter = False; user must explicitly opt-in
     if not is_hoofdverblijf:
         de_ruyter = st.checkbox(
             "Toepassing Arrest de Ruyter",
             value=False,
-            help="Als aangevinkt: verlaagd tarief voor sociale lasten (7,5%). Vink alleen aan als u sociaal verzekerd bent in een andere EU-lidstaat (bijv. Nederland) en niet in Frankrijk."
+            help="Als aangevinkt: verlaagd tarief voor sociale lasten (7,5%). Vink alleen aan als u sociaal verzekerd bent in een andere EU-lidstaat en niet in Frankrijk."
         )
         pv_methode = st.radio("Plus-value berekening", ["Automatisch (obv jaren)", "Handmatige invoer"], index=0)
     else:
         de_ruyter = False
         pv_methode = "Automatisch (obv jaren)"
 
-# extra leesbare hint onderaan expander (klein)
 st.sidebar.markdown("**Tip:** Gebruik de [i]‑checkbox alleen als u zeker weet dat u onder Arrest De Ruyter valt.")
 
 # -----------------------------------------------------------------------------
@@ -291,7 +320,7 @@ werkelijke_winst = netto_opbrengst - aankoopprijs
 frictiekosten = notariskosten + totaal_kosten_verkoper
 
 # -----------------------------------------------------------------------------
-# 5. OUTPUT (compact, leesbaar)
+# 5. OUTPUT (compact en leesbaar)
 # -----------------------------------------------------------------------------
 
 st.title("Vastgoedtransactieanalyse")
