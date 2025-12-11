@@ -3,65 +3,77 @@ import pandas as pd
 
 # -----------------------------------------------------------------------------
 # 1. CONFIGURATIE & HUISSTIJL (lichte achtergrond, Poppins / Mulish, kleur #800000)
-# -----------------------------------------------------------------------------
+# --- Prioriteit: maximale leesbaarheid, geen zwarte invoervelden ----------
 st.set_page_config(
     page_title="Vastgoedtransactieanalyse",
     page_icon="🏠",
     layout="wide"
 )
 
-# Gerichte, veilige CSS (vermijd globale selectors die widgets breken)
 st.markdown(
     """
     <style>
-    /* Load fonts */
+    /* Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Mulish:wght@300;400;600;700&display=swap');
 
-    /* Base / Light background */
+    /* Base / Light */
     html, body, .stApp {
         background-color: #ffffff !important;
         color: #222222 !important;
-        font-family: 'Poppins', 'Mulish', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        font-family: 'Poppins', 'Mulish', system-ui, -apple-system, "Segoe UI", Roboto, Arial;
     }
 
-    /* Block container padding - maak content compacter zodat minder scroll */
+    /* Block container: meer top-padding zodat h1 niet in de topbar zit */
     .block-container {
-        padding-top: 1.25rem;
+        padding-top: 2.5rem;
         padding-bottom: 1.25rem;
         padding-left: 2rem;
         padding-right: 2rem;
         max-width: 1400px;
     }
 
-    /* Sidebar: smaller, fixed-ish look with its own scroll; reduces main-page scroll */
+    /* Sidebar: duidelijk lichte achtergrond en donkere tekst */
     [data-testid="stSidebar"] {
         width: 320px !important;
         min-width: 300px !important;
-        max-width: 360px !important;
-        background-color: #f6f6f6 !important;
+        background-color: #faf9f8 !important;
         color: #222 !important;
         padding-top: 1rem;
         padding-left: 1rem;
         padding-right: 1rem;
         border-right: 1px solid rgba(0,0,0,0.04);
     }
-    [data-testid="stSidebar"] .stMarkdown p, [data-testid="stSidebar"] .stText {
-        color: #222 !important;
-    }
+    [data-testid="stSidebar"] * { color: #222 !important; }
 
-    /* Ensure sidebar content scrolls internally if needed (keeps main area stable) */
+    /* Zorg dat sidebar intern scrollt (voorkomt pagina-scroll) */
     [data-testid="stSidebar"] > div:first-child {
-        max-height: calc(100vh - 40px);
+        max-height: calc(100vh - 48px);
         overflow-y: auto;
         padding-right: 6px;
     }
 
-    /* Header styling */
+    /* Verwijder donkere/zwart-achtige invoervelden: maak inputs licht met duidelijke rand */
+    div[data-baseweb="input"] > div,
+    .stTextInput>div, .stNumberInput>div, input[type="text"], input[type="number"] {
+        background-color: #ffffff !important;
+        color: #222 !important;
+        border: 1px solid #e8e8e8 !important;
+        border-radius: 8px;
+    }
+    /* Radio / checkbox labels: donker genoeg */
+    div[role="radiogroup"] label, .stCheckbox label, .stRadio label {
+        color: #222 !important;
+    }
+
+    /* Expander header (voorkom donkere blokken) */
+    .streamlit-expanderHeader, .css-1v3fvcr { background: transparent !important; color: #222 !important; }
+
+    /* H1 en headers: accentkleur en voldoende margin-top */
     .stApp h1 {
         color: #800000 !important;
         font-family: 'Mulish', 'Poppins', sans-serif !important;
         font-size: 2.2rem;
-        margin-top: 0.25rem;
+        margin-top: 0.5rem;
         margin-bottom: 0.25rem;
     }
     .stApp h2, .stApp h3 {
@@ -79,7 +91,7 @@ st.markdown(
     }
     .stButton>button:hover { background-color: #5d0000; }
 
-    /* Table header highlight (targeting testid for safety) */
+    /* Table header */
     div[data-testid="stTable"] thead tr th {
         background-color: #800000 !important;
         color: #ffffff !important;
@@ -89,15 +101,9 @@ st.markdown(
     div[data-testid="stTable"] tbody tr td {
         padding: 8px 12px;
         color: #222;
-        background: transparent;
-    }
-    div[data-testid="stTable"] {
-        border-radius: 8px;
-        overflow-x: auto;
-        background: transparent;
     }
 
-    /* Result cards: compact and fit in one row on normal screens */
+    /* Result cards: licht en compact */
     .result-card {
         background: linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%);
         border: 1px solid #f1e9e9;
@@ -107,39 +113,13 @@ st.markdown(
         box-shadow: 0 6px 18px rgba(0,0,0,0.04);
         min-height: 100px;
     }
-    .result-label {
-        font-size: 0.8rem;
-        color: #666;
-        text-transform: uppercase;
-        letter-spacing: 0.6px;
-    }
-    .result-value {
-        font-family: 'Mulish', 'Poppins', sans-serif;
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #222;
-        margin-top: 8px;
-    }
-    .result-sub {
-        font-size: 0.8rem;
-        color: #777;
-        margin-top: 6px;
-    }
 
-    /* Reduce large default margins that cause vertical scroll */
-    .stHeader, .stBetaFooter {
-        margin-top: 0 !important;
-        margin-bottom: 0 !important;
-    }
-
-    /* Small screens adjustments */
+    /* Small screens */
     @media (max-width: 1024px) {
-        .block-container { padding-left: 1rem; padding-right: 1rem; }
+        .block-container { padding-left: 1rem; padding-right: 1rem; padding-top: 1.5rem; }
         [data-testid="stSidebar"] { width: 300px !important; }
-        .result-value { font-size: 1.05rem; }
     }
     @media (max-width: 640px) {
-        .block-container { padding-left: 8px; padding-right: 8px; }
         .stApp h1 { font-size: 1.6rem; }
     }
     </style>
@@ -183,10 +163,8 @@ def bereken_notariskosten(prijs_voor_notaris, postcode, is_nieuwbouw):
     if prijs_voor_notaris <= 0: return 0.0
     
     if is_nieuwbouw:
-        # VEFA: ca 2.5%
         return prijs_voor_notaris * 0.025
 
-    # Ancien
     dmto_tarief = get_dmto_tarief(postcode)
     tranches = [(6500, 0.03870), (17000, 0.01596), (60000, 0.01064), (float('inf'), 0.00799)]
     
@@ -207,7 +185,7 @@ def bereken_notariskosten(prijs_voor_notaris, postcode, is_nieuwbouw):
     return emoluments + tva + dmto + csi + frais_divers
 
 # -----------------------------------------------------------------------------
-# 3. SIDEBAR & INPUTS (compact)
+# 3. SIDEBAR & INPUTS (leesbaarheid verbeterd; default de_ruyter=False)
 # -----------------------------------------------------------------------------
 
 if st.sidebar.button("🔄 RESET SCENARIO"):
@@ -216,7 +194,7 @@ if st.sidebar.button("🔄 RESET SCENARIO"):
 
 st.sidebar.title("Instellingen")
 
-with st.sidebar.expander("1. Locatie & Makelaar", expanded=True):
+with st.sidebar.expander("1. Locatie & Notaris", expanded=True):  # aangepast label
     postcode = st.text_input("Postcode (bepaalt notaris-regio)", value="58000", max_chars=5)
     type_woning_optie = st.radio("Type Woning", ["Bestaand (Ancien)", "Nieuwbouw (VEFA)"], index=0)
     is_nieuwbouw = (type_woning_optie == "Nieuwbouw (VEFA)")
@@ -237,15 +215,21 @@ with st.sidebar.expander("3. Kosten & Belastingen", expanded=False):
     hoofdverblijf_optie = st.radio("Was dit uw hoofdverblijf?", ["Nee (2de woning)", "Ja (Hoofdverblijf)"], index=0)
     is_hoofdverblijf = (hoofdverblijf_optie == "Ja (Hoofdverblijf)")
     landmeter = st.number_input("Landmeter / Diagnostics €", value=1500.0, step=100.0)
+
+    # Default gezet op False: gebruiker moet expliciet aanvinken
     if not is_hoofdverblijf:
-        de_ruyter = st.checkbox("Toepassing Arrest de Ruyter", value=True)
+        de_ruyter = st.checkbox(
+            "Toepassing Arrest de Ruyter",
+            value=False,
+            help="Als aangevinkt: verlaagd tarief voor sociale lasten (7,5%). Vink alleen aan als u sociaal verzekerd bent in een andere EU-lidstaat (bijv. Nederland) en niet in Frankrijk."
+        )
         pv_methode = st.radio("Plus-value berekening", ["Automatisch (obv jaren)", "Handmatige invoer"], index=0)
     else:
         de_ruyter = False
         pv_methode = "Automatisch (obv jaren)"
 
-if is_nieuwbouw and jaren_bezit > 5:
-    st.sidebar.warning(f"⚠️ Let op: 'Nieuwbouw' maar bezit de woning al {jaren_bezit} jaar.")
+# extra leesbare hint onderaan expander (klein)
+st.sidebar.markdown("**Tip:** Gebruik de [i]‑checkbox alleen als u zeker weet dat u onder Arrest De Ruyter valt.")
 
 # -----------------------------------------------------------------------------
 # 4. BEREKENINGEN (ongewijzigd)
@@ -256,6 +240,8 @@ pv_toelichting = ""
 bruto_meerwaarde = 0.0
 abat_ir_perc = 0.0
 abat_ps_perc = 0.0
+tax_ir = 0.0
+tax_ps = 0.0
 
 if makelaar_optie == "Geen makelaar":
     makelaarskosten = 0.0
@@ -305,7 +291,7 @@ werkelijke_winst = netto_opbrengst - aankoopprijs
 frictiekosten = notariskosten + totaal_kosten_verkoper
 
 # -----------------------------------------------------------------------------
-# 5. OUTPUT (compact en passend)
+# 5. OUTPUT (compact, leesbaar)
 # -----------------------------------------------------------------------------
 
 st.title("Vastgoedtransactieanalyse")
