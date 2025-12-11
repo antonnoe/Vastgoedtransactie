@@ -371,4 +371,19 @@ with st.expander("🔎 Bekijk fiscale analyse & validatie"):
     st.markdown("#### Grondslag Notaris & Makelaar")
     if makelaar_optie == "Koper (Charge Acquéreur)" and makelaarskosten > 0:
         st.write("Situatie: Charge Acquéreur — makelaarscourtage is vaak vrijgesteld van overdrachtsbelasting.")
-    elif makelaar_optie == "V
+    elif makelaar_optie == "Verkoper (Charge Vendeur)":
+        st.write("Situatie: Charge Vendeur — geen belastingvoordeel voor koper.")
+    else:
+        st.write("Geen makelaar betrokken of specifieke situatie.")
+    if not is_hoofdverblijf and pv_methode == "Automatisch (obv jaren)" and bruto_meerwaarde > 0:
+        st.markdown(f"#### Plus-Value Berekening ({jaren_bezit} jaar bezit)")
+        st.markdown(f"* Inkomstenbelasting (IR) aftrek: {abat_ir_perc:.1f}%  — berekend op € {bruto_meerwaarde:,.0f}")
+        st.markdown(f"* Sociale lasten aftrek: {abat_ps_perc:.1f}%  — tarief toegepast: {('7,5%' if de_ruyter else '17,2%')}")
+    elif is_hoofdverblijf:
+        st.write("✅ Object is aangemerkt als Hoofdverblijf. Volledige vrijstelling van Plus-Value belasting.")
+    st.markdown("---")
+    st.write("Conclusie: de rekenkern is consistent met de gebruikte regels.")
+    if pv_toelichting:
+        st.info(pv_toelichting)
+
+st.markdown('<div style="text-align:center;color:#666;padding-top:10px;">Deze interactieve analyse wordt u aangeboden door <b>Infofrankrijk.com</b></div>', unsafe_allow_html=True)
