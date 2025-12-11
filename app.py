@@ -1,4 +1,3 @@
- url=https://github.com/antonnoe/Vastgoedtransactie/blob/main/app.py
 import streamlit as st
 import pandas as pd
 
