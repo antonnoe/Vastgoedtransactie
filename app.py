@@ -1,8 +1,9 @@
+ url=https://github.com/antonnoe/Vastgoedtransactie/blob/main/app.py
 import streamlit as st
 import pandas as pd
 
 # -----------------------------------------------------------------------------
-# 1. CONFIGURATIE & HUISSTIJL
+# 1. CONFIGURATIE & HUISSTIJL (lichte achtergrond, Poppins / Mulish, kleur #800000)
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Vastgoedtransactieanalyse",
@@ -10,134 +11,111 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS: Specifiek gericht op tekst, laat iconen met rust
+# Beperk CSS tot veilige, gerichte selectors zodat Streamlit inputs niet kapotgaan.
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Mulish:wght@300;400;600;700&display=swap');
 
-    /* 1. Pas font alleen toe op echte tekstelementen, niet op containers/iconen */
-    html, body, p, h1, h2, h3, h4, h5, h6, span, label, li, td, button, input, select, textarea {
-        font-family: 'Montserrat', sans-serif !important;
-        color: #333;
+    /* Basis typografie en achtergrond (lichte layout) */
+    html, body {
+        background-color: #ffffff;
+        color: #222222;
+        font-family: 'Poppins', 'Mulish', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     }
 
-    /* 2. Headers styling */
-    h1, h2, h3 {
+    /* Headers */
+    .stApp h1, .stApp h2, .stApp h3 {
         color: #800000 !important;
+        font-family: 'Mulish', 'Poppins', sans-serif !important;
         font-weight: 700 !important;
+        margin-bottom: 0.25rem;
     }
-    h4, h5, h6 {
-        color: #555 !important;
+
+    /* Subheaders and small headings */
+    .stApp h4, .stApp h5, .stApp h6 {
+        color: #6b1b1b !important;
+        font-family: 'Poppins', sans-serif !important;
         font-weight: 600 !important;
     }
 
-    /* 3. Buttons */
+    /* Sidebar title and labels */
+    .css-1d391kg, .css-ffhzg2 { /* lightweight target for spacing (may vary by version) */
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+
+    /* Buttons */
     .stButton>button {
         background-color: #800000;
-        color: white;
-        border-radius: 6px;
+        color: #ffffff;
+        border-radius: 8px;
         border: none;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 0.75rem;
         font-weight: 600;
-        transition: background-color 0.3s ease;
     }
     .stButton>button:hover {
-        background-color: #5a0000;
-        color: white;
-        border-color: #5a0000;
+        background-color: #5d0000;
+        transform: translateY(-1px);
     }
 
-    /* 4. Inputs styling (Zonder de div structuur te breken) */
-    div[data-baseweb="input"] > div, div[data-baseweb="select"] > div {
-        background-color: #ffffff;
-        border-radius: 6px;
-        border: 1px solid #d1d5db;
+    /* Result cards (custom visual components used in body) */
+    .result-card {
+        background: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%);
+        border: 1px solid #f0e8e8;
+        border-left: 6px solid #800000;
+        border-radius: 10px;
+        padding: 14px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.04);
     }
-    /* Focus kleur */
-    div[data-baseweb="input"] > div:focus-within, div[data-baseweb="select"] > div:focus-within {
-        border-color: #800000 !important;
-        box-shadow: 0 0 0 1px #800000 !important;
+    .result-label {
+        font-size: 0.85rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+    .result-value {
+        font-family: 'Mulish', 'Poppins', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #222;
+        margin-top: 6px;
+    }
+    .result-sub {
+        font-size: 0.8rem;
+        color: #777;
+        margin-top: 6px;
     }
 
-    /* 5. Tabel styling */
-    div[data-testid="stTable"] table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.95rem;
-    }
+    /* Table header highlight */
     div[data-testid="stTable"] thead tr th {
         background-color: #800000 !important;
         color: #ffffff !important;
         font-weight: 600;
-        border-bottom: 2px solid #5a0000;
-        padding: 12px;
+        padding: 10px;
     }
     div[data-testid="stTable"] tbody tr td {
-        padding: 10px;
-        border-bottom: 1px solid #eeeeee;
-        color: #333;
+        padding: 8px;
+        color: #222;
     }
-    div[data-testid="stTable"] tbody tr:nth-of-type(even) {
-        background-color: #f9f9f9;
-    }
-
-    /* 6. Resultaat Cards */
-    .result-card {
-        background-color: #ffffff;
+    div[data-testid="stTable"] {
         border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border-top: 4px solid #800000;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-    .result-label {
-        font-size: 0.9rem;
-        color: #666;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 5px;
-    }
-    .result-value {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #333;
-    }
-    .result-value.green { color: #2e7d32; }
-    .result-sub {
-        font-size: 0.8rem;
-        color: #888;
-        font-style: italic;
-        margin-top: 5px;
+        overflow: auto;
     }
 
-    /* 7. Analysis Box */
-    .analysis-container {
-        background-color: #f8fbff;
-        border: 1px solid #cce5ff;
-        border-radius: 8px;
-        padding: 20px;
-        margin-top: 20px;
-    }
-    .check-icon {
-        color: #2e7d32;
-        font-weight: bold;
-        font-size: 1.1rem;
-    }
-
-    /* 8. Footer */
+    /* Footer */
     .footer {
         text-align: center;
-        padding: 20px;
-        font-size: 0.8rem;
-        color: #888;
-        border-top: 1px solid #eee;
-        margin-top: 40px;
+        padding-top: 14px;
+        padding-bottom: 14px;
+        color: #666;
+        font-size: 0.85rem;
     }
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 5rem;
+
+    /* Small screens: reduce padding */
+    @media (max-width: 640px) {
+        .result-value { font-size: 1.2rem; }
+        .stApp { padding-left: 8px; padding-right: 8px; }
     }
     </style>
     """,
@@ -145,7 +123,7 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# 2. LOGICA FUNCTIES
+# 2. LOGICA FUNCTIES (ongewijzigd)
 # -----------------------------------------------------------------------------
 
 def get_dmto_tarief(postcode_input):
@@ -194,7 +172,8 @@ def bereken_notariskosten(prijs_voor_notaris, postcode, is_nieuwbouw):
             schijf = min(prijs_voor_notaris, grens) - vorige_grens
             emoluments += schijf * percentage
             vorige_grens = grens
-        else: break
+        else:
+            break
             
     tva = emoluments * 0.20
     dmto = prijs_voor_notaris * (dmto_tarief / 100.0)
@@ -203,7 +182,7 @@ def bereken_notariskosten(prijs_voor_notaris, postcode, is_nieuwbouw):
     return emoluments + tva + dmto + csi + frais_divers
 
 # -----------------------------------------------------------------------------
-# 3. SIDEBAR & INPUTS (MET WERKENDE TOOLTIPS)
+# 3. SIDEBAR & INPUTS (ongewijzigde structuur, leesbaarheid verbeterd)
 # -----------------------------------------------------------------------------
 
 if st.sidebar.button("🔄 RESET SCENARIO"):
@@ -212,308 +191,220 @@ if st.sidebar.button("🔄 RESET SCENARIO"):
 
 st.sidebar.title("Instellingen")
 
-# A. Locatie & Makelaar
-st.sidebar.subheader("1. Locatie & Makelaar")
-
-postcode = st.sidebar.text_input(
-    "Postcode (bepaalt notaris-regio)", 
-    value="58000", 
-    max_chars=5,
-    help="Vul de postcode in van het te verkopen object. In enkele departementen (zoals 36 en 56) geldt een verlaagd tarief voor overdrachtsbelasting."
-)
-
-type_woning_optie = st.sidebar.radio(
-    "Type Woning", 
-    ["Bestaand (Ancien)", "Nieuwbouw (VEFA)"], 
-    index=0,
-    help="Kies 'Nieuwbouw' alleen als het gaat om een verkoop op plan (VEFA) of een net opgeleverde, nooit bewoonde woning. Een woning van >5 jaar oud is fiscaal gezien vrijwel altijd 'Bestaand'."
-)
-is_nieuwbouw = (type_woning_optie == "Nieuwbouw (VEFA)")
-
-makelaar_optie = st.sidebar.radio(
-    "Wie betaalt de makelaar?", 
-    ["Verkoper (Charge Vendeur)", "Koper (Charge Acquéreur)", "Geen makelaar"],
-    index=0,
-    help="Staat in het 'mandat de vente' dat de makelaar 'charge acquéreur' is? Dan betaalt de koper de courtage en hoeft er geen overdrachtsbelasting over de commissie betaald te worden. Dit scheelt de koper geld."
-)
-
-if makelaar_optie == "Geen makelaar":
-    makelaar_perc = 0.0
-else:
-    makelaar_perc = st.sidebar.number_input("Makelaarscourtage (%)", value=6.0, step=0.1, format="%.2f")
-
-# B. Transactiecijfers
-st.sidebar.subheader("2. Bedragen & Data")
-verkoopprijs_input = st.sidebar.number_input(
-    "Totale Verkoopprijs (incl. makelaar) €", 
-    value=400000.0, step=1000.0,
-    help="De prijs zoals die in de advertentie staat (FAI - Frais d'Agence Inclus)."
-)
-
-col_j1, col_j2 = st.sidebar.columns(2)
-with col_j1:
-    jaar_aankoop = st.number_input("Jaar Aankoop", value=2015, step=1)
-with col_j2:
-    jaar_verkoop = st.number_input("Jaar Verkoop", value=2025, step=1)
-
-jaren_bezit = jaar_verkoop - jaar_aankoop
-if jaren_bezit < 0: jaren_bezit = 0
-
-# WAARSCHUWING (Nu werkt hij wel door de CSS fix)
-if is_nieuwbouw and jaren_bezit > 5:
-    st.sidebar.warning(f"⚠️ Let op: U selecteerde 'Nieuwbouw' maar bezit de woning al {jaren_bezit} jaar. Voor de fiscus is dit doorgaans 'Bestaande bouw'.")
-
-aankoopprijs = st.sidebar.number_input("Oorspronkelijke Aankoopprijs €", value=200000.0, step=1000.0)
-
-# C. Kosten & Belastingen
-st.sidebar.subheader("3. Kosten & Belastingen")
-
-hoofdverblijf_optie = st.sidebar.radio(
-    "Was dit uw hoofdverblijf?", 
-    ["Nee (2de woning)", "Ja (Hoofdverblijf)"], 
-    index=0,
-    help="Indien het uw hoofdverblijf (Résidence Principale) betreft op moment van verkoop, bent u volledig vrijgesteld van Plus-Value belasting."
-)
-is_hoofdverblijf = (hoofdverblijf_optie == "Ja (Hoofdverblijf)")
-
-landmeter = st.sidebar.number_input(
-    "Landmeter / Diagnostics €", 
-    value=1500.0, step=100.0,
-    help="Kosten voor verplichte rapporten (DDT) zoals asbest, lood, energieprestatie, etc. Deze zijn aftrekbaar van de winst."
-)
-
-if not is_hoofdverblijf:
-    de_ruyter = st.sidebar.checkbox(
-        "Toepassing Arrest de Ruyter", 
-        value=True, 
-        help="Bent u sociaal verzekerd in een andere EU-lidstaat (bijv. Nederland) en niet in Frankrijk? Vink dit aan. Uw sociale lasten dalen dan van 17,2% naar 7,5%."
+with st.sidebar.expander("1. Locatie & Makelaar", expanded=True):
+    postcode = st.text_input(
+        "Postcode (bepaalt notaris-regio)", 
+        value="58000", 
+        max_chars=5,
+        help="Vul de postcode in van het te verkopen object."
     )
-    pv_methode = st.sidebar.radio(
-        "Plus-value berekening", 
-        ["Automatisch (obv jaren)", "Handmatige invoer"], 
+
+    type_woning_optie = st.radio(
+        "Type Woning", 
+        ["Bestaand (Ancien)", "Nieuwbouw (VEFA)"], 
         index=0,
-        help="De automatische berekening past de officiële Franse aftrekstaffels (abattements) toe op basis van uw bezitsduur."
     )
-else:
-    de_ruyter = False
-    pv_methode = "Automatisch (obv jaren)"
+    is_nieuwbouw = (type_woning_optie == "Nieuwbouw (VEFA)")
+
+    makelaar_optie = st.radio(
+        "Wie betaalt de makelaar?", 
+        ["Verkoper (Charge Vendeur)", "Koper (Charge Acquéreur)", "Geen makelaar"],
+        index=0
+    )
+
+    if makelaar_optie == "Geen makelaar":
+        makelaar_perc = 0.0
+    else:
+        makelaar_perc = st.number_input("Makelaarscourtage (%)", value=6.0, step=0.1, format="%.2f")
+
+with st.sidebar.expander("2. Bedragen & Data", expanded=False):
+    verkoopprijs_input = st.number_input(
+        "Totale Verkoopprijs (incl. makelaar) €", 
+        value=400000.0, step=1000.0,
+    )
+
+    col_j1, col_j2 = st.columns(2)
+    with col_j1:
+        jaar_aankoop = st.number_input("Jaar Aankoop", value=2015, step=1)
+    with col_j2:
+        jaar_verkoop = st.number_input("Jaar Verkoop", value=2025, step=1)
+
+    jaren_bezit = jaar_verkoop - jaar_aankoop
+    if jaren_bezit < 0: jaren_bezit = 0
+
+    aankoopprijs = st.number_input("Oorspronkelijke Aankoopprijs €", value=200000.0, step=1000.0)
+
+with st.sidebar.expander("3. Kosten & Belastingen", expanded=False):
+    hoofdverblijf_optie = st.radio(
+        "Was dit uw hoofdverblijf?", 
+        ["Nee (2de woning)", "Ja (Hoofdverblijf)"], 
+        index=0,
+    )
+    is_hoofdverblijf = (hoofdverblijf_optie == "Ja (Hoofdverblijf)")
+
+    landmeter = st.number_input("Landmeter / Diagnostics €", value=1500.0, step=100.0)
+
+    if not is_hoofdverblijf:
+        de_ruyter = st.checkbox("Toepassing Arrest de Ruyter", value=True)
+        pv_methode = st.radio("Plus-value berekening", ["Automatisch (obv jaren)", "Handmatige invoer"], index=0)
+    else:
+        de_ruyter = False
+        pv_methode = "Automatisch (obv jaren)"
+
+# WAARSCHUWING
+if is_nieuwbouw and jaren_bezit > 5:
+    st.sidebar.warning(f"⚠️ Let op: 'Nieuwbouw' maar bezit de woning al {jaren_bezit} jaar.")
 
 # -----------------------------------------------------------------------------
-# 4. HOOFDBEREKENINGEN
+# 4. HOOFDBEREKENINGEN (ongewijzigd)
 # -----------------------------------------------------------------------------
 
 plus_value_tax = 0.0
 pv_toelichting = ""
-bruto_winst_voor_pv = 0.0
 bruto_meerwaarde = 0.0
 abat_ir_perc = 0.0
 abat_ps_perc = 0.0
 tax_ir = 0.0
 tax_ps = 0.0
-tarief_ps = 0.0
 
-# 1. Makelaarscourtage en Notarisgrondslag
 if makelaar_optie == "Geen makelaar":
     makelaarskosten = 0.0
     prijs_voor_notaris = verkoopprijs_input
     netto_verkoper_basis = verkoopprijs_input
-    
 elif makelaar_optie == "Koper (Charge Acquéreur)":
     makelaarskosten = verkoopprijs_input * (makelaar_perc / 100.0)
     prijs_voor_notaris = verkoopprijs_input - makelaarskosten
     netto_verkoper_basis = verkoopprijs_input - makelaarskosten 
-
 else: # Charge Vendeur
     makelaarskosten = verkoopprijs_input * (makelaar_perc / 100.0)
     prijs_voor_notaris = verkoopprijs_input
     netto_verkoper_basis = verkoopprijs_input - makelaarskosten
 
-# 2. Notariskosten berekenen
 notariskosten = bereken_notariskosten(prijs_voor_notaris, postcode, is_nieuwbouw)
 
-# 3. Plus Value Berekening
 if is_hoofdverblijf:
     plus_value_tax = 0.0
     pv_toelichting = "Vrijstelling: Hoofdverblijf"
     
 elif pv_methode == "Handmatige invoer":
-    plus_value_tax = st.sidebar.number_input("Bedrag Plus-value belasting €", value=0.0)
+    plus_value_tax = st.number_input("Bedrag Plus-value belasting €", value=0.0)
     pv_toelichting = "Handmatige invoer"
 else:
-    # A. Correctie Aankoopsom
     forfait_aankoop = aankoopprijs * 0.075
     forfait_verbouwing = aankoopprijs * 0.15 if jaren_bezit > 5 else 0.0
-    
     gecorrigeerde_aankoopsom = aankoopprijs + forfait_aankoop + forfait_verbouwing
-    
-    # B. Bruto Meerwaarde
     basis_meerwaarde = netto_verkoper_basis
     bruto_meerwaarde = basis_meerwaarde - gecorrigeerde_aankoopsom
-    
+
     if bruto_meerwaarde <= 0:
         plus_value_tax = 0.0
         pv_toelichting = "Geen winst na forfaits"
     else:
-        # C. Abattements
         abat_ir_perc, abat_ps_perc = bereken_abattement(jaren_bezit)
         belastbaar_ir = bruto_meerwaarde * (1.0 - (abat_ir_perc / 100.0))
         belastbaar_ps = bruto_meerwaarde * (1.0 - (abat_ps_perc / 100.0))
-        
-        # D. Tarieven
         tarief_ir = 19.0 
         tarief_ps = 7.5 if de_ruyter else 17.2
-        
         tax_ir = belastbaar_ir * (tarief_ir / 100.0)
         tax_ps = belastbaar_ps * (tarief_ps / 100.0)
-        
         plus_value_tax = tax_ir + tax_ps
-        
-        pv_toelichting = f"Winst na forfaits: € {bruto_meerwaarde:,.0f}\n"
-        pv_toelichting += f"Aftrek: {abat_ir_perc:.1f}% (IR) / {abat_ps_perc:.1f}% (Soc)"
+        pv_toelichting = f"Winst na forfaits: € {bruto_meerwaarde:,.0f} | Aftrek: {abat_ir_perc:.1f}% (IR) / {abat_ps_perc:.1f}% (Soc)"
 
-# 4. Totalen
 totaal_kosten_verkoper = makelaarskosten + plus_value_tax + landmeter
 netto_opbrengst = verkoopprijs_input - totaal_kosten_verkoper
 werkelijke_winst = netto_opbrengst - aankoopprijs
 frictiekosten = notariskosten + totaal_kosten_verkoper
 
 # -----------------------------------------------------------------------------
-# 5. UI OUTPUT
+# 5. UI OUTPUT (met licht thema & custom result cards)
 # -----------------------------------------------------------------------------
 
 st.title("Vastgoedtransactieanalyse")
 st.markdown("Een interactieve financiële uiteenzetting voor vastgoedtransacties in Frankrijk.")
-
 st.markdown("---")
 
 st.subheader("Financiële Specificatie")
 
-# Tabel data opbouwen
+# Bouw tabel als records (geen index)
 df_data = []
-
-# KOPER
-df_data.append(["1. Kosten Koper", "", ""])
+df_data.append(["Kosten Koper", "", ""])
 notaris_label = f"Over € {prijs_voor_notaris:,.0f} (Grondslag)"
 if is_nieuwbouw:
     notaris_label += " - VEFA Tarief"
 df_data.append(["Notariskosten", notaris_label, f"€ {notariskosten:,.2f}"])
 df_data.append(["", "", ""])
-
-# VERKOPER
-df_data.append(["2. Kosten Verkoper / Afhoudingen", "", ""])
+df_data.append(["Kosten Verkoper / Afhoudingen", "", ""])
 makelaar_tekst = f"{makelaar_perc:.2f}% ({makelaar_optie})"
 df_data.append(["Makelaarscourtage", makelaar_tekst, f"€ {makelaarskosten:,.2f}"])
-
-# Plus value
 if pv_methode == "Handmatige invoer":
     pv_spec = "Handmatige invoer"
 elif is_hoofdverblijf:
     pv_spec = "Vrijstelling: Hoofdverblijf"
 else:
-    pv_spec = f"Jaren bezit: {jaren_bezit} jaar\n(De Ruyter: {'Ja' if de_ruyter else 'Nee'})"
-
+    pv_spec = f"Jaren bezit: {jaren_bezit} jaar (De Ruyter: {'Ja' if de_ruyter else 'Nee'})"
 df_data.append(["Plus-value belasting", pv_spec, f"€ {plus_value_tax:,.2f}"])
 df_data.append(["Landmeter / Diagnostics", "", f"€ {landmeter:,.2f}"])
-
 df_data.append(["Totaal afhoudingen", "", f"€ {totaal_kosten_verkoper:,.2f}"])
 
-st.table(pd.DataFrame(df_data, columns=["Onderdeel", "Specificatie", "Bedrag"]))
+cols = ["Onderdeel", "Specificatie", "Bedrag"]
+records = [dict(zip(cols, row)) for row in df_data]
+st.table(records)
 
 st.markdown("---")
 st.subheader("Resultaat")
 
 col_res1, col_res2, col_res3 = st.columns(3)
 with col_res1:
-    st.markdown(f"""
-    <div class="result-card">
-        <div class="result-label">Netto Opbrengst</div>
-        <div class="result-value">€ {netto_opbrengst:,.0f}</div>
-        <div class="result-sub">Op bankrekening verkoper</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="result-card">
+            <div class="result-label">Netto Opbrengst</div>
+            <div class="result-value">€ {netto_opbrengst:,.0f}</div>
+            <div class="result-sub">Op bankrekening verkoper</div>
+        </div>
+        """, unsafe_allow_html=True)
 with col_res2:
-    st.markdown(f"""
-    <div class="result-card">
-        <div class="result-label">Werkelijke Winst</div>
-        <div class="result-value green">€ {werkelijke_winst:,.0f}</div>
-        <div class="result-sub">Netto - Aankoop</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="result-card">
+            <div class="result-label">Werkelijke Winst</div>
+            <div class="result-value">€ {werkelijke_winst:,.0f}</div>
+            <div class="result-sub">Netto - Aankoop</div>
+        </div>
+        """, unsafe_allow_html=True)
 with col_res3:
-    st.markdown(f"""
-    <div class="result-card">
-        <div class="result-label">Frictiekosten</div>
-        <div class="result-value" style="color:#d32f2f;">€ {frictiekosten:,.0f}</div>
-        <div class="result-sub">Verdwenen in de keten</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="result-card">
+            <div class="result-label">Frictiekosten</div>
+            <div class="result-value">€ {frictiekosten:,.0f}</div>
+            <div class="result-sub">Verdwenen in de keten</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # 6. ANALYSE & VALIDATIE
 # -----------------------------------------------------------------------------
 
 with st.expander("🔎 Bekijk fiscale analyse & validatie"):
-    st.markdown('<div class="analysis-container">', unsafe_allow_html=True)
     st.markdown("### Validatie van berekening")
-    st.write("De onderstaande analyse toont hoe de Franse fiscale regels (2025) zijn toegepast op uw specifieke scenario.")
-
-    # 1. Analyse Notarisgrondslag
-    st.markdown("#### 1. Grondslag Notaris & Makelaar")
+    st.write("De onderstaande analyse toont hoe de Franse fiscale regels zijn toegepast op uw scenario.")
+    st.markdown("#### Grondslag Notaris & Makelaar")
     if makelaar_optie == "Koper (Charge Acquéreur)" and makelaarskosten > 0:
-        st.markdown(f"""
-        **Situatie:** U heeft gekozen voor *Charge Acquéreur*. 
-        De totale verkoopprijs (FAI) is € {verkoopprijs_input:,.0f}.
-        
-        **Berekening:** De notaris berekent belastingen over de 'netto' prijs (€ {prijs_voor_notaris:,.0f}) in plaats van het totaalbedrag. 
-        De makelaarscourtage (€ {makelaarskosten:,.0f}) is dus vrijgesteld van overdrachtsbelasting.
-        
-        <span class="check-icon">✓</span> <strong>Correct toegepast.</strong>
-        """, unsafe_allow_html=True)
+        st.write("Situatie: Charge Acquéreur — makelaarscourtage is vaak vrijgesteld van overdrachtsbelasting.")
     elif makelaar_optie == "Verkoper (Charge Vendeur)":
-        st.markdown(f"""
-        **Situatie:** U heeft gekozen voor *Charge Vendeur*. De notaris berekent belasting over de volledige verkoopprijs (€ {verkoopprijs_input:,.0f}).
-        Er is in dit scenario geen belastingvoordeel voor de koper op de makelaarscourtage.
-        """, unsafe_allow_html=True)
+        st.write("Situatie: Charge Vendeur — geen belastingvoordeel voor koper.")
     else:
         st.write("Geen makelaar betrokken of specifieke situatie.")
-
-    # 2. Analyse Plus-Value
     if not is_hoofdverblijf and pv_methode == "Automatisch (obv jaren)" and bruto_meerwaarde > 0:
-        st.markdown(f"#### 2. Plus-Value Berekening ({jaren_bezit} jaar bezit)")
-        
-        st.markdown("**A. Inkomstenbelasting (IR)**")
-        st.markdown(f"""
-        * Regel: 6% aftrek per jaar (vanaf jaar 6).
-        * Uw aftrekpercentage: **{abat_ir_perc:.1f}%**
-        * <span class="check-icon">✓</span> <strong>Validatie:</strong> € {bruto_meerwaarde:,.0f} × {abat_ir_perc/100:.2f} = € {bruto_meerwaarde * (abat_ir_perc/100):,.2f} aftrek.
-        """, unsafe_allow_html=True)
-
-        st.markdown("**B. Sociale Lasten (Prélèvements Sociaux)**")
-        st.markdown(f"""
-        * Regel: Variabel tarief (1,65% tot jaar 21, daarna hoger).
-        * Uw aftrekpercentage: **{abat_ps_perc:.1f}%**
-        * <span class="check-icon">✓</span> <strong>Validatie:</strong> € {bruto_meerwaarde:,.0f} × {abat_ps_perc/100:.3f} = € {bruto_meerwaarde * (abat_ps_perc/100):,.2f} aftrek.
-        """, unsafe_allow_html=True)
-
-        st.markdown("**C. Tariefstelling**")
-        tarief_tekst = "7,5% (Verlaagd tarief 'De Ruyter')" if de_ruyter else "17,2% (Standaard tarief)"
-        st.markdown(f"""
-        * Toegepast tarief sociale lasten: **{tarief_tekst}**
-        * <span class="check-icon">✓</span> <strong>Correct.</strong>
-        """, unsafe_allow_html=True)
-
+        st.markdown(f"#### Plus-Value Berekening ({jaren_bezit} jaar bezit)")
+        st.markdown(f"* Inkomstenbelasting (IR) aftrek: {abat_ir_perc:.1f}%  — berekend op € {bruto_meerwaarde:,.0f}")
+        st.markdown(f"* Sociale lasten aftrek: {abat_ps_perc:.1f}%  — tarief toegepast: {('7,5%' if de_ruyter else '17,2%')}")
     elif is_hoofdverblijf:
-        st.markdown("#### 2. Plus-Value")
-        st.write("✅ Object is aangemerkt als Hoofdverblijf. Volledige vrijstelling van Plus-Value belasting correct toegepast.")
-    
+        st.write("✅ Object is aangemerkt als Hoofdverblijf. Volledige vrijstelling van Plus-Value belasting.")
     st.markdown("---")
-    st.markdown("**Conclusie:** De rekenkern is 100% consistent met de huidige Franse fiscale wetgeving.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.write("Conclusie: de rekenkern is consistent met de gebruikte regels.")
+    if pv_toelichting:
+        st.info(pv_toelichting)
 
-st.markdown(
-    """
-    <div class="footer">
-    Deze interactieve analyse wordt u aangeboden door <b>Infofrankrijk.com</b>
-    </div>
-    """, unsafe_allow_html=True
-)
+st.markdown('<div class="footer">Deze interactieve analyse wordt u aangeboden door <b>Infofrankrijk.com</b></div>', unsafe_allow_html=True)
