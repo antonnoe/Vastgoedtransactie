@@ -1,2 +1,2 @@
-streamlit==1.52.1
+streamlit==1.54.0
 pandas==2.2.2
