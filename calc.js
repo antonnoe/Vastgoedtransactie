@@ -80,6 +80,58 @@ export const SURTAXE_BAREME = [
     { tot: Infinity, pct: 0.06, correctie: null, factor: 0 }
 ];
 
+/* =====================================================================
+ * SIGNALERINGEN
+ * =====================================================================
+ *
+ * Een signalering benoemt dat een situatie speelt en verwijst naar het
+ * artikel. Zij bevat nooit een bedrag, een percentage of een termijn: die
+ * gegevens staan niet primair vast en horen daarom niet in de tool.
+ *
+ * Het veld `tekst` is de lopende tekst en moet cijfervrij zijn; test.mjs
+ * bewaakt dat. Het veld `artikelen` staat los, omdat een wetsartikel per
+ * definitie cijfers bevat en geen bedrag, percentage of termijn is.
+ */
+export const SIGNALERINGEN = {
+    nietIngezetene: {
+        titel: 'U woont fiscaal buiten Frankrijk',
+        tekst: 'De heffing over uw meerwaarde loopt dan niet via de route die deze tool berekent, maar via een afwijkend regime voor niet-inwoners. Er bestaat daarnaast een aparte vrijstelling voor onderdanen van de EU en de EER die eerder fiscaal inwoner van Frankrijk zijn geweest, en een aparte regeling voor de woning die uw hoofdverblijf was voordat u uit Frankrijk vertrok. In bepaalde gevallen moet u bovendien een erkend fiscaal vertegenwoordiger aanstellen. Deze tool rekent geen van deze regimes: het bedrag hieronder is dat van een inwoner en kan in uw geval hoger of lager uitvallen. Laat uw situatie voorleggen aan uw notaris.',
+        artikelen: ['art. 244 bis A CGI', 'art. 150 U II 2° CGI']
+    },
+    gemeubileerdReeel: {
+        titel: 'Het pand is gemeubileerd verhuurd geweest onder het reële stelsel',
+        tekst: 'De afschrijvingen die u tijdens de verhuur heeft afgetrokken, worden bij de verkoop teruggenomen in de meerwaarde. De belastbare meerwaarde is daardoor hoger dan wat deze tool berekent, en de uitkomst hieronder is dus te laag. Hoeveel te laag hangt af van wat er in de jaren van verhuur is afgeschreven; dat weet uw boekhouder.',
+        artikelen: []
+    },
+    overigeVrijstellingen: {
+        titel: 'Deze tool kent niet alle vrijstellingen',
+        tekst: 'Er bestaan meer vrijstellingen op de meerwaarde dan deze tool berekent, onder meer bij een lage verkoopprijs en voor gepensioneerden en houders van een invaliditeitskaart, in beide gevallen onder inkomens- en vermogensvoorwaarden. Ga na of een daarvan voor u geldt voordat u op dit bedrag afgaat.',
+        artikelen: []
+    },
+    bewaarAankoopstukken: {
+        titel: 'Bewaar de akte en de factuur van de makelaar',
+        tekst: 'Deze berekening gebruikt voor uw aankoopkosten het wettelijke forfait. Bij een verkoop mag u in plaats daarvan uw werkelijke aankoopkosten opvoeren, en die vallen vaak hoger uit dan het forfait, wat uw belastbare meerwaarde verlaagt. Dat kan alleen met bewijsstukken. Zonder die stukken bent u aan het forfait gebonden.',
+        artikelen: []
+    }
+};
+
+/**
+ * Welke signaleringen horen bij deze situatie? Alleen bij een verkoop en
+ * alleen als er een belastbare meerwaarde is.
+ */
+export function bepaalSignaleringen(situatie) {
+    const { rol, belastbareMeerwaarde, isNietIngezetene, isGemeubileerdReeel } = situatie;
+    const verkoopt = rol === 'verkopen' || rol === 'beide';
+    if (!verkoopt || !(belastbareMeerwaarde > 0)) return [];
+
+    const uit = [];
+    if (isNietIngezetene) uit.push(SIGNALERINGEN.nietIngezetene);
+    if (isGemeubileerdReeel) uit.push(SIGNALERINGEN.gemeubileerdReeel);
+    uit.push(SIGNALERINGEN.overigeVrijstellingen);
+    uit.push(SIGNALERINGEN.bewaarAankoopstukken);
+    return uit;
+}
+
 /* Postcodereeksen die niet met de eerste twee cijfers samenvallen: Corsica en
  * de DOM. Alle overige postcodes: de eerste twee cijfers. */
 export const POSTCODE_RANGES = [
@@ -293,6 +345,8 @@ if (typeof document !== 'undefined') {
         document.getElementById('jaren_bezit_label').innerText = `Jaren bezit: ${jarenBezit}`;
 
         const isHoofdverblijf = document.getElementById('is_hoofdverblijf').checked;
+        const isNietIngezetene = document.getElementById('fiscale_woonplaats').value === 'buiten';
+        const isGemeubileerdReeel = document.getElementById('gemeubileerd_reeel').checked;
         const isBouwgrond = document.getElementById('is_bouwgrond').checked;
         const aantalVerkopers = Math.max(1, parseInt(document.getElementById('aantal_verkopers').value, 10) || 1);
         const landmeter = parseFloat(document.getElementById('landmeter').value) || 0;
@@ -480,6 +534,29 @@ if (typeof document !== 'undefined') {
             explanation += `Geen belastbare meerwaarde na aftrek forfaits.`;
         }
         document.getElementById('tax_explanation').innerHTML = explanation;
+
+        // Signaleringen: situaties die de uitkomst kunnen veranderen maar die
+        // deze tool bewust niet doorrekent.
+        const signaleringen = bepaalSignaleringen({
+            rol: huidigeRol(),
+            belastbareMeerwaarde: belastbaarIr,
+            isNietIngezetene,
+            isGemeubileerdReeel
+        });
+        document.getElementById('signaleringen').innerHTML = signaleringen.map((s) => `
+            <div class="signalering">
+                <div class="signalering-titel">${s.titel}</div>
+                <p>${s.tekst}</p>
+                ${s.artikelen.length ? `<p class="signalering-artikelen">${s.artikelen.join(' · ')}</p>` : ''}
+                <p><a data-artikel-link href="${ARTIKEL_URL}" target="_blank" rel="noopener noreferrer">Lees de uitleg in het artikel</a></p>
+            </div>
+        `).join('');
+    }
+
+    /* Rol van de gebruiker. Blok D vervangt dit door een echte keuze. */
+    function huidigeRol() {
+        const veld = document.querySelector('input[name="rol"]:checked');
+        return veld ? veld.value : 'beide';
     }
 
     window.calculate = calculate;

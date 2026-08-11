@@ -76,6 +76,13 @@
 
         <div class="section-title">4. Fiscale Situatie</div>
         <div class="input-group">
+            <label for="fiscale_woonplaats">Waar woont u fiscaal?</label>
+            <select id="fiscale_woonplaats" onchange="calculate()">
+                <option value="fr">In Frankrijk</option>
+                <option value="buiten">Buiten Frankrijk</option>
+            </select>
+        </div>
+        <div class="input-group">
             <div class="checkbox-group">
                 <input type="checkbox" id="is_hoofdverblijf" onchange="toggleFiscaleOpties(); calculate()">
                 <label for="is_hoofdverblijf">Dit was mijn Hoofdverblijf</label>
@@ -83,6 +90,12 @@
         </div>
 
         <div id="fiscale_opties">
+            <div class="input-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="gemeubileerd_reeel" onchange="calculate()">
+                    <label for="gemeubileerd_reeel">Gemeubileerd verhuurd geweest onder het reële stelsel</label>
+                </div>
+            </div>
             <div class="input-group">
                 <label>Aantal verkopers</label>
                 <input type="number" id="aantal_verkopers" value="1" min="1" step="1" oninput="calculate()">
@@ -152,6 +165,8 @@
 
         <div class="info-box" id="tax_explanation">
             </div>
+
+        <div id="signaleringen"></div>
     </div>
 </div>
 

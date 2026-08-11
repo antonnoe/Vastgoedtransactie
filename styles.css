@@ -204,6 +204,33 @@ tr:last-child td {
     font-size: 0.9rem;
 }
 
+/* Signaleringen: situaties die de tool bewust niet doorrekent */
+.signalering {
+    background-color: #fbf5f5;
+    border: 1px solid #e8d6d6;
+    border-left: 4px solid var(--primary-color);
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.signalering-titel {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 6px;
+}
+
+.signalering p {
+    margin: 6px 0;
+}
+
+.signalering-artikelen {
+    font-size: 0.8rem;
+    color: #777;
+}
+
 /* Peildatum bij de uitkomst */
 .peildatum {
     margin-top: 8px;
