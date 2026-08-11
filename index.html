@@ -15,43 +15,59 @@
     <div class="sidebar">
         <h2>Instellingen</h2>
 
-        <div class="section-title">1. Locatie & Woning</div>
+        <div class="section-title">1. Wat gaat u doen?</div>
         <div class="input-group">
-            <label>Postcode (bepaalt notaris-regio)</label>
-            <input type="text" id="postcode" value="58000" maxlength="5" oninput="calculate()">
+            <fieldset>
+                <legend>Uw rol bij deze transactie</legend>
+                <div class="radio-group">
+                    <label class="radio-option"><input type="radio" name="rol" value="kopen" onchange="calculate()"> Ik ga kopen</label>
+                    <label class="radio-option"><input type="radio" name="rol" value="verkopen" onchange="calculate()"> Ik ga verkopen</label>
+                    <label class="radio-option"><input type="radio" name="rol" value="beide" checked onchange="calculate()"> Allebei</label>
+                </div>
+            </fieldset>
         </div>
 
+        <div id="sectie_koper">
+            <div class="section-title">2. Locatie &amp; Woning</div>
+            <div class="input-group">
+                <label for="postcode">Postcode (bepaalt notaris-regio)</label>
+                <input type="text" id="postcode" value="58000" maxlength="5" inputmode="numeric" oninput="calculate()">
+            </div>
+
+            <div class="input-group">
+                <fieldset>
+                    <legend>Type Woning</legend>
+                    <div class="radio-group">
+                        <label class="radio-option"><input type="radio" name="type_woning" value="ancien" checked onchange="calculate()"> Bestaand (Ancien)</label>
+                        <label class="radio-option"><input type="radio" name="type_woning" value="vefa" onchange="calculate()"> Nieuwbouw (VEFA)</label>
+                    </div>
+                </fieldset>
+            </div>
+
+            <div class="input-group" id="primo_wrapper">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="primo_accedant" onchange="calculate()">
+                    <label for="primo_accedant">Primo-accédant</label>
+                </div>
+                <div class="hint" style="margin-left:20px;">Vink aan als u in de twee jaar vóór de akte geen eigenaar van uw hoofdverblijf was.</div>
+            </div>
+
+            <div class="input-group" id="remise_wrapper">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="remise_aan" onchange="calculate()">
+                    <label for="remise_aan">Notaris geeft korting op zijn emolumenten</label>
+                </div>
+                <div id="remise_pct_wrapper" style="margin-top:8px;">
+                    <label for="remise_pct">Kortingspercentage (%)</label>
+                    <input type="number" id="remise_pct" value="20" min="0" max="20" step="1" oninput="calculate()">
+                </div>
+                <div class="hint">Maximaal 20% over het deel van de grondslag vanaf € 100.000. De notaris is hiertoe niet verplicht, dus vraag ernaar voordat u erop rekent.</div>
+            </div>
+        </div>
+
+        <div class="section-title">3. Makelaar</div>
         <div class="input-group">
-            <label>Type Woning</label>
-            <div class="radio-group">
-                <label class="radio-option"><input type="radio" name="type_woning" value="ancien" checked onchange="calculate()"> Bestaand (Ancien)</label>
-                <label class="radio-option"><input type="radio" name="type_woning" value="vefa" onchange="calculate()"> Nieuwbouw (VEFA)</label>
-            </div>
-        </div>
-
-        <div class="input-group" id="primo_wrapper">
-            <div class="checkbox-group">
-                <input type="checkbox" id="primo_accedant" onchange="calculate()">
-                <label for="primo_accedant">Primo-accédant</label>
-            </div>
-            <div class="hint" style="margin-left:20px;">Vink aan als u in de twee jaar vóór de akte geen eigenaar van uw hoofdverblijf was.</div>
-        </div>
-
-        <div class="input-group" id="remise_wrapper">
-            <div class="checkbox-group">
-                <input type="checkbox" id="remise_aan" onchange="calculate()">
-                <label for="remise_aan">Notaris geeft korting op zijn emolumenten</label>
-            </div>
-            <div id="remise_pct_wrapper" style="margin-top:8px;">
-                <label for="remise_pct">Kortingspercentage (%)</label>
-                <input type="number" id="remise_pct" value="20" min="0" max="20" step="1" oninput="calculate()">
-            </div>
-            <div class="hint">Maximaal 20% over het deel van de grondslag vanaf € 100.000. De notaris is hiertoe niet verplicht, dus vraag ernaar voordat u erop rekent.</div>
-        </div>
-
-        <div class="section-title">2. Makelaar</div>
-        <div class="input-group">
-            <label>Wie betaalt de makelaar?</label>
+            <label for="makelaar_optie">Wie betaalt de makelaar?</label>
             <select id="makelaar_optie" onchange="calculate()">
                 <option value="vendeur">Verkoper (Charge Vendeur)</option>
                 <option value="acquereur">Koper (Charge Acquéreur)</option>
@@ -59,105 +75,125 @@
             </select>
         </div>
         <div class="input-group" id="makelaar_perc_wrapper">
-            <label>Makelaarscourtage (%)</label>
-            <input type="number" id="makelaar_perc" value="6.0" step="0.1" oninput="calculate()">
+            <label for="makelaar_perc">Makelaarscourtage (%)</label>
+            <input type="number" id="makelaar_perc" value="6.0" step="0.1" min="0" oninput="calculate()">
         </div>
 
-        <div class="section-title">3. Bedragen & Data</div>
+        <div class="section-title">4. Bedragen &amp; Data</div>
         <div class="input-group">
-            <label>Totale Verkoopprijs (€)</label>
-            <input type="number" id="verkoopprijs" value="400000" step="1000" oninput="calculate()">
+            <label for="verkoopprijs">Totale Verkoopprijs (€)</label>
+            <input type="number" id="verkoopprijs" value="400000" step="1000" min="0" oninput="calculate()">
         </div>
-        <div class="input-group">
-            <label>Oorspronkelijke Aankoopsom (€)</label>
-            <input type="number" id="aankoopprijs" value="200000" step="1000" oninput="calculate()">
-        </div>
-        <div class="input-group">
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1;">
-                    <label>Datum Aankoop</label>
-                    <input type="date" id="datum_aankoop" value="2015-01-01" oninput="calculate()">
-                </div>
-                <div style="flex:1;">
-                    <label>Datum Verkoop</label>
-                    <input type="date" id="datum_verkoop" value="2025-01-01" oninput="calculate()">
-                </div>
+
+        <div id="sectie_verkoper_bedragen">
+            <div class="input-group">
+                <label for="aankoopprijs">Oorspronkelijke Aankoopsom (€)</label>
+                <input type="number" id="aankoopprijs" value="200000" step="1000" min="0" oninput="calculate()">
             </div>
-            <div style="margin-top:5px; font-size:0.85rem; color:#666;" id="jaren_bezit_label">Jaren bezit: 10</div>
-        </div>
-
-        <div class="section-title">4. Fiscale Situatie</div>
-        <div class="input-group">
-            <label for="fiscale_woonplaats">Waar woont u fiscaal?</label>
-            <select id="fiscale_woonplaats" onchange="calculate()">
-                <option value="fr">In Frankrijk</option>
-                <option value="buiten">Buiten Frankrijk</option>
-            </select>
-        </div>
-        <div class="input-group">
-            <div class="checkbox-group">
-                <input type="checkbox" id="is_hoofdverblijf" onchange="toggleFiscaleOpties(); calculate()">
-                <label for="is_hoofdverblijf">Dit was mijn Hoofdverblijf</label>
+            <div class="input-group">
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;">
+                        <label for="datum_aankoop">Datum Aankoop</label>
+                        <input type="date" id="datum_aankoop" value="2015-01-01" oninput="calculate()">
+                    </div>
+                    <div style="flex:1;">
+                        <label for="datum_verkoop">Datum Verkoop</label>
+                        <input type="date" id="datum_verkoop" value="2025-01-01" oninput="calculate()">
+                    </div>
+                </div>
+                <div class="hint" id="jaren_bezit_label">Jaren bezit: 10</div>
             </div>
         </div>
 
-        <div id="fiscale_opties">
+        <div id="sectie_fiscaal">
+            <div class="section-title">5. Fiscale Situatie</div>
             <div class="input-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="gemeubileerd_reeel" onchange="calculate()">
-                    <label for="gemeubileerd_reeel">Gemeubileerd verhuurd geweest onder het reële stelsel</label>
-                </div>
-            </div>
-            <div class="input-group">
-                <label>Aantal verkopers</label>
-                <input type="number" id="aantal_verkopers" value="1" min="1" step="1" oninput="calculate()">
-                <div style="font-size:0.75rem; color:#888; margin-top:4px;">De drempel van € 50.000 voor de taxe op hoge meerwaarden geldt per verkoper.</div>
-            </div>
-            <div class="input-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="is_bouwgrond" onchange="calculate()">
-                    <label for="is_bouwgrond">Betreft bouwgrond (terrain à bâtir)</label>
-                </div>
-                <div style="font-size:0.75rem; color:#888; margin-top:4px; margin-left: 20px;">De taxe op hoge meerwaarden geldt niet voor bouwgrond.</div>
-            </div>
-            <div class="input-group">
-                <label for="aankoopkosten_modus">Aankoopkosten bij de aankoop destijds</label>
-                <select id="aankoopkosten_modus" onchange="calculate()">
-                    <option value="forfait">Forfait van 7,5% van de aankoopsom</option>
-                    <option value="werkelijk">Werkelijke kosten, op bewijsstukken</option>
+                <label for="fiscale_woonplaats">Waar woont u fiscaal?</label>
+                <select id="fiscale_woonplaats" onchange="calculate()">
+                    <option value="fr">In Frankrijk</option>
+                    <option value="buiten">Buiten Frankrijk</option>
                 </select>
-                <div id="aankoopkosten_eigen_wrapper" style="margin-top:8px;">
-                    <label for="aankoopkosten_eigen">Werkelijke aankoopkosten (€)</label>
-                    <input type="number" id="aankoopkosten_eigen" value="" min="0" step="100" oninput="calculate()">
-                </div>
-                <div class="hint" id="aankoopkosten_advies"></div>
-            </div>
-            <div class="input-group">
-                <label for="werkzaamheden_modus">Werkzaamheden aan de woning</label>
-                <select id="werkzaamheden_modus" onchange="calculate()">
-                    <option value="forfait">Forfait van 15% bij bezit langer dan vijf jaar</option>
-                    <option value="werkelijk">Werkelijke kosten, op facturen van een bedrijf</option>
-                </select>
-                <div id="werkzaamheden_eigen_wrapper" style="margin-top:8px;">
-                    <label for="werkzaamheden_eigen">Werkelijke kosten werkzaamheden (€)</label>
-                    <input type="number" id="werkzaamheden_eigen" value="" min="0" step="100" oninput="calculate()">
-                </div>
-                <div class="hint" id="werkzaamheden_advies"></div>
-            </div>
-            <div class="input-group">
-                <label for="landmeter">Landmeter / Diagnostics (€)</label>
-                <input type="number" id="landmeter" value="1500" step="100" oninput="calculate()">
-            </div>
-            <div class="input-group">
-                <label for="mainlevee">Mainlevée (€)</label>
-                <input type="number" id="mainlevee" value="0" step="100" oninput="calculate()">
             </div>
             <div class="input-group">
                 <div class="checkbox-group">
-                    <input type="checkbox" id="de_ruyter" onchange="calculate()">
-                    <label for="de_ruyter">Arrest De Ruyter (7.5% soc. lasten)</label>
+                    <input type="checkbox" id="is_hoofdverblijf" onchange="toggleFiscaleOpties(); calculate()">
+                    <label for="is_hoofdverblijf">Dit was mijn Hoofdverblijf</label>
                 </div>
-                <div style="font-size:0.75rem; color:#888; margin-top:4px; margin-left: 20px;">Vink aan als u voor ziektekosten onder de wetgeving van een ander land van de EER of Zwitserland valt en niet ten laste komt van een Frans verplicht stelsel. Voor het Verenigd Koninkrijk gelden de uittredingsakkoorden. <a id="link_de_ruyter" href="#" target="_blank" rel="noopener noreferrer">Twijfelt u? Lees eerst de uitleg.</a></div>
+            </div>
+
+            <div id="fiscale_opties">
+                <div class="input-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="gemeubileerd_reeel" onchange="calculate()">
+                        <label for="gemeubileerd_reeel">Gemeubileerd verhuurd geweest onder het reële stelsel</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="aantal_verkopers">Aantal verkopers</label>
+                    <input type="number" id="aantal_verkopers" value="1" min="1" step="1" oninput="calculate()">
+                    <div class="hint">De drempel van € 50.000 voor de taxe op hoge meerwaarden geldt per verkoper.</div>
+                </div>
+                <div class="input-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="is_bouwgrond" onchange="calculate()">
+                        <label for="is_bouwgrond">Betreft bouwgrond (terrain à bâtir)</label>
+                    </div>
+                    <div class="hint" style="margin-left:20px;">De taxe op hoge meerwaarden geldt niet voor bouwgrond.</div>
+                </div>
+                <div class="input-group">
+                    <label for="aankoopkosten_modus">Aankoopkosten bij de aankoop destijds</label>
+                    <select id="aankoopkosten_modus" onchange="calculate()">
+                        <option value="forfait">Forfait van 7,5% van de aankoopsom</option>
+                        <option value="werkelijk">Werkelijke kosten, op bewijsstukken</option>
+                    </select>
+                    <div id="aankoopkosten_eigen_wrapper" style="margin-top:8px;">
+                        <label for="aankoopkosten_eigen">Werkelijke aankoopkosten (€)</label>
+                        <input type="number" id="aankoopkosten_eigen" value="" min="0" step="100" oninput="calculate()">
+                    </div>
+                    <div class="hint" id="aankoopkosten_advies"></div>
+                </div>
+                <div class="input-group">
+                    <label for="werkzaamheden_modus">Werkzaamheden aan de woning</label>
+                    <select id="werkzaamheden_modus" onchange="calculate()">
+                        <option value="forfait">Forfait van 15% bij bezit langer dan vijf jaar</option>
+                        <option value="werkelijk">Werkelijke kosten, op facturen van een bedrijf</option>
+                    </select>
+                    <div id="werkzaamheden_eigen_wrapper" style="margin-top:8px;">
+                        <label for="werkzaamheden_eigen">Werkelijke kosten werkzaamheden (€)</label>
+                        <input type="number" id="werkzaamheden_eigen" value="" min="0" step="100" oninput="calculate()">
+                    </div>
+                    <div class="hint" id="werkzaamheden_advies"></div>
+                </div>
+
+                <div class="input-group">
+                    <label for="landmeter">Landmeter (€)</label>
+                    <div class="veld-met-knop">
+                        <input type="number" id="landmeter" value="" min="0" step="100" oninput="calculate()">
+                        <button type="button" class="weet-niet" id="wn_landmeter" aria-pressed="false" onclick="toggleWeetNiet('landmeter')">weet ik niet</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="diagnostics">Diagnostics (€)</label>
+                    <div class="veld-met-knop">
+                        <input type="number" id="diagnostics" value="" min="0" step="100" oninput="calculate()">
+                        <button type="button" class="weet-niet" id="wn_diagnostics" aria-pressed="false" onclick="toggleWeetNiet('diagnostics')">weet ik niet</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="mainlevee">Mainlevée (€)</label>
+                    <div class="veld-met-knop">
+                        <input type="number" id="mainlevee" value="" min="0" step="100" oninput="calculate()">
+                        <button type="button" class="weet-niet" id="wn_mainlevee" aria-pressed="false" onclick="toggleWeetNiet('mainlevee')">weet ik niet</button>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="de_ruyter" onchange="calculate()">
+                        <label for="de_ruyter">Arrest De Ruyter (7.5% soc. lasten)</label>
+                    </div>
+                    <div class="hint" style="margin-left:20px;">Vink aan als u voor ziektekosten onder de wetgeving van een ander land van de EER of Zwitserland valt en niet ten laste komt van een Frans verplicht stelsel. Voor het Verenigd Koninkrijk gelden de uittredingsakkoorden. <a id="link_de_ruyter" href="#" target="_blank" rel="noopener noreferrer">Twijfelt u? Lees eerst de uitleg.</a></div>
+                </div>
             </div>
         </div>
     </div>
@@ -167,44 +203,53 @@
         <p style="color:#666;">Interactieve financiële specificatie (InfoFrankrijk).</p>
         <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
 
-        <h3>Financiële Specificatie</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Onderdeel</th>
-                    <th>Specificatie</th>
-                    <th class="amount-header">Bedrag</th>
-                </tr>
-            </thead>
-            <tbody id="spec_table">
-                </tbody>
-        </table>
-        <div class="peildatum" id="dmto_peildatum"></div>
+        <div id="validatie" role="alert" aria-live="assertive"></div>
 
-        <div id="gevoeligheden"></div>
+        <div id="uitkomst" aria-live="polite">
+            <div class="uitkomst-zin" id="uitkomst_zin"></div>
 
-        <div class="cards-container">
-            <div class="result-card">
-                <div class="result-label">Netto Opbrengst</div>
-                <div class="result-value" id="res_netto">€ 0</div>
-                <div class="result-sub">Op bankrekening verkoper</div>
+            <h3>Financiële Specificatie</h3>
+            <table>
+                <caption class="visueel-verborgen">Specificatie van de kosten van deze transactie</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Onderdeel</th>
+                        <th scope="col">Specificatie</th>
+                        <th scope="col" class="amount-header">Bedrag</th>
+                    </tr>
+                </thead>
+                <tbody id="spec_table">
+                    </tbody>
+            </table>
+            <div class="peildatum" id="dmto_peildatum"></div>
+
+            <div id="onvolledig"></div>
+
+            <div id="gevoeligheden"></div>
+
+            <div class="cards-container">
+                <div class="result-card" id="card_1">
+                    <div class="result-label" id="card_1_label">Netto Opbrengst</div>
+                    <div class="result-value" id="res_netto">€ 0</div>
+                    <div class="result-sub" id="card_1_sub">Op bankrekening verkoper</div>
+                </div>
+                <div class="result-card" id="card_2">
+                    <div class="result-label" id="card_2_label">Werkelijke Winst</div>
+                    <div class="result-value" id="res_winst">€ 0</div>
+                    <div class="result-sub" id="card_2_sub">Netto - Aankoopsom</div>
+                </div>
+                <div class="result-card" id="card_3">
+                    <div class="result-label" id="card_3_label">Frictiekosten</div>
+                    <div class="result-value" id="res_frictie">€ 0</div>
+                    <div class="result-sub" id="card_3_sub">Verdwenen in de keten</div>
+                </div>
             </div>
-            <div class="result-card">
-                <div class="result-label">Werkelijke Winst</div>
-                <div class="result-value" id="res_winst">€ 0</div>
-                <div class="result-sub">Netto - Aankoopsom</div>
-            </div>
-            <div class="result-card">
-                <div class="result-label">Frictiekosten</div>
-                <div class="result-value" id="res_frictie">€ 0</div>
-                <div class="result-sub">Verdwenen in de keten</div>
-            </div>
+
+            <div class="info-box" id="tax_explanation">
+                </div>
+
+            <div id="signaleringen"></div>
         </div>
-
-        <div class="info-box" id="tax_explanation">
-            </div>
-
-        <div id="signaleringen"></div>
     </div>
 </div>
 

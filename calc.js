@@ -356,8 +356,21 @@ export function berekenScenario(inv, dmtoData) {
     const verkoopprijs = Math.max(0, Number(inv.verkoopprijs) || 0);
     const aankoopprijs = Math.max(0, Number(inv.aankoopprijs) || 0);
     const makelaarPerc = Math.max(0, Number(inv.makelaarPerc) || 0);
-    const landmeter = Math.max(0, Number(inv.landmeter) || 0);
-    const mainlevee = Math.max(0, Number(inv.mainlevee) || 0);
+
+    /* De drie verkoopkostenposten mogen onbekend zijn. Onbekend telt als nul in
+     * de berekening, maar wordt apart teruggegeven zodat de interface kan
+     * melden dat de uitkomst op dat punt onvolledig is. Er wordt geen
+     * bandbreedte of schatting voor in de plaats gezet. */
+    const isOnbekend = (v) => v === null || v === undefined || v === '';
+    const alsBedrag = (v) => (isOnbekend(v) ? 0 : Math.max(0, Number(v) || 0));
+    const onbekendePosten = [
+        ['landmeter', inv.landmeter],
+        ['diagnostics', inv.diagnostics],
+        ['mainlevée', inv.mainlevee]
+    ].filter(([, v]) => isOnbekend(v)).map(([naam]) => naam);
+    const landmeter = alsBedrag(inv.landmeter);
+    const diagnostics = alsBedrag(inv.diagnostics);
+    const mainlevee = alsBedrag(inv.mainlevee);
 
     // Makelaar en grondslagen
     let makelaarsKosten = 0;
@@ -387,7 +400,7 @@ export function berekenScenario(inv, dmtoData) {
     const jarenBezit = volleJaren(inv.datumAankoop, inv.datumVerkoop);
 
     // Plus-value
-    const verkoopkosten = landmeter + mainlevee;
+    const verkoopkosten = landmeter + diagnostics + mainlevee;
     const prijsVoorMeerwaarde = nettoVerkoperBasis - verkoopkosten;
     const aankoopkosten = kiesKostenpost(
         aankoopprijs * (FORFAIT_AANKOOPKOSTEN_PCT / 100),
@@ -422,7 +435,7 @@ export function berekenScenario(inv, dmtoData) {
         }
     }
 
-    const totaalKostenVerkoper = makelaarsKosten + plusValueTax + surtaxe + landmeter + mainlevee;
+    const totaalKostenVerkoper = makelaarsKosten + plusValueTax + surtaxe + verkoopkosten;
     const nettoOpbrengst = verkoopprijs - totaalKostenVerkoper;
     const totaalKostenKoper = notarisKosten === null
         ? null
@@ -435,12 +448,159 @@ export function berekenScenario(inv, dmtoData) {
         jarenBezit, aankoopkosten, werkzaamheden,
         brutoMeerwaarde, abatIr, abatPs, belastbaarIr,
         plusValueTax, surtaxe, pvReden,
-        landmeter, mainlevee, verkoopkosten,
+        landmeter, diagnostics, mainlevee, verkoopkosten, onbekendePosten,
         totaalKostenVerkoper, nettoOpbrengst,
         werkelijkeWinst: nettoOpbrengst - aankoopprijs,
         totaalKostenKoper,
         frictiekosten: notarisKosten === null ? null : notarisKosten + totaalKostenVerkoper
     };
+}
+
+/* =====================================================================
+ * INVOER: STANDAARDWAARDEN, VALIDATIE EN URL-CODERING
+ * ===================================================================== */
+
+/* De drie verkoopkostenposten staan bewust op null: onbekend, niet nul. */
+export const STANDAARD_INVOER = {
+    rol: 'beide',
+    postcode: '58000',
+    isNieuwbouw: false,
+    isPrimo: false,
+    remisePct: 0,
+    makelaarOptie: 'vendeur',
+    makelaarPerc: 6,
+    verkoopprijs: 400000,
+    aankoopprijs: 200000,
+    datumAankoop: '2015-01-01',
+    datumVerkoop: '2025-01-01',
+    isHoofdverblijf: false,
+    isNietIngezetene: false,
+    isGemeubileerdReeel: false,
+    isBouwgrond: false,
+    aantalVerkopers: 1,
+    aankoopkostenModus: 'forfait',
+    aankoopkostenEigen: 0,
+    werkzaamhedenModus: 'forfait',
+    werkzaamhedenEigen: 0,
+    landmeter: null,
+    diagnostics: null,
+    mainlevee: null,
+    deRuyter: false
+};
+
+/* Afkortingen voor de URL, zodat een gedeeld scenario leesbaar blijft. */
+export const URL_VELDEN = [
+    ['rol', 'rol', 'tekst'],
+    ['postcode', 'pc', 'tekst'],
+    ['isNieuwbouw', 'nb', 'vinkje'],
+    ['isPrimo', 'pa', 'vinkje'],
+    ['remisePct', 'rm', 'getal'],
+    ['makelaarOptie', 'mo', 'tekst'],
+    ['makelaarPerc', 'mp', 'getal'],
+    ['verkoopprijs', 'vp', 'getal'],
+    ['aankoopprijs', 'ap', 'getal'],
+    ['datumAankoop', 'da', 'tekst'],
+    ['datumVerkoop', 'dv', 'tekst'],
+    ['isHoofdverblijf', 'hv', 'vinkje'],
+    ['isNietIngezetene', 'ni', 'vinkje'],
+    ['isGemeubileerdReeel', 'gr', 'vinkje'],
+    ['isBouwgrond', 'bg', 'vinkje'],
+    ['aantalVerkopers', 'av', 'getal'],
+    ['aankoopkostenModus', 'akm', 'tekst'],
+    ['aankoopkostenEigen', 'ake', 'getal'],
+    ['werkzaamhedenModus', 'wzm', 'tekst'],
+    ['werkzaamhedenEigen', 'wze', 'getal'],
+    ['landmeter', 'lm', 'getal_of_null'],
+    ['diagnostics', 'dg', 'getal_of_null'],
+    ['mainlevee', 'ml', 'getal_of_null'],
+    ['deRuyter', 'dr', 'vinkje']
+];
+
+/**
+ * Codeert de invoer als querystring. Waarden die gelijk zijn aan de standaard
+ * worden weggelaten, zodat de URL kort blijft.
+ */
+export function invoerNaarQuery(inv) {
+    const p = new URLSearchParams();
+    for (const [sleutel, param, type] of URL_VELDEN) {
+        const waarde = inv[sleutel];
+        const standaard = STANDAARD_INVOER[sleutel];
+        if (waarde === standaard) continue;
+        if (type === 'getal_of_null') {
+            if (waarde === null || waarde === undefined || waarde === '') continue;
+            p.set(param, String(waarde));
+        } else if (type === 'vinkje') {
+            p.set(param, waarde ? '1' : '0');
+        } else {
+            if (waarde === null || waarde === undefined) continue;
+            p.set(param, String(waarde));
+        }
+    }
+    return p.toString();
+}
+
+/**
+ * Leest een querystring terug naar een volledige invoer, aangevuld met de
+ * standaardwaarden. Onbekende parameters worden genegeerd.
+ */
+export function queryNaarInvoer(query) {
+    const p = new URLSearchParams(String(query || '').replace(/^\?/, ''));
+    const inv = { ...STANDAARD_INVOER };
+    for (const [sleutel, param, type] of URL_VELDEN) {
+        if (!p.has(param)) continue;
+        const ruw = p.get(param);
+        if (type === 'vinkje') {
+            inv[sleutel] = ruw === '1' || ruw === 'true';
+        } else if (type === 'getal' || type === 'getal_of_null') {
+            const n = Number(ruw);
+            if (Number.isFinite(n)) inv[sleutel] = n;
+        } else {
+            inv[sleutel] = ruw;
+        }
+    }
+    return inv;
+}
+
+/**
+ * Controleert de invoer. Een niet-lege uitkomst betekent: geen berekening
+ * tonen, wel de meldingen.
+ */
+export function valideer(inv, dmtoData) {
+    const fouten = [];
+    const koopt = inv.rol === 'kopen' || inv.rol === 'beide';
+    const verkoopt = inv.rol === 'verkopen' || inv.rol === 'beide';
+    const negatief = (v) => v !== null && v !== undefined && v !== '' && Number(v) < 0;
+
+    if (!(Number(inv.verkoopprijs) > 0)) {
+        fouten.push('Vul een verkoopprijs groter dan nul in.');
+    }
+    const bedragen = [
+        ['de aankoopsom', inv.aankoopprijs],
+        ['de makelaarscourtage', inv.makelaarPerc],
+        ['de werkelijke aankoopkosten', inv.aankoopkostenEigen],
+        ['de werkelijke kosten van werkzaamheden', inv.werkzaamhedenEigen],
+        ['de landmeter', inv.landmeter],
+        ['de diagnostics', inv.diagnostics],
+        ['de mainlevée', inv.mainlevee],
+        ['de verkoopprijs', inv.verkoopprijs]
+    ];
+    for (const [naam, waarde] of bedragen) {
+        if (negatief(waarde)) fouten.push(`Het bedrag voor ${naam} kan niet negatief zijn.`);
+    }
+    if (verkoopt) {
+        if (!inv.datumAankoop || !inv.datumVerkoop) {
+            fouten.push('Vul zowel een aankoopdatum als een verkoopdatum in.');
+        } else if (inv.datumVerkoop < inv.datumAankoop) {
+            fouten.push('De verkoopdatum ligt vóór de aankoopdatum.');
+        }
+    }
+    if (koopt && !inv.isNieuwbouw && !zoekDepartement(dmtoData, inv.postcode)) {
+        fouten.push('Het tarief voor deze postcode staat niet in de DGFiP-tabel. Er wordt niet teruggevallen op een standaardtarief.');
+    }
+    if (Number(inv.aantalVerkopers) < 1) {
+        fouten.push('Het aantal verkopers moet minstens één zijn.');
+    }
+    return fouten;
 }
 
 /** Het bedrag dat er voor deze rol toe doet. */
@@ -500,17 +660,17 @@ export function berekenGevoeligheden(inv, dmtoData) {
  * INTERFACE
  * ===================================================================== */
 
-
 if (typeof document !== 'undefined') {
-    const fmt = (num) => new Intl.NumberFormat('nl-NL', {
+    const fmt = (n) => new Intl.NumberFormat('nl-NL', {
         style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0
-    }).format(num);
-    const fmt2 = (num) => new Intl.NumberFormat('nl-NL', {
+    }).format(n);
+    const fmt2 = (n) => new Intl.NumberFormat('nl-NL', {
         style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2
-    }).format(num);
+    }).format(n);
 
     const el = (id) => document.getElementById(id);
     const toon = (id, aan) => { const n = el(id); if (n) n.style.display = aan ? '' : 'none'; };
+    const POSTEN_MET_KNOP = ['landmeter', 'diagnostics', 'mainlevee'];
 
     let dmtoData = null;
 
@@ -518,77 +678,166 @@ if (typeof document !== 'undefined') {
         el('de_ruyter').disabled = el('is_hoofdverblijf').checked;
     }
 
-    function huidigeRol() {
-        const veld = document.querySelector('input[name="rol"]:checked');
-        return veld ? veld.value : 'beide';
+    /* "Weet ik niet": de post wordt niet meegerekend en de uitkomst wordt op
+     * dat punt als onvolledig gemeld. Er komt geen geschat bedrag voor in de
+     * plaats. */
+    function toggleWeetNiet(post) {
+        const knop = el(`wn_${post}`);
+        const veld = el(post);
+        const aan = knop.getAttribute('aria-pressed') !== 'true';
+        knop.setAttribute('aria-pressed', aan ? 'true' : 'false');
+        veld.disabled = aan;
+        if (aan) veld.value = '';
+        calculate();
     }
 
-    /* Alle invoer uit de interface als plat object. */
+    function leesBedragOfNull(id) {
+        const veld = el(id);
+        if (veld.disabled) return null;
+        const waarde = veld.value.trim();
+        return waarde === '' ? null : Number(waarde);
+    }
+
     function leesInvoer() {
+        const rolVeld = document.querySelector('input[name="rol"]:checked');
         return {
-            rol: huidigeRol(),
+            rol: rolVeld ? rolVeld.value : 'beide',
             postcode: el('postcode').value,
             isNieuwbouw: document.querySelector('input[name="type_woning"]:checked').value === 'vefa',
             isPrimo: el('primo_accedant').checked,
-            remisePct: el('remise_aan').checked ? parseFloat(el('remise_pct').value) || 0 : 0,
+            remisePct: el('remise_aan').checked ? Number(el('remise_pct').value) || 0 : 0,
             makelaarOptie: el('makelaar_optie').value,
-            makelaarPerc: parseFloat(el('makelaar_perc').value) || 0,
-            verkoopprijs: parseFloat(el('verkoopprijs').value) || 0,
-            aankoopprijs: parseFloat(el('aankoopprijs').value) || 0,
+            makelaarPerc: Number(el('makelaar_perc').value) || 0,
+            verkoopprijs: Number(el('verkoopprijs').value) || 0,
+            aankoopprijs: Number(el('aankoopprijs').value) || 0,
             datumAankoop: el('datum_aankoop').value,
             datumVerkoop: el('datum_verkoop').value,
             isHoofdverblijf: el('is_hoofdverblijf').checked,
             isNietIngezetene: el('fiscale_woonplaats').value === 'buiten',
             isGemeubileerdReeel: el('gemeubileerd_reeel').checked,
             isBouwgrond: el('is_bouwgrond').checked,
-            aantalVerkopers: Math.max(1, parseInt(el('aantal_verkopers').value, 10) || 1),
+            aantalVerkopers: Number(el('aantal_verkopers').value) || 1,
             aankoopkostenModus: el('aankoopkosten_modus').value,
-            aankoopkostenEigen: parseFloat(el('aankoopkosten_eigen').value) || 0,
+            aankoopkostenEigen: Number(el('aankoopkosten_eigen').value) || 0,
             werkzaamhedenModus: el('werkzaamheden_modus').value,
-            werkzaamhedenEigen: parseFloat(el('werkzaamheden_eigen').value) || 0,
-            landmeter: parseFloat(el('landmeter').value) || 0,
-            mainlevee: parseFloat(el('mainlevee').value) || 0,
+            werkzaamhedenEigen: Number(el('werkzaamheden_eigen').value) || 0,
+            landmeter: leesBedragOfNull('landmeter'),
+            diagnostics: leesBedragOfNull('diagnostics'),
+            mainlevee: leesBedragOfNull('mainlevee'),
             deRuyter: el('de_ruyter').checked
         };
     }
 
-    /* Advies bij een eigen bedrag: welke van de twee is gunstiger? */
+    /* Zet een invoerobject terug in de interface. Gebruikt bij het laden van
+     * een gedeelde URL. */
+    function pasInvoerToe(inv) {
+        for (const knop of document.querySelectorAll(`input[name="rol"]`)) {
+            knop.checked = knop.value === inv.rol;
+        }
+        for (const knop of document.querySelectorAll('input[name="type_woning"]')) {
+            knop.checked = (knop.value === 'vefa') === Boolean(inv.isNieuwbouw);
+        }
+        el('postcode').value = inv.postcode;
+        el('primo_accedant').checked = Boolean(inv.isPrimo);
+        el('remise_aan').checked = Number(inv.remisePct) > 0;
+        if (Number(inv.remisePct) > 0) el('remise_pct').value = inv.remisePct;
+        el('makelaar_optie').value = inv.makelaarOptie;
+        el('makelaar_perc').value = inv.makelaarPerc;
+        el('verkoopprijs').value = inv.verkoopprijs;
+        el('aankoopprijs').value = inv.aankoopprijs;
+        el('datum_aankoop').value = inv.datumAankoop;
+        el('datum_verkoop').value = inv.datumVerkoop;
+        el('is_hoofdverblijf').checked = Boolean(inv.isHoofdverblijf);
+        el('fiscale_woonplaats').value = inv.isNietIngezetene ? 'buiten' : 'fr';
+        el('gemeubileerd_reeel').checked = Boolean(inv.isGemeubileerdReeel);
+        el('is_bouwgrond').checked = Boolean(inv.isBouwgrond);
+        el('aantal_verkopers').value = inv.aantalVerkopers;
+        el('aankoopkosten_modus').value = inv.aankoopkostenModus;
+        el('aankoopkosten_eigen').value = inv.aankoopkostenEigen || '';
+        el('werkzaamheden_modus').value = inv.werkzaamhedenModus;
+        el('werkzaamheden_eigen').value = inv.werkzaamhedenEigen || '';
+        for (const post of POSTEN_MET_KNOP) {
+            const waarde = inv[post];
+            el(post).disabled = false;
+            el(`wn_${post}`).setAttribute('aria-pressed', 'false');
+            el(post).value = (waarde === null || waarde === undefined) ? '' : waarde;
+        }
+        el('de_ruyter').checked = Boolean(inv.deRuyter);
+    }
+
     function adviesTekst(post, naam) {
         if (post.eigen === 0 && post.forfait === 0) return '';
         if (post.gunstigste === 'werkelijk') {
-            return `Uw werkelijke ${naam} liggen ${fmt2(post.verschil)} hoger dan het forfait van ${fmt2(post.forfait)}. `
-                 + `De werkelijke kosten zijn dus gunstiger.`;
+            return `Uw werkelijke ${naam} liggen ${fmt2(post.verschil)} hoger dan het forfait van ${fmt2(post.forfait)}. De werkelijke kosten zijn dus gunstiger.`;
         }
-        return `Het forfait van ${fmt2(post.forfait)} ligt ${fmt2(post.verschil)} hoger dan uw opgave van ${fmt2(post.eigen)}. `
-             + `Het forfait is dus gunstiger.`;
+        return `Het forfait van ${fmt2(post.forfait)} ligt ${fmt2(post.verschil)} hoger dan uw opgave van ${fmt2(post.eigen)}. Het forfait is dus gunstiger.`;
     }
 
     function calculate() {
         if (!dmtoData) return;
 
         const inv = leesInvoer();
-        const res = berekenScenario(inv, dmtoData);
+        const koopt = inv.rol === 'kopen' || inv.rol === 'beide';
+        const verkoopt = inv.rol === 'verkopen' || inv.rol === 'beide';
 
-        el('jaren_bezit_label').innerText = `Jaren bezit: ${res.jarenBezit}`;
-
-        // Zichtbaarheid van afhankelijke velden
+        // Zichtbaarheid per rol
+        toon('sectie_koper', koopt);
+        toon('sectie_verkoper_bedragen', verkoopt);
+        toon('sectie_fiscaal', verkoopt);
         toon('makelaar_perc_wrapper', inv.makelaarOptie !== 'geen');
         toon('primo_wrapper', !inv.isNieuwbouw);
         toon('remise_pct_wrapper', el('remise_aan').checked);
         toon('aankoopkosten_eigen_wrapper', inv.aankoopkostenModus === 'werkelijk');
         toon('werkzaamheden_eigen_wrapper', inv.werkzaamhedenModus === 'werkelijk');
 
+        // Scenario in de URL, zodat het te bookmarken en te delen is. In een
+        // sandboxed iframe zonder allow-same-origin gooit replaceState; dat mag
+        // de berekening niet meeslepen.
+        try {
+            const query = invoerNaarQuery(inv);
+            history.replaceState(null, '', query ? `?${query}` : location.pathname);
+        } catch (err) {
+            /* URL-deelbaarheid is een extraatje, geen voorwaarde. */
+        }
+
+        // Validatie: bij een fout geen uitkomst tonen
+        const fouten = valideer(inv, dmtoData);
+        if (fouten.length > 0) {
+            el('validatie').innerHTML = `
+                <div class="waarschuwing">
+                    <div class="waarschuwing-titel">De invoer is nog niet compleet</div>
+                    <ul>${fouten.map((f) => `<li>${f}</li>`).join('')}</ul>
+                </div>`;
+            toon('uitkomst', false);
+            return;
+        }
+        el('validatie').innerHTML = '';
+        toon('uitkomst', true);
+
+        const res = berekenScenario(inv, dmtoData);
+        el('jaren_bezit_label').innerText = `Jaren bezit: ${res.jarenBezit}`;
         el('aankoopkosten_advies').innerText =
             inv.aankoopkostenModus === 'werkelijk' ? adviesTekst(res.aankoopkosten, 'aankoopkosten') : '';
         el('werkzaamheden_advies').innerText =
             inv.werkzaamhedenModus === 'werkelijk' ? adviesTekst(res.werkzaamheden, 'kosten') : '';
 
+        // --- De uitkomst in één zin ---
+        const zinnen = [];
+        if (koopt && res.totaalKostenKoper !== null) {
+            const bovenop = rond2(res.totaalKostenKoper - res.prijsVoorNotaris);
+            zinnen.push(`Deze aankoop kost u in totaal <strong>${fmt(res.totaalKostenKoper)}</strong>: ${fmt(res.prijsVoorNotaris)} koopsom plus ${fmt(bovenop)} aan kosten.`);
+        }
+        if (verkoopt) {
+            zinnen.push(`Van deze verkoop houdt u netto <strong>${fmt(res.nettoOpbrengst)}</strong> over.`);
+        }
+        el('uitkomst_zin').innerHTML = zinnen.join('<br>');
+
         // --- Specificatie ---
         let notarisLabel = `Over ${fmt(res.prijsVoorNotaris)} (Grondslag)`;
         if (inv.isNieuwbouw) notarisLabel += ' - VEFA';
         else if (res.departement) notarisLabel += ` - ${res.departement.code} ${res.departement.naam}, ${res.tarief.toFixed(2)}% dep.${inv.isPrimo ? ' (primo-accédant)' : ''}`;
-        else notarisLabel = 'Het tarief voor dit gebied staat niet in de DGFiP-tabel. Notariskosten niet berekend.';
-        if (res.remise > 0) notarisLabel += ` - korting op emolumenten ${fmt2(res.remise)}`;
+        if (res.remise > 0) notarisLabel += `, korting op emolumenten ${fmt2(res.remise)}`;
+        notarisLabel += `<br><em>waaronder ${fmt(DEBOURS_FORFAIT)} débours: een schatting, geen tarief</em>`;
 
         const makelaarTekst = inv.makelaarOptie === 'geen' ? '-' : `${inv.makelaarPerc}%`;
         const pvToelichting = res.pvReden === 'vrijstelling hoofdverblijf'
@@ -599,50 +848,77 @@ if (typeof document !== 'undefined') {
         const surtaxeToelichting = inv.isBouwgrond
             ? 'Niet van toepassing: bouwgrond'
             : `Boven ${fmt(SURTAXE_DREMPEL)} per verkoper, ${inv.aantalVerkopers} verkoper(s)`;
+        const onbekend = (post) => res.onbekendePosten.includes(post) ? '<em>niet opgegeven</em>' : '';
 
-        el('spec_table').innerHTML = `
-            <tr><td colspan="3" style="font-weight:700; background-color:#f9f9f9;">KOSTEN KOPER</td></tr>
-            <tr>
-                <td>Notariskosten</td>
-                <td class="spec-toelichting">${notarisLabel}</td>
-                <td class="amount">${res.notarisKosten === null ? '—' : fmt2(res.notarisKosten)}</td>
-            </tr>
-            <tr><td colspan="3" style="height:10px;"></td></tr>
-            <tr><td colspan="3" style="font-weight:700; background-color:#f9f9f9;">KOSTEN VERKOPER</td></tr>
-            <tr>
-                <td>Makelaarscourtage</td>
-                <td class="spec-toelichting">${makelaarTekst}</td>
-                <td class="amount">${fmt2(res.makelaarsKosten)}</td>
-            </tr>
-            <tr>
-                <td>Plus-value belasting</td>
-                <td class="spec-toelichting">${pvToelichting}</td>
-                <td class="amount">${fmt2(res.plusValueTax)}</td>
-            </tr>
-            <tr>
-                <td>Taxe op hoge meerwaarden</td>
-                <td class="spec-toelichting">${surtaxeToelichting}</td>
-                <td class="amount">${fmt2(res.surtaxe)}</td>
-            </tr>
-            <tr>
-                <td>Landmeter / Diagnostics</td>
-                <td class="spec-toelichting"></td>
-                <td class="amount">${fmt2(res.landmeter)}</td>
-            </tr>
-            <tr>
-                <td>Mainlevée</td>
-                <td class="spec-toelichting"></td>
-                <td class="amount">${fmt2(res.mainlevee)}</td>
-            </tr>
-            <tr style="border-top:2px solid #ddd;">
-                <td><strong>Totaal afhoudingen</strong></td>
-                <td></td>
-                <td class="amount"><strong>${fmt2(res.totaalKostenVerkoper)}</strong></td>
-            </tr>`;
+        const rijen = [];
+        if (koopt) {
+            rijen.push(`<tr><td colspan="3" class="spec-kop">KOSTEN KOPER</td></tr>
+                <tr>
+                    <td>Notariskosten</td>
+                    <td class="spec-toelichting">${notarisLabel}</td>
+                    <td class="amount">${res.notarisKosten === null ? '—' : fmt2(res.notarisKosten)}</td>
+                </tr>`);
+        }
+        if (koopt && verkoopt) rijen.push('<tr><td colspan="3" style="height:10px;"></td></tr>');
+        if (verkoopt) {
+            rijen.push(`<tr><td colspan="3" class="spec-kop">KOSTEN VERKOPER</td></tr>
+                <tr>
+                    <td>Makelaarscourtage</td>
+                    <td class="spec-toelichting">${makelaarTekst}</td>
+                    <td class="amount">${fmt2(res.makelaarsKosten)}</td>
+                </tr>
+                <tr>
+                    <td>Plus-value belasting</td>
+                    <td class="spec-toelichting">${pvToelichting}</td>
+                    <td class="amount">${fmt2(res.plusValueTax)}</td>
+                </tr>
+                <tr>
+                    <td>Taxe op hoge meerwaarden</td>
+                    <td class="spec-toelichting">${surtaxeToelichting}</td>
+                    <td class="amount">${fmt2(res.surtaxe)}</td>
+                </tr>
+                <tr>
+                    <td>Landmeter</td>
+                    <td class="spec-toelichting">${onbekend('landmeter')}</td>
+                    <td class="amount">${fmt2(res.landmeter)}</td>
+                </tr>
+                <tr>
+                    <td>Diagnostics</td>
+                    <td class="spec-toelichting">${onbekend('diagnostics')}</td>
+                    <td class="amount">${fmt2(res.diagnostics)}</td>
+                </tr>
+                <tr>
+                    <td>Mainlevée</td>
+                    <td class="spec-toelichting">${onbekend('mainlevée')}</td>
+                    <td class="amount">${fmt2(res.mainlevee)}</td>
+                </tr>
+                <tr style="border-top:2px solid #ddd;">
+                    <td><strong>Totaal afhoudingen</strong></td>
+                    <td></td>
+                    <td class="amount"><strong>${fmt2(res.totaalKostenVerkoper)}</strong></td>
+                </tr>`);
+        }
+        el('spec_table').innerHTML = rijen.join('');
 
-        el('dmto_peildatum').innerHTML =
-            `DMTO-tarieven volgens ${dmtoData._meta.uitgever}, peildatum ${dmtoData._meta.peildatum} ` +
-            `(<a href="${dmtoData._meta.bron}" target="_blank" rel="noopener noreferrer">bron</a>)`;
+        el('dmto_peildatum').innerHTML = koopt
+            ? `DMTO-tarieven volgens ${dmtoData._meta.uitgever}, peildatum ${dmtoData._meta.peildatum} `
+              + `(<a href="${dmtoData._meta.bron}" target="_blank" rel="noopener noreferrer">bron</a>)`
+            : '';
+
+        // --- Onvolledige posten ---
+        const posten = res.onbekendePosten;
+        const opsomming = posten.length > 1
+            ? `${posten.slice(0, -1).join(', ')} en ${posten[posten.length - 1]}`
+            : posten[0];
+        el('onvolledig').innerHTML = (verkoopt && posten.length > 0) ? `
+            <div class="waarschuwing">
+                <div class="waarschuwing-titel">Deze uitkomst is onvolledig</div>
+                <p>U heeft geen bedrag opgegeven voor ${opsomming}.
+                ${posten.length > 1 ? 'Die posten tellen' : 'Die post telt'} daardoor niet mee,
+                niet als nul maar als onbekend. Uw werkelijke kosten liggen dus hoger dan hier
+                staat. Vul ${posten.length > 1 ? 'de bedragen' : 'het bedrag'} in zodra u
+                ${posten.length > 1 ? 'ze' : 'het'} weet.</p>
+            </div>` : '';
 
         // --- Gevoeligheden ---
         const gev = berekenGevoeligheden(inv, dmtoData);
@@ -655,29 +931,45 @@ if (typeof document !== 'undefined') {
                 </div>`).join('')}
             </div>`;
 
-        // --- Kaarten ---
-        el('res_netto').innerText = fmt(res.nettoOpbrengst);
-        el('res_winst').innerText = fmt(res.werkelijkeWinst);
-        el('res_frictie').innerText = res.frictiekosten === null ? '—' : fmt(res.frictiekosten);
+        // --- Kaarten, per rol ---
+        const kaart = (n, label, waarde, sub) => {
+            toon(`card_${n}`, label !== null);
+            if (label === null) return;
+            el(`card_${n}_label`).innerText = label;
+            el(`card_${n}_sub`).innerText = sub;
+            el(n === 1 ? 'res_netto' : n === 2 ? 'res_winst' : 'res_frictie').innerText = waarde;
+        };
+        if (koopt && !verkoopt) {
+            kaart(1, 'Totale aankoopkosten', res.totaalKostenKoper === null ? '—' : fmt(res.totaalKostenKoper), 'Koopsom plus alle kosten');
+            kaart(2, 'Notariskosten', res.notarisKosten === null ? '—' : fmt(res.notarisKosten), 'Frais d’acquisition');
+            kaart(3, null);
+        } else if (verkoopt && !koopt) {
+            kaart(1, 'Netto Opbrengst', fmt(res.nettoOpbrengst), 'Op bankrekening verkoper');
+            kaart(2, 'Werkelijke Winst', fmt(res.werkelijkeWinst), 'Netto - Aankoopsom');
+            kaart(3, null);
+        } else {
+            kaart(1, 'Netto Opbrengst', fmt(res.nettoOpbrengst), 'Op bankrekening verkoper');
+            kaart(2, 'Werkelijke Winst', fmt(res.werkelijkeWinst), 'Netto - Aankoopsom');
+            kaart(3, 'Frictiekosten', res.frictiekosten === null ? '—' : fmt(res.frictiekosten), 'Verdwenen in de keten');
+        }
 
         // --- Toelichting ---
-        let explanation = '<strong>Validatie van berekening:</strong><br>';
-        if (res.notarisKosten === null) {
-            explanation += '⚠️ Het tarief voor dit gebied staat niet in de DGFiP-tabel. Notariskosten niet berekend.<br>';
-        }
-        if (inv.isHoofdverblijf) {
-            explanation += '✅ Object is Hoofdverblijf. Volledige vrijstelling Plus-Value.';
-        } else if (res.brutoMeerwaarde > 0) {
-            explanation += `Jaren bezit: ${res.jarenBezit}. <br>`;
-            explanation += `Aftrek Inkomstenbelasting: ${res.abatIr.toFixed(1)}%. <br>`;
-            explanation += `Aftrek Sociale Lasten: ${res.abatPs.toFixed(1)}% (Tarief: ${inv.deRuyter ? '7.5% - De Ruyter' : '17.2% - Standaard'}).`;
+        let uitleg = '<strong>Validatie van berekening:</strong><br>';
+        if (verkoopt && inv.isHoofdverblijf) {
+            uitleg += '✅ Object is Hoofdverblijf. Volledige vrijstelling Plus-Value.';
+        } else if (verkoopt && res.brutoMeerwaarde > 0) {
+            uitleg += `Jaren bezit: ${res.jarenBezit}.<br>`;
+            uitleg += `Aftrek Inkomstenbelasting: ${res.abatIr.toFixed(1)}%.<br>`;
+            uitleg += `Aftrek Sociale Lasten: ${res.abatPs.toFixed(1)}% (Tarief: ${inv.deRuyter ? '7.5% - De Ruyter' : '17.2% - Standaard'}).`;
             if (res.surtaxe > 0) {
-                explanation += `<br>Belastbare meerwaarde na abattement: ${fmt(res.belastbaarIr)}, verdeeld over ${inv.aantalVerkopers} verkoper(s). Taxe art. 1609 nonies G CGI van toepassing.`;
+                uitleg += `<br>Belastbare meerwaarde na abattement: ${fmt(res.belastbaarIr)}, verdeeld over ${inv.aantalVerkopers} verkoper(s). Taxe art. 1609 nonies G CGI van toepassing.`;
             }
+        } else if (verkoopt) {
+            uitleg += 'Geen belastbare meerwaarde na aftrek.';
         } else {
-            explanation += 'Geen belastbare meerwaarde na aftrek.';
+            uitleg += `Notariskosten berekend over ${fmt(res.prijsVoorNotaris)}${res.departement ? `, departement ${res.departement.code} ${res.departement.naam}` : ''}.`;
         }
-        el('tax_explanation').innerHTML = explanation;
+        el('tax_explanation').innerHTML = uitleg;
 
         // --- Signaleringen ---
         const signaleringen = bepaalSignaleringen({
@@ -697,8 +989,8 @@ if (typeof document !== 'undefined') {
 
     window.calculate = calculate;
     window.toggleFiscaleOpties = toggleFiscaleOpties;
+    window.toggleWeetNiet = toggleWeetNiet;
 
-    // Alle verwijzingen naar het artikel komen uit één constante.
     for (const a of document.querySelectorAll('a[data-artikel-link], #link_de_ruyter')) {
         a.href = ARTIKEL_URL;
     }
@@ -710,12 +1002,14 @@ if (typeof document !== 'undefined') {
         })
         .then((data) => {
             dmtoData = data;
+            if (location.search) pasInvoerToe(queryNaarInvoer(location.search));
             toggleFiscaleOpties();
             calculate();
         })
         .catch((err) => {
-            el('tax_explanation').innerHTML =
-                `<strong>Fout:</strong> de tarieventabel dmto.json kon niet worden geladen (${err.message}). ` +
-                'Er wordt niet gerekend met een terugvaltarief.';
+            el('validatie').innerHTML =
+                `<div class="waarschuwing"><div class="waarschuwing-titel">De tarieventabel kon niet worden geladen</div>`
+                + `<p>dmto.json is niet bereikbaar (${err.message}). Er wordt niet gerekend met een terugvaltarief.</p></div>`;
+            toon('uitkomst', false);
         });
 }

@@ -231,6 +231,77 @@ tr:last-child td {
     color: #777;
 }
 
+/* Groepering van bij elkaar horende keuzes */
+fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+legend {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    color: #444;
+    padding: 0;
+}
+
+/* Alleen voor schermlezers */
+.visueel-verborgen {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Invoerveld met een knop "weet ik niet" ernaast */
+.veld-met-knop {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.veld-met-knop input {
+    flex: 1;
+    min-width: 0;
+}
+
+.weet-niet {
+    flex-shrink: 0;
+    padding: 8px 10px;
+    font-family: 'Mulish', sans-serif;
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.weet-niet[aria-pressed="true"] {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+/* De uitkomst in één zin, boven de specificatie */
+.uitkomst-zin {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.15rem;
+    margin-bottom: 20px;
+}
+
+.spec-kop {
+    font-weight: 700;
+    background-color: #f9f9f9;
+}
+
 /* Hulptekst onder een invoerveld */
 .hint {
     font-size: 0.75rem;
@@ -279,6 +350,32 @@ tr:last-child td {
 .spec-toelichting {
     font-size: 0.85rem;
     color: #666;
+}
+
+/* Waarschuwing: ongeldige invoer of een onvolledige uitkomst */
+.waarschuwing {
+    background-color: #fdf6ec;
+    border: 1px solid #e8d8bd;
+    border-left: 4px solid #b8860b;
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.waarschuwing-titel {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.waarschuwing ul {
+    margin: 6px 0 0 0;
+    padding-left: 20px;
+}
+
+.waarschuwing p {
+    margin: 6px 0 0 0;
 }
 
 /* Peildatum bij de uitkomst */
