@@ -29,6 +29,7 @@ import {
     valideer,
     bepaalSignaleringen,
     SIGNALERINGEN,
+    TERUGNAME_AFSCHRIJVINGEN_VANAF,
     STANDAARD_INVOER,
     URL_VELDEN
 } from './calc.js';
@@ -335,6 +336,30 @@ check('niet-ingezetene en gemeubileerde verhuur komen daar bovenop',
         rol: 'verkopen', belastbareMeerwaarde: 90000,
         isNietIngezetene: true, isGemeubileerdReeel: true
     }).length, 4);
+
+console.log('\nTerugname van afschrijvingen poort op de verkoopdatum');
+// Art. 84 van wet 2025-127 geldt voor verkopen vanaf 15 februari 2025.
+const gemeubileerd = (datumVerkoop) => bepaalSignaleringen({
+    rol: 'verkopen', belastbareMeerwaarde: 90000, isGemeubileerdReeel: true, datumVerkoop
+}).includes(SIGNALERINGEN.gemeubileerdReeel);
+check('de ingangsdatum is 15 februari 2025', TERUGNAME_AFSCHRIJVINGEN_VANAF, '2025-02-15');
+check('een verkoop op 14 februari 2025 valt er nog niet onder', gemeubileerd('2025-02-14'), false);
+check('een verkoop op 15 februari 2025 valt er wel onder', gemeubileerd('2025-02-15'), true);
+check('een verkoop op 16 februari 2025 valt er wel onder', gemeubileerd('2025-02-16'), true);
+check('een verkoop lang voor de ingangsdatum valt er niet onder', gemeubileerd('2019-06-30'), false);
+check('een verkoop ver na de ingangsdatum valt er wel onder', gemeubileerd('2026-06-01'), true);
+check('zonder verkoopdatum wordt de signalering wel getoond', gemeubileerd(undefined), true);
+check('bij een onleesbare verkoopdatum wordt de signalering wel getoond', gemeubileerd('geen datum'), true);
+check('zonder het vinkje verschijnt de signalering ook na de ingangsdatum niet',
+    bepaalSignaleringen({
+        rol: 'verkopen', belastbareMeerwaarde: 90000,
+        isGemeubileerdReeel: false, datumVerkoop: '2026-06-01'
+    }).includes(SIGNALERINGEN.gemeubileerdReeel), false);
+check('een verkoop voor de ingangsdatum houdt wel de twee algemene signaleringen over',
+    bepaalSignaleringen({
+        rol: 'verkopen', belastbareMeerwaarde: 90000,
+        isGemeubileerdReeel: true, datumVerkoop: '2024-01-01'
+    }).length, 2);
 
 console.log(`\n${geslaagd} geslaagd, ${mislukt.length} mislukt.`);
 if (mislukt.length > 0) {

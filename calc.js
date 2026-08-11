@@ -99,6 +99,12 @@ export const SURTAXE_BAREME = [
  * bewaakt dat. Het veld `artikelen` staat los, omdat een wetsartikel per
  * definitie cijfers bevat en geen bedrag, percentage of termijn is.
  */
+/* De terugname van afgetrokken afschrijvingen in de meerwaarde geldt voor
+ * verkopen vanaf deze datum, op grond van art. 84 van wet 2025-127 van
+ * 14 februari 2025. Bron: impots.gouv.fr, "Je vends mon bien immobilier,
+ * vais-je payer de la plus-value immobiliere ?". */
+export const TERUGNAME_AFSCHRIJVINGEN_VANAF = '2025-02-15';
+
 export const SIGNALERINGEN = {
     nietIngezetene: {
         titel: 'U woont fiscaal buiten Frankrijk',
@@ -127,13 +133,19 @@ export const SIGNALERINGEN = {
  * alleen als er een belastbare meerwaarde is.
  */
 export function bepaalSignaleringen(situatie) {
-    const { rol, belastbareMeerwaarde, isNietIngezetene, isGemeubileerdReeel } = situatie;
+    const { rol, belastbareMeerwaarde, isNietIngezetene, isGemeubileerdReeel, datumVerkoop } = situatie;
     const verkoopt = rol === 'verkopen' || rol === 'beide';
     if (!verkoopt || !(belastbareMeerwaarde > 0)) return [];
 
+    /* De terugname van afschrijvingen geldt alleen voor verkopen vanaf de
+     * ingangsdatum. Bij een ontbrekende of onleesbare datum tonen we de
+     * signalering wel: te vaak waarschuwen is hier de veiligere fout. */
+    const datumBekend = /^\d{4}-\d{2}-\d{2}$/.test(String(datumVerkoop || ''));
+    const naIngangsdatum = !datumBekend || datumVerkoop >= TERUGNAME_AFSCHRIJVINGEN_VANAF;
+
     const uit = [];
     if (isNietIngezetene) uit.push(SIGNALERINGEN.nietIngezetene);
-    if (isGemeubileerdReeel) uit.push(SIGNALERINGEN.gemeubileerdReeel);
+    if (isGemeubileerdReeel && naIngangsdatum) uit.push(SIGNALERINGEN.gemeubileerdReeel);
     uit.push(SIGNALERINGEN.overigeVrijstellingen);
     uit.push(SIGNALERINGEN.bewaarAankoopstukken);
     return uit;
@@ -976,7 +988,8 @@ if (typeof document !== 'undefined') {
             rol: inv.rol,
             belastbareMeerwaarde: res.belastbaarIr,
             isNietIngezetene: inv.isNietIngezetene,
-            isGemeubileerdReeel: inv.isGemeubileerdReeel
+            isGemeubileerdReeel: inv.isGemeubileerdReeel,
+            datumVerkoop: inv.datumVerkoop
         });
         el('signaleringen').innerHTML = signaleringen.map((s) => `
             <div class="signalering">

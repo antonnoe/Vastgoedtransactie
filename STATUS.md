@@ -128,6 +128,41 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 - Grondslag zoals opgegeven bij de bron: art. 116 II van wet 2025-127 van
   14 februari 2025.
 
+### Korting op de emolumenten van de notaris
+
+- Ten hoogste 20 % over het deel van de grondslag vanaf 100.000 euro. De
+  notaris is niet verplicht die korting te geven, dus staat zij in de tool
+  standaard uit.
+- **Bron:** economie.gouv.fr, "Achat d'un bien immobilier : quels frais de
+  notaire devez-vous payer ?",
+  `https://www.economie.gouv.fr/particuliers/gerer-mon-argent/investir-dans-limmobilier/achat-dun-bien-immobilier-quels-frais-de-notaire-devez-vous-payer`
+- **Wijze van verificatie:** door de opdrachtgever tegen de bron gelegd, met
+  de bevestiging dat de implementatie klopt. Ik heb de pagina zelf niet kunnen
+  openen; economie.gouv.fr is vanuit de uitvoeromgeving geblokkeerd.
+- De korting wordt toegepast op de emolumenten die aan het deel boven de
+  drempel zijn toe te rekenen, dus `emolumenten(prijs)` min
+  `emolumenten(100.000)`, en verlaagt daarmee ook de btw-grondslag omdat de
+  btw over de emolumenten gaat.
+
+### Terugname van afschrijvingen bij gemeubileerde verhuur
+
+- De afschrijvingen die tijdens gemeubileerde verhuur onder het reële stelsel
+  zijn afgetrokken, worden bij de verkoop teruggenomen in de meerwaarde. Dit
+  geldt voor verkopen vanaf **15 februari 2025**, op grond van artikel 84 van
+  wet 2025-127 van 14 februari 2025.
+- **Bron:** impots.gouv.fr, "Je vends mon bien immobilier, vais-je payer de la
+  plus-value immobilière ?", bijgewerkt 7 juli 2026,
+  `https://www.impots.gouv.fr/particulier/questions/je-vends-mon-bien-immobilier-vais-je-payer-de-la-plus-value-immobiliere`
+- **Wijze van verificatie:** door de opdrachtgever tegen de bron gelegd.
+  impots.gouv.fr is vanuit de uitvoeromgeving geblokkeerd.
+- De ingangsdatum staat als `TERUGNAME_AFSCHRIJVINGEN_VANAF` in `calc.js`. De
+  signalering verschijnt alleen bij een verkoopdatum op of na die datum. Dit is
+  de enige signalering met een datum erin, en dat kan omdat die datum nu
+  primair vaststaat. De datum wordt gebruikt om te poorten, niet getoond: de
+  tekst van de signalering blijft cijfervrij.
+- Bij een ontbrekende of onleesbare verkoopdatum verschijnt de signalering wel.
+  Te vaak waarschuwen is hier de veiligere fout.
+
 ### Lettertypen
 
 - Poppins en Mulish staan in `fonts/` en worden niet meer bij Google
@@ -214,13 +249,11 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
      Légifrance gecontroleerd. Tarieven, drempelbedragen, de
      bezitsduurvoorwaarde en de omzetgrens waarboven een vertegenwoordiger
      verplicht is, staan bewust niet in de tool.
-   - *Gemeubileerde verhuur onder het reële stelsel.* De opdracht geeft als
-     bron impots.gouv.fr, art. 84 van wet 2025-127, geldend voor verkopen vanaf
-     15 februari 2025. Niet zelf gecontroleerd. **Die datum staat daarom niet
-     in de tool**: de signalering verschijnt zodra de gebruiker het vinkje zet,
-     ongeacht de verkoopdatum. Voor een verkoop vóór die datum is de
-     signalering dus mogelijk onterecht. Dat is de veiligere fout: hij
-     waarschuwt te vaak in plaats van te weinig.
+   - *Gemeubileerde verhuur onder het reële stelsel.* Deze staat inmiddels
+     onder GEVERIFIEERD, inclusief de ingangsdatum, en de signalering poort
+     daarop. Wat hier open blijft: hoe groot de terugname is, hangt af van wat
+     er is afgeschreven, en dat rekent de tool niet uit. De signalering zegt
+     alleen dat de uitkomst te laag is, zonder bedrag.
    - *Overige vrijstellingen.* Dat er vrijstellingen bestaan bij een lage
      verkoopprijs en voor gepensioneerden en invaliden onder
      inkomensvoorwaarden, is uit de opdracht overgenomen. De prijsgrens en de
@@ -239,20 +272,13 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
     ze als aparte posten op en het zijn in de praktijk twee facturen, dus het
     zijn nu twee velden. Dat verandert geen enkele rekenregel: beide zijn
     aftrekbare verkoopkosten en tellen op dezelfde manier mee.
-12. **De emolumentenkorting is proportioneel toegepast.** De korting wordt
-    berekend als een percentage van de emolumenten die aan het deel van de
-    grondslag vanaf 100.000 euro zijn toe te rekenen, dus `emolumenten(prijs)`
-    min `emolumenten(100.000)`. Dat is de lezing van "korting over het deel van
-    de grondslag vanaf 100.000 euro" die niet van de schijfindeling uitgaat.
-    De formulering in de bron is niet zelf gelezen. De korting verlaagt ook de
-    btw-grondslag, wat volgt uit het feit dat de btw over de emolumenten gaat.
-13. **De maatstaf per gevoeligheid is een keuze van mij.** De courtagekeuze
+12. **De maatstaf per gevoeligheid is een keuze van mij.** De courtagekeuze
     raakt in dit model alleen de grondslag van de notaris en dus de koper, niet
     de netto-opbrengst van de verkoper. Gemeten op de netto-opbrengst kwam die
     gevoeligheid op nul uit en verdween hij. Elke gevoeligheid wordt daarom
     gemeten op de maatstaf waar het verschil landt, en de tool zegt er per
     regel bij welke dat is.
-14. **Corsica, Lyon, Alsace.** 2A en 2B hebben dezelfde tarieven gekregen omdat
+13. **Corsica, Lyon, Alsace.** 2A en 2B hebben dezelfde tarieven gekregen omdat
    de bron één regel voor de Collectivité de Corse heeft; 69 heeft één sleutel
    omdat de twee bronregels identieke tarieven hebben; 67 en 68 hebben elk een
    eigen sleutel onder de Collectivité européenne d'Alsace. Zo aangeleverd door
@@ -272,10 +298,12 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
    canonical daarna toe.
 2. **Ik heb vanuit de uitvoeromgeving nog steeds geen primaire bron kunnen
    openen.** De netwerkproxy blokkeert impots.gouv.fr, bofip.impots.gouv.fr,
-   legifrance.gouv.fr, economie.gouv.fr en service-public.fr. Dat geldt ook
-   voor de bronnen achter de signaleringen uit deze ronde. Wat inmiddels wel
+   legifrance.gouv.fr, economie.gouv.fr en service-public.fr. Wat inmiddels wel
    primair is bevestigd, staat onder GEVERIFIEERD met vermelding dat de
-   opdrachtgever die controle heeft gedaan.
+   opdrachtgever die controle heeft gedaan. Van de vier signaleringen is er
+   inmiddels één met een bevestigde bron en ingangsdatum (gemeubileerde
+   verhuur); voor de andere drie geldt onverminderd dat zij daarom geen bedrag,
+   percentage of termijn bevatten.
 3. **Is `dmto_2026-06.pdf` de nieuwste uitgave?** Niet vastgesteld; de
    overzichtspagina was niet bereikbaar. DGFiP publiceert maandelijks, dus dit
    moet periodiek worden nagelopen.
@@ -306,17 +334,7 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
    30 jaar in combinatie met andere vrijstellingen, en de behandeling van
    werkelijke in plaats van forfaitaire verbouwingskosten. Ongewijzigd ten
    opzichte van de bestaande tool.
-10. **De korting op de emolumenten is niet primair bevestigd.** De opdracht
-    geeft als bron economie.gouv.fr, frais de notaire. Dat maximum van 20
-    procent en die drempel van 100.000 euro zijn niet zelf gelezen, en het is
-    niet nagegaan of het maximum sindsdien is gewijzigd. De korting staat
-    standaard uit, dus wie er niets mee doet, wordt er niet door geraakt.
-11. **De ingangsdatum van de terugname van afschrijvingen zit niet in de tool.**
-    Zie AANNAMES punt 9: de signalering verschijnt op basis van het vinkje, niet
-    op basis van de verkoopdatum, omdat die datum niet primair is vastgesteld.
-    Zodra je de datum uit de bron hebt, kan de signalering aan de verkoopdatum
-    worden gekoppeld.
-12. **De hoogte-meldingen zijn niet tegen de echte artikelpagina getest.** De
+10. **De hoogte-meldingen zijn niet tegen de echte artikelpagina getest.** De
     tool stuurt `{ type: 'if-tool-hoogte', hoogte }` naar het bovenliggende
     venster. Dat is in een testpagina met een iframe geverifieerd: drie
     meldingen bij het laden, convergerend naar de eindhoogte, en geen nieuwe
@@ -324,11 +342,11 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
     het daar samen goed valt, is niet vastgesteld. Let op dat `body` een
     `min-height: 100vh` heeft: de gemelde hoogte is nooit kleiner dan het
     iframe zelf.
-13. **De ontvanger van postMessage is niet beperkt.** Het bericht gaat met
+11. **De ontvanger van postMessage is niet beperkt.** Het bericht gaat met
     `'*'` naar het bovenliggende venster, omdat de origin van het artikel hier
     niet bekend is. Het bericht bevat alleen een hoogte in pixels en dus geen
     gegevens van de gebruiker, maar strenger is netter: vul de origin in zodra
     die vaststaat.
-14. **De tool rondt de plus-value en de sociale lasten niet af op hele euro's,**
+12. **De tool rondt de plus-value en de sociale lasten niet af op hele euro's,**
     terwijl de belastingdienst dat wel doet. Alleen het DMTO en de surtaxe
     worden afgerond. Dit was al zo en is niet veranderd.
