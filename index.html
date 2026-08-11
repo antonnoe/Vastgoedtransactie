@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vastgoedtransactie Analyse - InfoFrankrijk</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;600;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- De tool hoort niet zelfstandig te ranken naast het artikel waarin hij
+         is ingebed. De canonical ontbreekt bewust: die kan er pas in zodra de
+         URL van het artikel bekend is. Zie STATUS.md onder OPENSTAAND. -->
+    <meta name="robots" content="noindex, follow">
 
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -205,8 +208,11 @@
 
         <div id="validatie" role="alert" aria-live="assertive"></div>
 
-        <div id="uitkomst" aria-live="polite">
-            <div class="uitkomst-zin" id="uitkomst_zin"></div>
+        <!-- Alleen de samenvattende zin wordt aangekondigd. Een aria-live op het
+             hele uitkomstblok laat een schermlezer bij elke toetsaanslag de
+             volledige tabel voorlezen, en dat is onbruikbaar. -->
+        <div id="uitkomst">
+            <div class="uitkomst-zin" id="uitkomst_zin" role="status" aria-live="polite"></div>
 
             <h3>Financiële Specificatie</h3>
             <table>

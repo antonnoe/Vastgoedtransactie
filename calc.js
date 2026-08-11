@@ -985,7 +985,30 @@ if (typeof document !== 'undefined') {
                 ${s.artikelen.length ? `<p class="signalering-artikelen">${s.artikelen.join(' · ')}</p>` : ''}
                 <p><a data-artikel-link href="${ARTIKEL_URL}" target="_blank" rel="noopener noreferrer">Lees de uitleg in het artikel</a></p>
             </div>`).join('');
+
+        meldHoogte();
     }
+
+    /* De tool draait in een iframe in het artikel. Het bovenliggende venster
+     * kent de hoogte van de inhoud niet, dus die melden we zelf: bij het laden
+     * en bij elke wijziging van de inhoud. De artikelkant luistert hierop. */
+    let laatstGemeldeHoogte = 0;
+    function meldHoogte() {
+        if (window.parent === window) return;
+        const hoogte = Math.ceil(document.documentElement.scrollHeight);
+        if (hoogte === laatstGemeldeHoogte) return;
+        laatstGemeldeHoogte = hoogte;
+        try {
+            window.parent.postMessage({ type: 'if-tool-hoogte', hoogte }, '*');
+        } catch (err) {
+            /* Geen bovenliggend venster bereikbaar; niets aan te doen. */
+        }
+    }
+
+    if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(meldHoogte).observe(document.documentElement);
+    }
+    window.addEventListener('load', meldHoogte);
 
     window.calculate = calculate;
     window.toggleFiscaleOpties = toggleFiscaleOpties;

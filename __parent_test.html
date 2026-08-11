@@ -1,0 +1,11 @@
+<!DOCTYPE html><html><body style="margin:0">
+<iframe id="f" src="/index.html" style="width:100%;border:0" height="200"></iframe>
+<script>
+window.__berichten = [];
+addEventListener('message', e => {
+  if (e.data && e.data.type === 'if-tool-hoogte') {
+    window.__berichten.push(e.data);
+    document.getElementById('f').height = e.data.hoogte;
+  }
+});
+</script></body></html>
