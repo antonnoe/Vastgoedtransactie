@@ -231,6 +231,56 @@ tr:last-child td {
     color: #777;
 }
 
+/* Hulptekst onder een invoerveld */
+.hint {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 4px;
+}
+
+/* Gevoeligheden bij de uitkomst */
+.gevoeligheden {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: #fcfcfc;
+}
+
+.gevoeligheden-titel {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.gevoeligheid {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 6px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.9rem;
+}
+
+.gevoeligheid:last-of-type {
+    border-bottom: none;
+}
+
+.gevoeligheid .amount {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.gevoeligheid .gunstig { color: #1b7a3d; }
+.gevoeligheid .ongunstig { color: var(--primary-color); }
+
+.spec-toelichting {
+    font-size: 0.85rem;
+    color: #666;
+}
+
 /* Peildatum bij de uitkomst */
 .peildatum {
     margin-top: 8px;

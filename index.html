@@ -34,7 +34,19 @@
                 <input type="checkbox" id="primo_accedant" onchange="calculate()">
                 <label for="primo_accedant">Primo-accédant</label>
             </div>
-            <div style="font-size:0.75rem; color:#888; margin-top:4px; margin-left: 20px;">Vink aan als u in de twee jaar vóór de akte geen eigenaar van uw hoofdverblijf was.</div>
+            <div class="hint" style="margin-left:20px;">Vink aan als u in de twee jaar vóór de akte geen eigenaar van uw hoofdverblijf was.</div>
+        </div>
+
+        <div class="input-group" id="remise_wrapper">
+            <div class="checkbox-group">
+                <input type="checkbox" id="remise_aan" onchange="calculate()">
+                <label for="remise_aan">Notaris geeft korting op zijn emolumenten</label>
+            </div>
+            <div id="remise_pct_wrapper" style="margin-top:8px;">
+                <label for="remise_pct">Kortingspercentage (%)</label>
+                <input type="number" id="remise_pct" value="20" min="0" max="20" step="1" oninput="calculate()">
+            </div>
+            <div class="hint">Maximaal 20% over het deel van de grondslag vanaf € 100.000. De notaris is hiertoe niet verplicht, dus vraag ernaar voordat u erop rekent.</div>
         </div>
 
         <div class="section-title">2. Makelaar</div>
@@ -109,11 +121,35 @@
                 <div style="font-size:0.75rem; color:#888; margin-top:4px; margin-left: 20px;">De taxe op hoge meerwaarden geldt niet voor bouwgrond.</div>
             </div>
             <div class="input-group">
-                <label>Landmeter / Diagnostics (€)</label>
+                <label for="aankoopkosten_modus">Aankoopkosten bij de aankoop destijds</label>
+                <select id="aankoopkosten_modus" onchange="calculate()">
+                    <option value="forfait">Forfait van 7,5% van de aankoopsom</option>
+                    <option value="werkelijk">Werkelijke kosten, op bewijsstukken</option>
+                </select>
+                <div id="aankoopkosten_eigen_wrapper" style="margin-top:8px;">
+                    <label for="aankoopkosten_eigen">Werkelijke aankoopkosten (€)</label>
+                    <input type="number" id="aankoopkosten_eigen" value="" min="0" step="100" oninput="calculate()">
+                </div>
+                <div class="hint" id="aankoopkosten_advies"></div>
+            </div>
+            <div class="input-group">
+                <label for="werkzaamheden_modus">Werkzaamheden aan de woning</label>
+                <select id="werkzaamheden_modus" onchange="calculate()">
+                    <option value="forfait">Forfait van 15% bij bezit langer dan vijf jaar</option>
+                    <option value="werkelijk">Werkelijke kosten, op facturen van een bedrijf</option>
+                </select>
+                <div id="werkzaamheden_eigen_wrapper" style="margin-top:8px;">
+                    <label for="werkzaamheden_eigen">Werkelijke kosten werkzaamheden (€)</label>
+                    <input type="number" id="werkzaamheden_eigen" value="" min="0" step="100" oninput="calculate()">
+                </div>
+                <div class="hint" id="werkzaamheden_advies"></div>
+            </div>
+            <div class="input-group">
+                <label for="landmeter">Landmeter / Diagnostics (€)</label>
                 <input type="number" id="landmeter" value="1500" step="100" oninput="calculate()">
             </div>
             <div class="input-group">
-                <label>Mainlevée (€)</label>
+                <label for="mainlevee">Mainlevée (€)</label>
                 <input type="number" id="mainlevee" value="0" step="100" oninput="calculate()">
             </div>
             <div class="input-group">
@@ -144,6 +180,8 @@
                 </tbody>
         </table>
         <div class="peildatum" id="dmto_peildatum"></div>
+
+        <div id="gevoeligheden"></div>
 
         <div class="cards-container">
             <div class="result-card">
