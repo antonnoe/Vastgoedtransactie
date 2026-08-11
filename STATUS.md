@@ -1,7 +1,7 @@
 # STATUS
 
 Herkomst van elk tarief, elk bedrag en elke termijn in deze tool.
-Bijgewerkt: 2026-08-11.
+Bijgewerkt: 2026-08-11, na de tweede ronde (blokken A tot en met F).
 
 **Belangrijke beperking vooraf.** De uitvoeromgeving waarin deze wijziging is
 gemaakt, blokkeert uitgaand netwerkverkeer naar `impots.gouv.fr`,
@@ -128,6 +128,24 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 - Grondslag zoals opgegeven bij de bron: art. 116 II van wet 2025-127 van
   14 februari 2025.
 
+### Lettertypen
+
+- Poppins en Mulish staan in `fonts/` en worden niet meer bij Google
+  opgehaald. Beide vallen onder de SIL Open Font License 1.1, die
+  herdistributie toestaat; de licentieteksten staan naast de bestanden.
+  Herkomst: de npm-pakketten `@fontsource/poppins` en `@fontsource/mulish`,
+  versie 5.3.0, latijnse subset, woff2, de vier gewichten die de tool gebruikt.
+- **Verificatie:** in de browser gecontroleerd dat de pagina geen enkel extern
+  verzoek meer doet en dat beide families lokaal laden.
+
+### Contrast
+
+- Het bijschriftgrijs is van `#888888` naar `#6b6b6b` gegaan. Berekend volgens
+  de WCAG-formule voor relatieve luminantie: `#888888` op wit geeft 3,54 op 1
+  en haalt de eis van 4,5 op 1 dus niet; `#6b6b6b` geeft 5,33 op 1. Ook
+  gecontroleerd: `#800000` op wit geeft 10,95 op 1, wit op `#800000` idem, en
+  het groen `#1b7a3d` van een gunstige gevoeligheid geeft 5,39 op 1.
+
 ---
 
 ## AANNAMES
@@ -184,7 +202,57 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 8. **Tarieven IR 19 % en sociale lasten 17,2 % / 7,5 %, forfaits 7,5 % en
    15 %.** Alle vier stonden al in de bestaande code en zijn ongewijzigd
    overgenomen. Niet opnieuw tegen een primaire bron gelegd.
-9. **Corsica, Lyon, Alsace.** 2A en 2B hebben dezelfde tarieven gekregen omdat
+9. **De vier signaleringen uit blok B zijn niet primair geverifieerd.** Dat is
+   precies waarom het signaleringen zijn en geen berekeningen: ze benoemen dat
+   een situatie speelt en verwijzen door, zonder één bedrag, percentage of
+   termijn. Per signalering wat er níet vaststaat:
+   - *Niet-ingezetene.* Dat er een afwijkend regime bestaat (art. 244 bis A
+     CGI), een vrijstelling voor EU- en EER-onderdanen die eerder fiscaal
+     inwoner waren (art. 150 U II 2° CGI), een regeling voor de voormalige
+     hoofdwoning, en in gevallen een plicht tot een fiscaal vertegenwoordiger,
+     is uit de opdracht overgenomen. De artikelnummers zijn niet tegen
+     Légifrance gecontroleerd. Tarieven, drempelbedragen, de
+     bezitsduurvoorwaarde en de omzetgrens waarboven een vertegenwoordiger
+     verplicht is, staan bewust niet in de tool.
+   - *Gemeubileerde verhuur onder het reële stelsel.* De opdracht geeft als
+     bron impots.gouv.fr, art. 84 van wet 2025-127, geldend voor verkopen vanaf
+     15 februari 2025. Niet zelf gecontroleerd. **Die datum staat daarom niet
+     in de tool**: de signalering verschijnt zodra de gebruiker het vinkje zet,
+     ongeacht de verkoopdatum. Voor een verkoop vóór die datum is de
+     signalering dus mogelijk onterecht. Dat is de veiligere fout: hij
+     waarschuwt te vaak in plaats van te weinig.
+   - *Overige vrijstellingen.* Dat er vrijstellingen bestaan bij een lage
+     verkoopprijs en voor gepensioneerden en invaliden onder
+     inkomensvoorwaarden, is uit de opdracht overgenomen. De prijsgrens en de
+     inkomens- en vermogensgrenzen zijn niet vastgesteld en staan er niet in.
+   - *Bewaaradvies.* Puur een advies, geen fiscale bewering, dus hier valt
+     niets te verifiëren. Het forfait waar het naar verwijst, zit al in de
+     berekening.
+10. **De grondregel en de artikelverwijzingen botsen.** De grondregel verbiedt
+    cijfers in een signalering; B1 vraagt om `art. 244 bis A CGI`, dat cijfers
+    bevat. Ik heb de lopende tekst gescheiden van een apart veld `artikelen`.
+    De cijfertoets uit F1 controleert alleen titel en tekst. Redenering: een
+    wetsartikelnummer is geen bedrag, geen percentage en geen termijn, en dus
+    niet wat de grondregel wil weren. **Als je dat anders ziet, haal dan het
+    veld `artikelen` leeg; de toets hoeft daarvoor niet te wijzigen.**
+11. **Landmeter en diagnostics zijn gesplitst.** Ze zaten in één veld. D3 somt
+    ze als aparte posten op en het zijn in de praktijk twee facturen, dus het
+    zijn nu twee velden. Dat verandert geen enkele rekenregel: beide zijn
+    aftrekbare verkoopkosten en tellen op dezelfde manier mee.
+12. **De emolumentenkorting is proportioneel toegepast.** De korting wordt
+    berekend als een percentage van de emolumenten die aan het deel van de
+    grondslag vanaf 100.000 euro zijn toe te rekenen, dus `emolumenten(prijs)`
+    min `emolumenten(100.000)`. Dat is de lezing van "korting over het deel van
+    de grondslag vanaf 100.000 euro" die niet van de schijfindeling uitgaat.
+    De formulering in de bron is niet zelf gelezen. De korting verlaagt ook de
+    btw-grondslag, wat volgt uit het feit dat de btw over de emolumenten gaat.
+13. **De maatstaf per gevoeligheid is een keuze van mij.** De courtagekeuze
+    raakt in dit model alleen de grondslag van de notaris en dus de koper, niet
+    de netto-opbrengst van de verkoper. Gemeten op de netto-opbrengst kwam die
+    gevoeligheid op nul uit en verdween hij. Elke gevoeligheid wordt daarom
+    gemeten op de maatstaf waar het verschil landt, en de tool zegt er per
+    regel bij welke dat is.
+14. **Corsica, Lyon, Alsace.** 2A en 2B hebben dezelfde tarieven gekregen omdat
    de bron één regel voor de Collectivité de Corse heeft; 69 heeft één sleutel
    omdat de twee bronregels identieke tarieven hebben; 67 en 68 hebben elk een
    eigen sleutel onder de Collectivité européenne d'Alsace. Zo aangeleverd door
@@ -238,6 +306,29 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
    30 jaar in combinatie met andere vrijstellingen, en de behandeling van
    werkelijke in plaats van forfaitaire verbouwingskosten. Ongewijzigd ten
    opzichte van de bestaande tool.
-10. **De tool rondt de plus-value en de sociale lasten niet af op hele euro's,**
+10. **De korting op de emolumenten is niet primair bevestigd.** De opdracht
+    geeft als bron economie.gouv.fr, frais de notaire. Dat maximum van 20
+    procent en die drempel van 100.000 euro zijn niet zelf gelezen, en het is
+    niet nagegaan of het maximum sindsdien is gewijzigd. De korting staat
+    standaard uit, dus wie er niets mee doet, wordt er niet door geraakt.
+11. **De ingangsdatum van de terugname van afschrijvingen zit niet in de tool.**
+    Zie AANNAMES punt 9: de signalering verschijnt op basis van het vinkje, niet
+    op basis van de verkoopdatum, omdat die datum niet primair is vastgesteld.
+    Zodra je de datum uit de bron hebt, kan de signalering aan de verkoopdatum
+    worden gekoppeld.
+12. **De hoogte-meldingen zijn niet tegen de echte artikelpagina getest.** De
+    tool stuurt `{ type: 'if-tool-hoogte', hoogte }` naar het bovenliggende
+    venster. Dat is in een testpagina met een iframe geverifieerd: drie
+    meldingen bij het laden, convergerend naar de eindhoogte, en geen nieuwe
+    melding als de hoogte niet verandert. De artikelkant regel je zelf, dus of
+    het daar samen goed valt, is niet vastgesteld. Let op dat `body` een
+    `min-height: 100vh` heeft: de gemelde hoogte is nooit kleiner dan het
+    iframe zelf.
+13. **De ontvanger van postMessage is niet beperkt.** Het bericht gaat met
+    `'*'` naar het bovenliggende venster, omdat de origin van het artikel hier
+    niet bekend is. Het bericht bevat alleen een hoogte in pixels en dus geen
+    gegevens van de gebruiker, maar strenger is netter: vul de origin in zodra
+    die vaststaat.
+14. **De tool rondt de plus-value en de sociale lasten niet af op hele euro's,**
     terwijl de belastingdienst dat wel doet. Alleen het DMTO en de surtaxe
     worden afgerond. Dit was al zo en is niet veranderd.

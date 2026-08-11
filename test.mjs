@@ -18,7 +18,19 @@ import {
     volleJaren,
     postcodeNaarDepartement,
     zoekDepartement,
-    departementaalTarief
+    departementaalTarief,
+    berekenRemise,
+    kiesKostenpost,
+    berekenScenario,
+    berekenGevoeligheden,
+    jaarLater,
+    invoerNaarQuery,
+    queryNaarInvoer,
+    valideer,
+    bepaalSignaleringen,
+    SIGNALERINGEN,
+    STANDAARD_INVOER,
+    URL_VELDEN
 } from './calc.js';
 
 const hier = dirname(fileURLToPath(import.meta.url));
@@ -153,6 +165,176 @@ check('geen enkel primo-tarief ligt boven het standaardtarief',
     codes.every((c) => dmto.departementen[c].primo <= dmto.departementen[c].std), true);
 check('_meta bevat bron en peildatum',
     Boolean(meta.bron && meta.peildatum), true);
+
+console.log('\nKorting op de emolumenten van de notaris (blok C2)');
+// Emolumenten over het deel boven 100.000: 3.593,25 min 1.196,25 = 2.397,00
+check('korting van 20 procent op 400.000 euro is 479,40 euro',
+    berekenRemise(400000, 20), 479.40);
+check('geen korting onder de drempel van 100.000 euro',
+    berekenRemise(80000, 20), 0);
+check('geen korting als het percentage nul is',
+    berekenRemise(400000, 0), 0);
+check('een percentage boven het maximum wordt afgetopt op 20 procent',
+    berekenRemise(400000, 50), berekenRemise(400000, 20));
+check('notariskosten met korting over 400.000 euro bij 5,00% is 30.610,62 euro',
+    berekenNotarisAncien(400000, 5.00, meta, 20), 30610.62);
+check('zonder korting blijft de uitkomst ongewijzigd',
+    berekenNotarisAncien(400000, 5.00, meta, 0), berekenNotarisAncien(400000, 5.00, meta));
+
+console.log('\nForfait of werkelijke kosten (blok C1)');
+const hoog = kiesKostenpost(15000, 'werkelijk', 25000);
+check('werkelijke kosten van 25.000 worden gebruikt als die modus is gekozen', hoog.bedrag, 25000);
+check('bij 25.000 tegen een forfait van 15.000 is werkelijk gunstiger', hoog.gunstigste, 'werkelijk');
+check('het verschil is 10.000 euro', hoog.verschil, 10000);
+const laag = kiesKostenpost(15000, 'werkelijk', 9000);
+check('bij 9.000 tegen een forfait van 15.000 is het forfait gunstiger', laag.gunstigste, 'forfait');
+check('het verschil is 6.000 euro', laag.verschil, 6000);
+check('in de forfaitmodus telt het forfait, ook al gaf de gebruiker een bedrag op',
+    kiesKostenpost(15000, 'forfait', 25000).bedrag, 15000);
+check('een negatief eigen bedrag telt als nul',
+    kiesKostenpost(15000, 'werkelijk', -500).bedrag, 0);
+
+console.log('\nGevoeligheden (blok C3)');
+const basisInvoer = { ...STANDAARD_INVOER };
+const gev = berekenGevoeligheden(basisInvoer, dmto);
+check('er worden nooit meer dan drie gevoeligheden getoond', gev.length <= 3, true);
+check('de courtagekeuze wordt gemeten bij de koper',
+    gev.find((g) => g.label.includes('Courtage')).metriek, 'koper');
+check('een jaar langer wachten wordt gemeten bij de verkoper',
+    gev.find((g) => g.label.includes('jaar langer')).metriek, 'verkoper');
+check('een jaar langer wachten levert de verkoper geld op',
+    gev.find((g) => g.label.includes('jaar langer')).gunstig, true);
+check('primo-accedant verlaagt de kosten van de koper',
+    gev.find((g) => g.label.includes('primo')).delta < 0, true);
+check('een koper krijgt geen gevoeligheid over langer wachten',
+    berekenGevoeligheden({ ...basisInvoer, rol: 'kopen' }, dmto)
+        .some((g) => g.label.includes('jaar langer')), false);
+check('een verkoper krijgt geen gevoeligheid over primo-accedant',
+    berekenGevoeligheden({ ...basisInvoer, rol: 'verkopen' }, dmto)
+        .some((g) => g.label.includes('primo')), false);
+check('zonder makelaar vervalt de courtagegevoeligheid',
+    berekenGevoeligheden({ ...basisInvoer, makelaarOptie: 'geen' }, dmto)
+        .some((g) => g.label.includes('Courtage')), false);
+check('in departement 06, zonder verschil tussen std en primo, vervalt die gevoeligheid',
+    berekenGevoeligheden({ ...basisInvoer, postcode: '06000' }, dmto)
+        .some((g) => g.label.includes('primo')), false);
+check('jaarLater telt precies een jaar op', jaarLater('2025-01-01'), '2026-01-01');
+
+console.log('\nOnbekende kostenposten (blok D3)');
+const metOnbekend = berekenScenario({ ...STANDAARD_INVOER, diagnostics: 800 }, dmto);
+check('landmeter en mainlevee gelden als onbekend, diagnostics niet',
+    metOnbekend.onbekendePosten.join('|'), 'landmeter|mainlevée');
+check('een onbekende post telt als nul in de berekening', metOnbekend.landmeter, 0);
+check('een ingevulde post telt gewoon mee', metOnbekend.diagnostics, 800);
+check('alle drie ingevuld geeft geen onbekende posten',
+    berekenScenario({ ...STANDAARD_INVOER, landmeter: 1000, diagnostics: 800, mainlevee: 500 }, dmto)
+        .onbekendePosten.length, 0);
+check('de drie posten verlagen samen de meerwaardegrondslag',
+    berekenScenario({ ...STANDAARD_INVOER, landmeter: 1000, diagnostics: 800, mainlevee: 500 }, dmto).verkoopkosten,
+    2300);
+
+console.log('\nURL-codering heen en terug (blok D4)');
+check('de standaardinvoer levert een lege querystring', invoerNaarQuery(STANDAARD_INVOER), '');
+check('de standaardinvoer komt ongeschonden terug',
+    JSON.stringify(queryNaarInvoer('')), JSON.stringify(STANDAARD_INVOER));
+const afwijkend = {
+    ...STANDAARD_INVOER,
+    rol: 'verkopen',
+    postcode: '20000',
+    isNieuwbouw: true,
+    isPrimo: true,
+    remisePct: 15,
+    makelaarOptie: 'acquereur',
+    makelaarPerc: 4.5,
+    verkoopprijs: 675000,
+    aankoopprijs: 250000,
+    datumAankoop: '2003-12-15',
+    datumVerkoop: '2026-01-10',
+    isHoofdverblijf: true,
+    isNietIngezetene: true,
+    isGemeubileerdReeel: true,
+    isBouwgrond: true,
+    aantalVerkopers: 3,
+    aankoopkostenModus: 'werkelijk',
+    aankoopkostenEigen: 21000,
+    werkzaamhedenModus: 'werkelijk',
+    werkzaamhedenEigen: 48000,
+    landmeter: 1250,
+    diagnostics: 800,
+    mainlevee: 650,
+    deRuyter: true
+};
+check('elk afwijkend veld overleeft de reis door de URL',
+    JSON.stringify(queryNaarInvoer(invoerNaarQuery(afwijkend))), JSON.stringify(afwijkend));
+check('een onbekende post komt niet in de URL terecht',
+    invoerNaarQuery({ ...STANDAARD_INVOER, landmeter: null }).includes('lm='), false);
+check('een post met waarde nul komt wel in de URL, want nul is niet onbekend',
+    invoerNaarQuery({ ...STANDAARD_INVOER, landmeter: 0 }).includes('lm=0'), true);
+check('nul en onbekend blijven na de reis van elkaar te onderscheiden',
+    queryNaarInvoer(invoerNaarQuery({ ...STANDAARD_INVOER, landmeter: 0 })).landmeter, 0);
+check('onbekend blijft onbekend na de reis',
+    queryNaarInvoer(invoerNaarQuery({ ...STANDAARD_INVOER, landmeter: null })).landmeter, null);
+check('onbekende parameters in de URL worden genegeerd',
+    queryNaarInvoer('?onzin=1&rol=kopen').rol, 'kopen');
+check('elke sleutel in URL_VELDEN bestaat in STANDAARD_INVOER',
+    URL_VELDEN.every(([sleutel]) => sleutel in STANDAARD_INVOER), true);
+check('elke sleutel in STANDAARD_INVOER zit in URL_VELDEN',
+    Object.keys(STANDAARD_INVOER).every((s) => URL_VELDEN.some(([k]) => k === s)), true);
+check('geen twee velden delen dezelfde URL-parameter',
+    new Set(URL_VELDEN.map(([, p]) => p)).size, URL_VELDEN.length);
+
+console.log('\nValidatie (blok D5)');
+check('de standaardinvoer is geldig', valideer(STANDAARD_INVOER, dmto).length, 0);
+check('een verkoopprijs van nul wordt afgekeurd',
+    valideer({ ...STANDAARD_INVOER, verkoopprijs: 0 }, dmto).length > 0, true);
+check('een negatieve verkoopprijs wordt afgekeurd',
+    valideer({ ...STANDAARD_INVOER, verkoopprijs: -1 }, dmto).length > 0, true);
+check('een negatieve aankoopsom wordt afgekeurd',
+    valideer({ ...STANDAARD_INVOER, aankoopprijs: -100 }, dmto).length > 0, true);
+check('een negatieve landmeterpost wordt afgekeurd',
+    valideer({ ...STANDAARD_INVOER, landmeter: -1 }, dmto).length > 0, true);
+check('een onbekende landmeterpost wordt niet afgekeurd',
+    valideer({ ...STANDAARD_INVOER, landmeter: null }, dmto).length, 0);
+check('een verkoopdatum voor de aankoopdatum wordt afgekeurd',
+    valideer({ ...STANDAARD_INVOER, datumVerkoop: '2010-01-01' }, dmto).length > 0, true);
+check('die datumcontrole geldt niet voor wie alleen koopt',
+    valideer({ ...STANDAARD_INVOER, rol: 'kopen', datumVerkoop: '2010-01-01' }, dmto).length, 0);
+check('een postcode buiten de DGFiP-tabel wordt afgekeurd bij een aankoop',
+    valideer({ ...STANDAARD_INVOER, postcode: '97500' }, dmto).length > 0, true);
+check('die postcodecontrole geldt niet voor wie alleen verkoopt',
+    valideer({ ...STANDAARD_INVOER, rol: 'verkopen', postcode: '97500' }, dmto).length, 0);
+check('die postcodecontrole geldt niet bij nieuwbouw',
+    valideer({ ...STANDAARD_INVOER, postcode: '97500', isNieuwbouw: true }, dmto).length, 0);
+check('minder dan een verkoper wordt afgekeurd',
+    valideer({ ...STANDAARD_INVOER, aantalVerkopers: 0 }, dmto).length > 0, true);
+
+console.log('\nSignaleringen bevatten geen cijfers (blok B, grondregel)');
+// De grondregel: nooit een bedrag, een percentage of een termijn in een
+// signalering. Het veld artikelen is uitgezonderd, want een wetsartikel bevat
+// per definitie cijfers en is geen van die drie.
+for (const [sleutel, s] of Object.entries(SIGNALERINGEN)) {
+    const cijfers = `${s.titel} ${s.tekst}`.match(/[0-9]/g);
+    check(`signalering ${sleutel} bevat geen enkel cijfer in titel of tekst`,
+        cijfers === null, true);
+}
+check('elke signalering heeft een titel, een tekst en een artikelenlijst',
+    Object.values(SIGNALERINGEN).every((s) =>
+        typeof s.titel === 'string' && s.titel.length > 0
+        && typeof s.tekst === 'string' && s.tekst.length > 0
+        && Array.isArray(s.artikelen)), true);
+
+console.log('\nWanneer verschijnt een signalering?');
+check('een koper krijgt er geen',
+    bepaalSignaleringen({ rol: 'kopen', belastbareMeerwaarde: 90000 }).length, 0);
+check('zonder belastbare meerwaarde geen signaleringen',
+    bepaalSignaleringen({ rol: 'verkopen', belastbareMeerwaarde: 0 }).length, 0);
+check('een verkoper met meerwaarde krijgt de twee algemene signaleringen',
+    bepaalSignaleringen({ rol: 'verkopen', belastbareMeerwaarde: 90000 }).length, 2);
+check('niet-ingezetene en gemeubileerde verhuur komen daar bovenop',
+    bepaalSignaleringen({
+        rol: 'verkopen', belastbareMeerwaarde: 90000,
+        isNietIngezetene: true, isGemeubileerdReeel: true
+    }).length, 4);
 
 console.log(`\n${geslaagd} geslaagd, ${mislukt.length} mislukt.`);
 if (mislukt.length > 0) {
