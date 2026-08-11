@@ -73,10 +73,16 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 | 250.001 – 260.000 | 6 % PV − (260.000 − PV) × 25/100 |
 | boven 260.000 | 6 % PV |
 
-- **Verificatie, twee onafhankelijke controles die beide slagen:**
-  1. De twee uitgewerkte voorbeelden uit BOFiP `BOI-RFPI-TPVIE-20`, door de
-     opdrachtgever aangeleverd, komen exact uit: 52.500 → 675 euro,
-     103.400 → 2.442 euro.
+- **Primaire bron, inmiddels geverifieerd:** Légifrance, Code général des
+  impôts, artikel 1609 nonies G, versie in werking sinds 01/01/2024, gewijzigd
+  bij wet 2023-1322 van 29 december 2023,
+  `https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000048806252`.
+  Alle tien tranches en alle vier afvlakkingsfactoren komen exact overeen met
+  de hierboven weergegeven tabel. Deze controle is door de opdrachtgever
+  uitgevoerd, omdat Légifrance vanuit de uitvoeromgeving niet bereikbaar is.
+- **Twee aanvullende controles die beide slagen:**
+  1. De twee uitgewerkte voorbeelden uit BOFiP `BOI-RFPI-TPVIE-20` komen exact
+     uit: 52.500 → 675 euro, 103.400 → 2.442 euro.
   2. De afvlakkingsformules maken het barème op alle negen tranchegrenzen
      continu. Elke transcriptiefout in een tariefpercentage of in een
      afvlakkingsfactor zou op minstens één grens een sprong opleveren. Beide
@@ -188,48 +194,50 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 
 ## OPENSTAAND
 
-1. **Ik heb geen enkele primaire bron zelf kunnen openen.** De netwerkproxy van
-   de uitvoeromgeving blokkeert impots.gouv.fr, bofip.impots.gouv.fr,
-   legifrance.gouv.fr, economie.gouv.fr en service-public.fr. Het barème van
-   art. 1609 nonies G is dus niet letterlijk van Legifrance getranscribeerd
-   maar gereconstrueerd en daarna tegen twee BOFiP-uitkomsten en tegen de
-   continuïteit op negen tranchegrenzen gevalideerd. Beide controles slagen,
-   maar dat is geen vervanging voor het lezen van de wettekst. **Leg het barème
-   naast Legifrance voordat de tool live gaat.**
-2. **Is `dmto_2026-06.pdf` de nieuwste uitgave?** Niet vastgesteld; de
+1. **De URL van het Infofrankrijk-artikel ontbreekt.** In `calc.js` staat
+   bovenaan één constante `ARTIKEL_URL` met een placeholder-waarde. Alle
+   signaleringen en de hulptekst bij De Ruyter linken daarnaartoe. **Zolang die
+   niet is vervangen, wijzen alle links in de tool naar een niet-bestaande
+   pagina.** Om dezelfde reden staat er in `index.html` wel een
+   `robots noindex` maar bewust géén canonical: een canonical naar de verkeerde
+   pagina is schadelijker dan geen canonical. Vervang de constante en voeg de
+   canonical daarna toe.
+2. **Ik heb vanuit de uitvoeromgeving nog steeds geen primaire bron kunnen
+   openen.** De netwerkproxy blokkeert impots.gouv.fr, bofip.impots.gouv.fr,
+   legifrance.gouv.fr, economie.gouv.fr en service-public.fr. Dat geldt ook
+   voor de bronnen achter de signaleringen uit deze ronde. Wat inmiddels wel
+   primair is bevestigd, staat onder GEVERIFIEERD met vermelding dat de
+   opdrachtgever die controle heeft gedaan.
+3. **Is `dmto_2026-06.pdf` de nieuwste uitgave?** Niet vastgesteld; de
    overzichtspagina was niet bereikbaar. DGFiP publiceert maandelijks, dus dit
    moet periodiek worden nagelopen.
-3. **Calvados en Savoie.** In de bron staat bij Calvados een abattement van
+4. **Calvados en Savoie.** In de bron staat bij Calvados een abattement van
    46.000 euro en bij Savoie een verlaagd tarief van 4,00 procent. Uit de platte
    tekst is niet af te leiden op welke kolom die betrekking hebben (art. 1594 F
    ter, F sexies of F septies). Niet ingebouwd. Voor die twee departementen kan
    de tool dus te hoog uitkomen in de gevallen waarop die regelingen zien.
-4. **Overige abattements en verlaagde tarieven per departement.** `dmto.json`
+5. **Overige abattements en verlaagde tarieven per departement.** `dmto.json`
    bevat alleen `std` en `primo`. Departementale abattements en sectorale
    verlaagde tarieven uit de DGFiP-tabel zijn niet opgenomen.
-5. **De 0,5-punts verhoging is tijdelijk.** De verhoging op grond van wet
+6. **De 0,5-punts verhoging is tijdelijk.** De verhoging op grond van wet
    2025-127 loopt volgens de gangbare lezing tot en met een einddatum in 2028.
    De exacte einddatum is niet uit een primaire bron bevestigd en zit niet in
    `dmto.json`. Er is geen mechanisme dat waarschuwt als de peildatum verouderd
    is.
-6. **Voorwaarden primo-accédant.** De tool vraagt alleen of de gebruiker
+7. **Voorwaarden primo-accédant.** De tool vraagt alleen of de gebruiker
    primo-accédant is. De wettelijke voorwaarden (geen eigenaar van het
    hoofdverblijf in de twee jaar vóór de akte, en bestemming als hoofdverblijf)
    worden niet gecontroleerd of toegelicht buiten de korte tekst bij het
    invoerveld. De bronvermelding hiervoor is niet zelf geverifieerd.
-7. **Emolumenten bij VEFA.** De opdracht schrijft hetzelfde barème voor als bij
+8. **Emolumenten bij VEFA.** De opdracht schrijft hetzelfde barème voor als bij
    bestaande bouw. Of het tarif réglementé voor een VEFA-akte daadwerkelijk
    identiek is, is niet geverifieerd.
-8. **Uitzonderingen op de plus-value die de tool niet kent:** vrijstelling bij
+9. **Uitzonderingen op de plus-value die de tool niet kent:** vrijstelling bij
    een verkoopprijs tot 15.000 euro, de vrijstelling voor niet-ingezetenen, de
    vrijstelling bij herinvestering in een hoofdverblijf, bezit langer dan
    30 jaar in combinatie met andere vrijstellingen, en de behandeling van
    werkelijke in plaats van forfaitaire verbouwingskosten. Ongewijzigd ten
    opzichte van de bestaande tool.
-9. **`.devcontainer/devcontainer.json` is achtergebleven** en verwijst nog naar
-   `app.py` en Streamlit, die met deze wijziging zijn verwijderd. De opdracht
-   noemde dit bestand niet in de opruimlijst, dus het is ongemoeid gelaten. Het
-   werkt in zijn huidige vorm niet meer.
 10. **De tool rondt de plus-value en de sociale lasten niet af op hele euro's,**
     terwijl de belastingdienst dat wel doet. Alleen het DMTO en de surtaxe
     worden afgerond. Dit was al zo en is niet veranderd.

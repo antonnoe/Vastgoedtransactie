@@ -10,6 +10,18 @@
  */
 
 /* =====================================================================
+ * VERWIJZING NAAR HET ARTIKEL
+ * =====================================================================
+ *
+ * !!! VERVANG DEZE WAARDE !!!
+ * Dit is een placeholder. Alle signaleringen en hulpteksten linken hiernaar.
+ * Zolang hier geen echte URL staat, is de canonical bewust weggelaten uit
+ * index.html: een canonical naar de verkeerde pagina is schadelijker dan geen
+ * canonical. Zie STATUS.md onder OPENSTAAND.
+ */
+export const ARTIKEL_URL = 'https://www.infofrankrijk.com/VERVANG-DOOR-ARTIKEL-URL';
+
+/* =====================================================================
  * TARIEVEN EN BAREMA'S
  * ===================================================================== */
 
@@ -439,9 +451,11 @@ if (typeof document !== 'undefined') {
         `;
         document.getElementById('spec_table').innerHTML = html;
 
-        // Peildatum van de DMTO-tarieven, zichtbaar bij de uitkomst
-        document.getElementById('dmto_peildatum').innerText =
-            `DMTO-tarieven volgens ${dmtoData._meta.uitgever}, peildatum ${dmtoData._meta.peildatum}.`;
+        // Peildatum van de DMTO-tarieven, zichtbaar onder de specificatie.
+        // Uitgever, peildatum en bron-URL komen uit dmto.json, niet uit de code.
+        document.getElementById('dmto_peildatum').innerHTML =
+            `DMTO-tarieven volgens ${dmtoData._meta.uitgever}, peildatum ${dmtoData._meta.peildatum} ` +
+            `(<a href="${dmtoData._meta.bron}" target="_blank" rel="noopener noreferrer">bron</a>)`;
 
         // Cards
         document.getElementById('res_netto').innerText = fmt(nettoOpbrengst);
@@ -470,6 +484,11 @@ if (typeof document !== 'undefined') {
 
     window.calculate = calculate;
     window.toggleFiscaleOpties = toggleFiscaleOpties;
+
+    // Alle verwijzingen naar het artikel komen uit één constante.
+    for (const a of document.querySelectorAll('a[data-artikel-link], #link_de_ruyter')) {
+        a.href = ARTIKEL_URL;
+    }
 
     fetch('dmto.json')
         .then((r) => {
