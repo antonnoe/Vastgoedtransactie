@@ -1,26 +1,23 @@
-name: Safety Check
+name: Tests
 
 on:
+  push:
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: "3.10"
+          node-version: "20"
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Lint check
-        run: |
-          python -m py_compile $(git ls-files "*.py")
+      - name: Run test suite
+        run: node test.mjs

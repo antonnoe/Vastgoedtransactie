@@ -19,5 +19,8 @@ De tool werkt volledig in de browser (HTML + CSS + JS), zonder server of backend
 
 /
 ├── index.html → hoofdapplicatie (interface)
-├── style.css → layout, ontwerp, mobiele weergave
-└── script.js → volledige functionaliteit & berekeningen
+├── styles.css → layout, ontwerp, mobiele weergave
+├── calc.js → volledige functionaliteit & berekeningen
+├── dmto.json → DMTO-tarieven per département (DGFiP), met bron en peildatum
+├── test.mjs → testset, draait met `node test.mjs`
+└── STATUS.md → herkomst van tarieven en regels: geverifieerd, aannames, openstaand
