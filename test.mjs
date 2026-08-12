@@ -553,6 +553,17 @@ check('ARTIKEL_URL bevat geen placeholder meer',
     /VERVANG/i.test(ARTIKEL_URL), false);
 check('index.html zet robots op noindex', /name="robots"\s+content="noindex/.test(html), true);
 
+/* Het hoofdadres hoort de nieuwe schil te draaien; de vorige interface blijft
+ * als terugvaloptie bestaan. Deze twee assertions vallen om zodra de bestanden
+ * per ongeluk weer worden omgewisseld. */
+const oudeHtml = readFileSync(join(hier, 'index-oud.html'), 'utf8');
+check('index.html draait de nieuwe schil', html.includes('class="rekentool"'), true);
+check('en laadt schil.js', html.includes('src="schil.js"'), true);
+check('index-oud.html is de vorige interface', oudeHtml.includes('id="spec_table"'), true);
+check('de terugvaloptie wordt niet geindexeerd',
+    /name="robots"\s+content="noindex/.test(oudeHtml), true);
+check('en draagt geen tweede canonical', oudeHtml.includes('rel="canonical"'), false);
+
 console.log('\nTerugname van afschrijvingen poort op de verkoopdatum');
 // Art. 84 van wet 2025-127 geldt voor verkopen vanaf 15 februari 2025.
 const gemeubileerd = (datumVerkoop) => bepaalSignaleringen({

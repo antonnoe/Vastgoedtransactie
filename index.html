@@ -1,277 +1,346 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vastgoedtransactie Analyse - InfoFrankrijk</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kosten bij koop en verkoop van Frans vastgoed - InfoFrankrijk</title>
 
     <!-- De tool hoort niet zelfstandig te ranken naast het artikel waarin hij
-         is ingebed. De canonical wijst naar dat artikel en staat hier statisch,
-         omdat een via JavaScript geinjecteerde canonical minder zwaar weegt.
-         Dezelfde URL staat als ARTIKEL_URL in calc.js; test.mjs faalt zodra de
-         twee uit elkaar lopen. -->
+         is ingebed. Dezelfde URL staat als ARTIKEL_URL in calc.js; test.mjs
+         faalt zodra de twee uit elkaar lopen. -->
     <meta name="robots" content="noindex, follow">
     <link rel="canonical" href="https://infofrankrijk.com/vastgoed-transactiekosten/">
 
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="schil.css">
 </head>
 <body>
 
-<div class="container">
-    <div class="sidebar">
-        <h2>Instellingen</h2>
+<div class="rekentool">
+  <div class="kolom">
 
-        <div class="section-title">1. Wat gaat u doen?</div>
-        <div class="input-group">
-            <fieldset>
-                <legend>Uw rol bij deze transactie</legend>
-                <div class="radio-group">
-                    <label class="radio-option"><input type="radio" name="rol" value="kopen" onchange="calculate()"> Ik ga kopen</label>
-                    <label class="radio-option"><input type="radio" name="rol" value="verkopen" onchange="calculate()"> Ik ga verkopen</label>
-                    <label class="radio-option"><input type="radio" name="rol" value="beide" checked onchange="calculate()"> Allebei</label>
-                </div>
-            </fieldset>
-        </div>
+    <div class="kop">Kosten bij koop &amp; verkoop</div>
 
-        <div id="sectie_koper">
-            <div class="section-title">2. Locatie &amp; Woning</div>
-            <div class="input-group">
-                <label for="postcode">Postcode (bepaalt notaris-regio)</label>
-                <input type="text" id="postcode" value="58000" maxlength="5" inputmode="numeric" oninput="calculate()">
-            </div>
-
-            <div class="input-group">
-                <fieldset>
-                    <legend>Type Woning</legend>
-                    <div class="radio-group">
-                        <label class="radio-option"><input type="radio" name="type_woning" value="ancien" checked onchange="calculate()"> Bestaand (Ancien)</label>
-                        <label class="radio-option"><input type="radio" name="type_woning" value="vefa" onchange="calculate()"> Nieuwbouw (VEFA)</label>
-                    </div>
-                </fieldset>
-            </div>
-
-            <div class="input-group" id="primo_wrapper">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="primo_accedant" onchange="calculate()">
-                    <label for="primo_accedant">Primo-accédant</label>
-                </div>
-                <div class="hint" style="margin-left:20px;">Vink aan als u in de twee jaar vóór de akte geen eigenaar van uw hoofdverblijf was.</div>
-            </div>
-
-            <div class="input-group" id="remise_wrapper">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="remise_aan" onchange="calculate()">
-                    <label for="remise_aan">Notaris geeft korting op zijn emolumenten</label>
-                </div>
-                <div id="remise_pct_wrapper" style="margin-top:8px;">
-                    <label for="remise_pct">Kortingspercentage (%)</label>
-                    <input type="number" id="remise_pct" value="20" min="0" max="20" step="1" oninput="calculate()">
-                </div>
-                <div class="hint">Maximaal 20% over het deel van de grondslag vanaf € 100.000. De notaris is hiertoe niet verplicht, dus vraag ernaar voordat u erop rekent.</div>
-            </div>
-        </div>
-
-        <div class="section-title">3. Makelaar</div>
-        <div class="input-group">
-            <label for="makelaar_optie">Wie betaalt de makelaar?</label>
-            <select id="makelaar_optie" onchange="calculate()">
-                <option value="vendeur">Verkoper (Charge Vendeur)</option>
-                <option value="acquereur">Koper (Charge Acquéreur)</option>
-                <option value="geen">Geen makelaar</option>
-            </select>
-        </div>
-        <div class="input-group" id="makelaar_perc_wrapper">
-            <label for="makelaar_perc">Makelaarscourtage (%)</label>
-            <input type="number" id="makelaar_perc" value="6.0" step="0.1" min="0" oninput="calculate()">
-        </div>
-
-        <div class="section-title">4. Bedragen &amp; Data</div>
-        <div class="input-group">
-            <label for="verkoopprijs">Totale Verkoopprijs (€)</label>
-            <input type="number" id="verkoopprijs" value="400000" step="1000" min="0" oninput="calculate()">
-        </div>
-
-        <div id="sectie_verkoper_bedragen">
-            <div class="input-group">
-                <label for="verkrijging">Hoe hebt u dit pand verkregen?</label>
-                <select id="verkrijging" onchange="calculate()">
-                    <option value="gekocht">Gekocht</option>
-                    <option value="geerfd">Geërfd</option>
-                    <option value="geschonken">Geschonken gekregen</option>
-                </select>
-                <div class="hint" id="verkrijging_hint"></div>
-            </div>
-            <div class="input-group">
-                <label for="aankoopprijs" id="aankoopprijs_label">Oorspronkelijke Aankoopsom (€)</label>
-                <input type="number" id="aankoopprijs" value="200000" step="1000" min="0" oninput="calculate()">
-            </div>
-            <div class="input-group">
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1;">
-                        <label for="datum_aankoop">Datum Aankoop</label>
-                        <input type="date" id="datum_aankoop" value="2015-01-01" oninput="calculate()">
-                    </div>
-                    <div style="flex:1;">
-                        <label for="datum_verkoop">Datum Verkoop</label>
-                        <input type="date" id="datum_verkoop" value="2025-01-01" oninput="calculate()">
-                    </div>
-                </div>
-                <div class="hint" id="jaren_bezit_label">Jaren bezit: 10</div>
-            </div>
-        </div>
-
-        <div id="sectie_fiscaal">
-            <div class="section-title">5. Fiscale Situatie</div>
-            <div class="input-group">
-                <label for="fiscale_woonplaats">Waar woont u fiscaal?</label>
-                <select id="fiscale_woonplaats" onchange="calculate()">
-                    <option value="fr">In Frankrijk</option>
-                    <option value="buiten">Buiten Frankrijk</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="is_hoofdverblijf" onchange="toggleFiscaleOpties(); calculate()">
-                    <label for="is_hoofdverblijf">Dit was mijn Hoofdverblijf</label>
-                </div>
-            </div>
-
-            <div id="fiscale_opties">
-                <div class="input-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="gemeubileerd_reeel" onchange="calculate()">
-                        <label for="gemeubileerd_reeel">Gemeubileerd verhuurd geweest onder het reële stelsel</label>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label for="aantal_verkopers">Aantal verkopers</label>
-                    <input type="number" id="aantal_verkopers" value="1" min="1" step="1" oninput="calculate()">
-                    <div class="hint">De drempel van € 50.000 voor de taxe op hoge meerwaarden geldt per verkoper.</div>
-                </div>
-                <div class="input-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="is_bouwgrond" onchange="calculate()">
-                        <label for="is_bouwgrond">Betreft bouwgrond (terrain à bâtir)</label>
-                    </div>
-                    <div class="hint" style="margin-left:20px;">De taxe op hoge meerwaarden geldt niet voor bouwgrond.</div>
-                </div>
-                <div class="input-group">
-                    <label for="aankoopkosten_modus" id="aankoopkosten_modus_label">Kosten van de verkrijging destijds</label>
-                    <select id="aankoopkosten_modus" onchange="calculate()">
-                        <option value="forfait">Forfait van 7,5% van de aankoopsom</option>
-                        <option value="werkelijk">Werkelijke kosten, op bewijsstukken</option>
-                    </select>
-                    <div id="aankoopkosten_eigen_wrapper" style="margin-top:8px;">
-                        <label for="aankoopkosten_eigen" id="aankoopkosten_eigen_label">Werkelijke aankoopkosten (€)</label>
-                        <input type="number" id="aankoopkosten_eigen" value="" min="0" step="100" oninput="calculate()">
-                    </div>
-                    <div class="hint" id="aankoopkosten_advies"></div>
-                </div>
-                <div class="input-group">
-                    <label for="werkzaamheden_modus">Werkzaamheden aan de woning</label>
-                    <select id="werkzaamheden_modus" onchange="calculate()">
-                        <option value="forfait">Forfait van 15% bij bezit langer dan vijf jaar</option>
-                        <option value="werkelijk">Werkelijke kosten, op facturen van een bedrijf</option>
-                    </select>
-                    <div id="werkzaamheden_eigen_wrapper" style="margin-top:8px;">
-                        <label for="werkzaamheden_eigen">Werkelijke kosten werkzaamheden (€)</label>
-                        <input type="number" id="werkzaamheden_eigen" value="" min="0" step="100" oninput="calculate()">
-                    </div>
-                    <div class="hint" id="werkzaamheden_advies"></div>
-                </div>
-
-                <div class="input-group">
-                    <label for="landmeter">Landmeter (€)</label>
-                    <div class="veld-met-knop">
-                        <input type="number" id="landmeter" value="" min="0" step="100" oninput="calculate()">
-                        <button type="button" class="weet-niet" id="wn_landmeter" aria-pressed="false" onclick="toggleWeetNiet('landmeter')">weet ik niet</button>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label for="diagnostics">Diagnostics (€)</label>
-                    <div class="veld-met-knop">
-                        <input type="number" id="diagnostics" value="" min="0" step="100" oninput="calculate()">
-                        <button type="button" class="weet-niet" id="wn_diagnostics" aria-pressed="false" onclick="toggleWeetNiet('diagnostics')">weet ik niet</button>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label for="mainlevee">Mainlevée (€)</label>
-                    <div class="veld-met-knop">
-                        <input type="number" id="mainlevee" value="" min="0" step="100" oninput="calculate()">
-                        <button type="button" class="weet-niet" id="wn_mainlevee" aria-pressed="false" onclick="toggleWeetNiet('mainlevee')">weet ik niet</button>
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="de_ruyter" onchange="calculate()">
-                        <label for="de_ruyter">Arrest De Ruyter (7.5% soc. lasten)</label>
-                    </div>
-                    <div class="hint" style="margin-left:20px;">Vink aan als u voor ziektekosten onder de wetgeving van een ander land van de EER of Zwitserland valt en niet ten laste komt van een Frans verplicht stelsel. Voor het Verenigd Koninkrijk gelden de uittredingsakkoorden. <a id="link_de_ruyter" href="#" target="_blank" rel="noopener noreferrer">Twijfelt u? Lees eerst de uitleg.</a></div>
-                </div>
-            </div>
-        </div>
+    <!-- Voortgang -->
+    <div class="voortgang verborgen" data-toon="voortgang">
+      <div class="voortgang-regel">
+        <button type="button" class="terug" data-actie="terug" aria-label="Vorige vraag">← Terug</button>
+        <div class="stapteller">Vraag <span data-tekst="stapNr">1</span> van <span data-tekst="stapTotaal">1</span></div>
+      </div>
+      <div class="balk"><div class="balk-vulling" data-breedte="pct"></div></div>
     </div>
 
-    <div class="main">
-        <h1>Vastgoedtransactie Analyse</h1>
-        <p style="color:#666;">Interactieve financiële specificatie (InfoFrankrijk).</p>
-        <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+    <!-- Rol -->
+    <section class="kaart verborgen" data-scherm="rol" aria-labelledby="kop-rol">
+      <h1 id="kop-rol">Gaat u kopen of verkopen?</h1>
+      <p class="inleiding">U krijgt alleen de vragen die bij uw situatie horen. Drie vragen, dan al een bedrag.</p>
+      <div class="keuzes">
+        <button type="button" class="keuze" data-veld="rol" data-waarde="koper">Ik ga kopen<span>Wat kost de aankoop mij in totaal?</span></button>
+        <button type="button" class="keuze" data-veld="rol" data-waarde="verkoper">Ik ga verkopen<span>Wat houd ik netto over?</span></button>
+        <button type="button" class="keuze" data-veld="rol" data-waarde="beide">Allebei<span>Verkopen én kopen, in één overzicht</span></button>
+      </div>
+    </section>
 
-        <div id="validatie" role="alert" aria-live="assertive"></div>
+    <!-- K1 postcode -->
+    <section class="kaart verborgen" data-scherm="k1" aria-labelledby="kop-k1">
+      <h1 id="kop-k1">Wat is de postcode van de woning?</h1>
+      <p class="inleiding">Het departement bepaalt het tarief van de overdrachtsbelasting.</p>
+      <label for="veld-postcode">Postcode</label>
+      <input id="veld-postcode" class="veld" name="postcode" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="34000">
+      <p class="onderschrift">Vijf cijfers, bijvoorbeeld 34000 voor Montpellier.</p>
+      <p class="onderschrift" data-tekst="postcodeMelding" role="status"></p>
+    </section>
 
-        <!-- Alleen de samenvattende zin wordt aangekondigd. Een aria-live op het
-             hele uitkomstblok laat een schermlezer bij elke toetsaanslag de
-             volledige tabel voorlezen, en dat is onbruikbaar. -->
-        <div id="uitkomst">
-            <div class="uitkomst-zin" id="uitkomst_zin" role="status" aria-live="polite"></div>
+    <!-- K2 koopsom -->
+    <section class="kaart verborgen" data-scherm="k2" aria-labelledby="kop-k2">
+      <h1 id="kop-k2">Wat is de koopsom?
+        <button type="button" class="info-knop" data-info="koopsom" aria-label="Uitleg bij koopsom" aria-expanded="false">i</button>
+      </h1>
+      <div class="notitie verborgen" data-notitie="koopsom" role="note">De koopsom is de prijs die u met de verkoper afspreekt, zoals die in het voorlopige koopcontract komt te staan. Kosten van notaris, belasting en makelaar horen daar niet bij. Die rekenen wij hierna voor u uit.</div>
+      <label for="veld-koopsom" class="blok">Koopsom</label>
+      <div class="bedragveld">
+        <span class="teken" aria-hidden="true">€</span>
+        <input id="veld-koopsom" name="koopsom" type="text" inputmode="numeric" placeholder="400.000">
+      </div>
+    </section>
 
-            <h3>Financiële Specificatie</h3>
-            <table>
-                <caption class="visueel-verborgen">Specificatie van de kosten van deze transactie</caption>
-                <thead>
-                    <tr>
-                        <th scope="col">Onderdeel</th>
-                        <th scope="col">Specificatie</th>
-                        <th scope="col" class="amount-header">Bedrag</th>
-                    </tr>
-                </thead>
-                <tbody id="spec_table">
-                    </tbody>
-            </table>
-            <div class="peildatum" id="dmto_peildatum"></div>
+    <!-- K3 type -->
+    <section class="kaart verborgen" data-scherm="k3" aria-labelledby="kop-k3">
+      <h1 id="kop-k3">Bestaande woning of nieuwbouw?
+        <button type="button" class="info-knop" data-info="type" aria-label="Uitleg bij bestaand of nieuwbouw" aria-expanded="false">i</button>
+      </h1>
+      <div class="notitie verborgen" data-notitie="type" role="note">Nieuwbouw is een woning die voor het eerst wordt geleverd, meestal gekocht van een projectontwikkelaar of op plan. Alle andere woningen gelden als bestaande bouw. Het verschil is groot: bij nieuwbouw betaalt u een heel ander soort belasting.</div>
+      <div class="keuzes-twee">
+        <button type="button" class="keuze keuze-compact" data-veld="type" data-waarde="bestaand">Bestaand</button>
+        <button type="button" class="keuze keuze-compact" data-veld="type" data-waarde="nieuwbouw">Nieuwbouw</button>
+      </div>
+    </section>
 
-            <div id="onvolledig"></div>
+    <!-- V0 hoofdverblijf -->
+    <section class="kaart verborgen" data-scherm="v0" aria-labelledby="kop-v0">
+      <h1 id="kop-v0">Was dit uw hoofdverblijf toen u verkocht?
+        <button type="button" class="info-knop" data-info="hoofdverblijf" aria-label="Uitleg bij hoofdverblijf" aria-expanded="false">i</button>
+      </h1>
+      <p class="inleiding">Eén vraag die alles kan schelen. Bij ja bent u in twee tellen klaar.</p>
+      <div class="notitie verborgen" data-notitie="hoofdverblijf" role="note">Uw hoofdverblijf is de woning waar u op het moment van verkoop werkelijk en gewoonlijk woonde. Een tweede woning of een verhuurd pand valt hier niet onder. Twijfelt u, ga dan uit van het adres waar u belastingaangifte deed.</div>
+      <div class="keuzes-twee">
+        <button type="button" class="keuze keuze-compact" data-veld="hoofdverblijf" data-waarde="ja">Ja</button>
+        <button type="button" class="keuze keuze-compact" data-veld="hoofdverblijf" data-waarde="nee">Nee</button>
+      </div>
+    </section>
 
-            <div id="gevoeligheden"></div>
+    <!-- VB bouwgrond -->
+    <section class="kaart verborgen" data-scherm="vB" aria-labelledby="kop-vb">
+      <h1 id="kop-vb">Gaat het om bouwgrond?
+        <button type="button" class="info-knop" data-info="bouwgrond" aria-label="Uitleg bij bouwgrond" aria-expanded="false">i</button>
+      </h1>
+      <p class="inleiding">Deze vraag verandert uw bedrag, daarom staat hij hier vooraan.</p>
+      <div class="notitie verborgen" data-notitie="bouwgrond" role="note">Bouwgrond is een perceel dat volgens het bestemmingsplan bebouwd mag worden, zonder woning erop. Voor bouwgrond gelden andere regels dan voor een woning: een aftrekpost vervalt en een extra heffing op hoge meerwaarden geldt er niet. Twijfelt u, kijk dan in de akte of vraag het uw notaris.</div>
+      <div class="keuzes-twee">
+        <button type="button" class="keuze keuze-compact" data-veld="bouwgrond" data-waarde="ja">Ja, bouwgrond</button>
+        <button type="button" class="keuze keuze-compact" data-veld="bouwgrond" data-waarde="nee">Nee, een woning</button>
+      </div>
+    </section>
 
-            <div class="cards-container">
-                <div class="result-card" id="card_1">
-                    <div class="result-label" id="card_1_label">Netto Opbrengst</div>
-                    <div class="result-value" id="res_netto">€ 0</div>
-                    <div class="result-sub" id="card_1_sub">Op bankrekening verkoper</div>
-                </div>
-                <div class="result-card" id="card_2">
-                    <div class="result-label" id="card_2_label">Werkelijke Winst</div>
-                    <div class="result-value" id="res_winst">€ 0</div>
-                    <div class="result-sub" id="card_2_sub">Netto - Aankoopsom</div>
-                </div>
-                <div class="result-card" id="card_3">
-                    <div class="result-label" id="card_3_label">Frictiekosten</div>
-                    <div class="result-value" id="res_frictie">€ 0</div>
-                    <div class="result-sub" id="card_3_sub">Verdwenen in de keten</div>
-                </div>
-            </div>
+    <!-- V1 verkoopprijs -->
+    <section class="kaart verborgen" data-scherm="v1" aria-labelledby="kop-v1">
+      <h1 id="kop-v1">Voor welk bedrag verkoopt u?</h1>
+      <label for="veld-verkoopprijs" class="blok">Verkoopprijs</label>
+      <div class="bedragveld">
+        <span class="teken" aria-hidden="true">€</span>
+        <input id="veld-verkoopprijs" name="verkoopprijs" type="text" inputmode="numeric" placeholder="400.000">
+      </div>
+    </section>
 
-            <div class="info-box" id="tax_explanation">
-                </div>
+    <!-- V2 verkrijging -->
+    <section class="kaart verborgen" data-scherm="v2" aria-labelledby="kop-v2">
+      <h1 id="kop-v2">Hoe hebt u het pand gekregen?
+        <button type="button" class="info-knop" data-info="verkrijging" aria-label="Uitleg bij verkrijging" aria-expanded="false">i</button>
+      </h1>
+      <div class="notitie verborgen" data-notitie="verkrijging" role="note">Hebt u het pand gekocht, dan telt de koopprijs uit de akte. Bij een erfenis of schenking telt de waarde die destijds in de akte of aangifte is vastgelegd. Die waarde vindt u terug bij de notaris die de zaak toen heeft geregeld.</div>
+      <div class="keuzes-drie">
+        <button type="button" class="keuze keuze-compact" data-veld="verkrijging" data-waarde="gekocht">Gekocht</button>
+        <button type="button" class="keuze keuze-compact" data-veld="verkrijging" data-waarde="geerfd">Geërfd</button>
+        <button type="button" class="keuze keuze-compact" data-veld="verkrijging" data-waarde="geschonken">Geschonken</button>
+      </div>
+    </section>
 
-            <div id="signaleringen"></div>
+    <!-- V3 aankoopprijs en verkrijgingskosten -->
+    <section class="kaart verborgen" data-scherm="v3" aria-labelledby="kop-v3">
+      <h1 id="kop-v3" data-tekst="vraagAankoopprijs">Voor welk bedrag hebt u het gekocht?</h1>
+      <p class="inleiding">Het bedrag zoals het in de akte staat.</p>
+      <label for="veld-aankoopprijs" data-tekst="labelAankoopprijs">Aankoopprijs destijds</label>
+      <div class="bedragveld">
+        <span class="teken" aria-hidden="true">€</span>
+        <input id="veld-aankoopprijs" name="aankoopprijs" type="text" inputmode="numeric" placeholder="200.000">
+      </div>
+
+      <div class="blok verborgen" data-toon="verkrijgingskosten">
+        <label for="veld-verkrijgingskosten">Kosten van de verkrijging destijds</label>
+        <p class="onderschrift">Wat u toen kwijt was aan notaris, akte en belasting over de erfenis of schenking. Dit is iets anders dan de waarde van het pand hierboven. Een forfait bestaat hier niet.</p>
+        <div class="post-met-knop">
+          <div class="bedragveld">
+            <span class="teken" aria-hidden="true">€</span>
+            <input id="veld-verkrijgingskosten" name="verkrijgingskosten" type="text" inputmode="numeric" placeholder="0">
+          </div>
+          <button type="button" class="weet-niet" data-weetniet="verkrijgingskosten" aria-pressed="false">Weet ik niet</button>
         </div>
+      </div>
+
+      <div class="waarschuwing verborgen" data-toon="waarschuwingVerkrijging" role="note">
+        <span class="teken" aria-hidden="true">!</span>
+        <div><strong>Let op</strong><br>Bij een geërfd of geschonken pand rekent deze tool niet alles mee, zoals kosten van de nalatenschap of een verdeling tussen erfgenamen. Laat uw uitkomst nakijken door uw notaris.</div>
+      </div>
+    </section>
+
+    <!-- V4 datums -->
+    <section class="kaart verborgen" data-scherm="v4" aria-labelledby="kop-v4">
+      <h1 id="kop-v4">Wanneer kreeg u het pand, en wanneer verkoopt u?</h1>
+      <p class="inleiding">De tijd tussen die twee data bepaalt uw korting op de meerwaarde.</p>
+      <div class="datums">
+        <div>
+          <label for="veld-datum-verkrijging">Datum van verkrijging</label>
+          <input id="veld-datum-verkrijging" class="veld" name="datumVerkrijging" type="date">
+        </div>
+        <div>
+          <label for="veld-datum-verkoop">Datum van verkoop</label>
+          <input id="veld-datum-verkoop" class="veld" name="datumVerkoop" type="date">
+        </div>
+      </div>
+      <p class="onderschrift" data-tekst="datumMelding" role="status"></p>
+    </section>
+
+    <!-- Uitkomst -->
+    <section class="verborgen" data-scherm="uitkomst">
+      <div class="kaart">
+        <div role="status" aria-live="polite">
+          <p class="uitkomst-zin" data-tekst="uitkomstZin"></p>
+          <div class="uitkomst-bedrag" data-tekst="uitkomstBedrag">€ 0</div>
+        </div>
+
+        <div class="tweede-uitkomst verborgen" data-toon="tweedeUitkomst">
+          <p class="uitkomst-zin" data-tekst="tweedeZin"></p>
+          <div class="uitkomst-bedrag" data-tekst="tweedeBedrag">€ 0</div>
+        </div>
+
+        <div data-toon="opbouwBlok">
+          <button type="button" class="opbouw-knop" data-actie="opbouw" aria-expanded="false">
+            <span aria-hidden="true" data-tekst="opbouwPijl">▸</span><span data-tekst="opbouwLabel">Bekijk de opbouw</span>
+          </button>
+          <div class="opbouw verborgen" data-toon="opbouw" data-lijst="posten"></div>
+        </div>
+
+        <div class="waarschuwing verborgen" data-toon="onvolledig" role="note">
+          <span class="teken" aria-hidden="true">!</span>
+          <div><strong>Uitkomst nog niet compleet</strong><br>U hebt bij één of meer posten "weet ik niet" gekozen. Die posten zijn niet meegerekend, dus het werkelijke bedrag ligt hoger.</div>
+        </div>
+
+        <div class="waarschuwing verborgen" data-toon="verkrijgingOnbekend" role="note">
+          <span class="teken" aria-hidden="true">!</span>
+          <div><strong>De kosten van uw verkrijging ontbreken</strong><br>Bij een geërfd of geschonken pand bestaat geen forfait: alleen uw werkelijke kosten mogen van de meerwaarde af. Zolang u die niet invult, rekent deze tool zonder die aftrek, en valt de belasting hier dus te hoog uit. Wat u netto overhoudt, is in werkelijkheid hoger dan hier staat.</div>
+        </div>
+
+        <p class="bronregel">Berekening, geen advies. Tarieven met peildatum <span data-tekst="peildatum">—</span> · bron: <span data-tekst="bron">—</span></p>
+      </div>
+
+      <div data-lijst="waarschuwingen"></div>
+
+      <button type="button" class="verder verborgen" data-toon="vervolgKnop" data-actie="verder">Verder met de verkoop →</button>
+
+      <!-- Verfijningen koper -->
+      <div class="kaart verborgen" data-toon="koperVerfijningen">
+        <h2>Verfijn uw aankoop</h2>
+        <p class="inleiding">Alleen als het op u van toepassing is. Uw bedrag hierboven past zich meteen aan.</p>
+        <div data-lijst="koperVerfijningen"></div>
+
+        <div class="verborgen" data-toon="makelaarKoop">
+          <h3>Wie betaalt de courtage bij de aankoop?</h3>
+          <div class="keuzes-drie">
+            <button type="button" class="keuze keuze-compact" data-veld="mkKoopPartij" data-waarde="verkoper">Verkoper betaalt</button>
+            <button type="button" class="keuze keuze-compact" data-veld="mkKoopPartij" data-waarde="koper">Koper betaalt</button>
+            <button type="button" class="keuze keuze-compact" data-veld="mkKoopPartij" data-waarde="geen">Geen makelaar</button>
+          </div>
+          <div class="blok verborgen" data-toon="mkKoopBedrag">
+            <div class="keuzes-twee">
+              <button type="button" class="keuze keuze-compact" data-veld="mkKoopModus" data-waarde="percentage">Percentage</button>
+              <button type="button" class="keuze keuze-compact" data-veld="mkKoopModus" data-waarde="bedrag">Vast bedrag</button>
+            </div>
+            <label for="veld-mk-koop" class="blok">Courtage</label>
+            <div class="bedragveld">
+              <span class="teken" aria-hidden="true" data-tekst="mkKoopTeken">%</span>
+              <input id="veld-mk-koop" name="mkKoopWaarde" type="text" inputmode="decimal" placeholder="4,5">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Verfijningen verkoper -->
+      <div class="kaart verborgen" data-toon="verkoperVerfijningen">
+        <h2>Verfijn uw verkoop</h2>
+        <p class="inleiding">Alleen als het op u van toepassing is. Uw bedrag hierboven past zich meteen aan.</p>
+        <div data-lijst="verkoperVerfijningen"></div>
+
+        <div class="verborgen" data-toon="makelaarVerk">
+          <h3>Wie betaalt de courtage bij de verkoop?</h3>
+          <div class="keuzes-drie">
+            <button type="button" class="keuze keuze-compact" data-veld="mkVerkPartij" data-waarde="verkoper">Verkoper betaalt</button>
+            <button type="button" class="keuze keuze-compact" data-veld="mkVerkPartij" data-waarde="koper">Koper betaalt</button>
+            <button type="button" class="keuze keuze-compact" data-veld="mkVerkPartij" data-waarde="geen">Geen makelaar</button>
+          </div>
+          <div class="blok verborgen" data-toon="mkVerkBedrag">
+            <div class="keuzes-twee">
+              <button type="button" class="keuze keuze-compact" data-veld="mkVerkModus" data-waarde="percentage">Percentage</button>
+              <button type="button" class="keuze keuze-compact" data-veld="mkVerkModus" data-waarde="bedrag">Vast bedrag</button>
+            </div>
+            <label for="veld-mk-verk" class="blok">Courtage</label>
+            <div class="bedragveld">
+              <span class="teken" aria-hidden="true" data-tekst="mkVerkTeken">%</span>
+              <input id="veld-mk-verk" name="mkVerkWaarde" type="text" inputmode="decimal" placeholder="4,5">
+            </div>
+          </div>
+        </div>
+
+        <div class="blok verborgen" data-toon="aktesBedrag">
+          <label for="veld-aktes-bedrag">Werkelijke aankoopkosten van destijds</label>
+          <p class="onderschrift">Notaris, akte en belasting die u bij de aankoop betaalde, volgens de akte. De kern kiest zelf wat gunstiger is: dit bedrag of het forfait.</p>
+          <div class="bedragveld">
+            <span class="teken" aria-hidden="true">€</span>
+            <input id="veld-aktes-bedrag" name="aktesBedrag" type="text" inputmode="numeric" placeholder="0">
+          </div>
+        </div>
+
+        <div class="blok verborgen" data-toon="verbouwdBedrag">
+          <label for="veld-verbouwd-bedrag">Bedrag van de verbouwingsfacturen</label>
+          <p class="onderschrift">Het totaal van de facturen van het bedrijf dat het werk deed, op naam van de eigenaar. De kern kiest zelf wat gunstiger is: dit bedrag of het forfait.</p>
+          <div class="bedragveld">
+            <span class="teken" aria-hidden="true">€</span>
+            <input id="veld-verbouwd-bedrag" name="verbouwdBedrag" type="text" inputmode="numeric" placeholder="0">
+          </div>
+        </div>
+
+        <div class="blok">
+          <label for="veld-aantal">Met hoeveel personen verkoopt u?</label>
+          <div class="teller">
+            <button type="button" data-actie="aantal:-" aria-label="Eén verkoper minder">−</button>
+            <input id="veld-aantal" name="aantalVerkopers" type="text" inputmode="numeric" readonly value="1">
+            <button type="button" data-actie="aantal:+" aria-label="Eén verkoper meer">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Verkoopkosten -->
+      <div class="kaart verborgen" data-toon="kostenvelden">
+        <h3>Welke verkoopkosten maakt u?</h3>
+
+        <div class="blok">
+          <label for="veld-landmeter">Landmeter (géomètre)</label>
+          <div class="post-met-knop">
+            <div class="bedragveld">
+              <span class="teken" aria-hidden="true">€</span>
+              <input id="veld-landmeter" name="landmeter" type="text" inputmode="numeric" placeholder="0">
+            </div>
+            <button type="button" class="weet-niet" data-weetniet="landmeter" aria-pressed="false">Weet ik niet</button>
+          </div>
+        </div>
+
+        <div class="blok">
+          <label for="veld-diagnostics">Verplichte keuringen (diagnostics)</label>
+          <div class="post-met-knop">
+            <div class="bedragveld">
+              <span class="teken" aria-hidden="true">€</span>
+              <input id="veld-diagnostics" name="diagnostics" type="text" inputmode="numeric" placeholder="0">
+            </div>
+            <button type="button" class="weet-niet" data-weetniet="diagnostics" aria-pressed="false">Weet ik niet</button>
+          </div>
+        </div>
+
+        <div class="blok">
+          <label for="veld-doorhaling">Doorhaling van de hypotheek</label>
+          <div class="post-met-knop">
+            <div class="bedragveld">
+              <span class="teken" aria-hidden="true">€</span>
+              <input id="veld-doorhaling" name="doorhaling" type="text" inputmode="numeric" placeholder="0">
+            </div>
+            <button type="button" class="weet-niet" data-weetniet="doorhaling" aria-pressed="false">Weet ik niet</button>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="herstart" data-actie="herstart" data-noprint="1">Opnieuw beginnen</button>
+    </section>
+
+    <!-- Doorgaan -->
+    <button type="button" class="verder verborgen" data-toon="verderKnop" data-actie="verder" data-tekst="verderLabel">Verder</button>
+
+    <!-- Tarieven niet geladen -->
+    <div class="waarschuwing verborgen" data-toon="geenTarieven" role="alert">
+      <span class="teken" aria-hidden="true">!</span>
+      <div><strong>De tarieven konden niet worden geladen</strong><br>Zonder de tarieventabel rekent deze tool niet. Er wordt bewust geen terugvaltarief gebruikt. Ververs de pagina; blijft dit staan, meld het dan via het artikel.</div>
     </div>
+
+  </div>
 </div>
 
-<script type="module" src="calc.js"></script>
+<script type="module" src="schil.js"></script>
 
 </body>
 </html>

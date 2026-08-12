@@ -872,11 +872,15 @@ if (typeof document !== 'undefined' && document.getElementById('spec_table')) {
         calculate();
     }
 
+    /* Onaangeroerd en expliciet onbekend zijn twee verschillende dingen. Alleen
+     * een druk op "weet ik niet" maakt de post onbekend en roept de melding op
+     * dat de uitkomst onvolledig is; een veld dat de gebruiker heeft laten
+     * staan telt als nul en zegt niets. */
     function leesBedragOfNull(id) {
-        const veld = el(id);
-        if (veld.disabled) return null;
-        const waarde = veld.value.trim();
-        return waarde === '' ? null : Number(waarde);
+        const knop = el(`wn_${id}`);
+        if (knop && knop.getAttribute('aria-pressed') === 'true') return null;
+        const waarde = el(id).value.trim();
+        return waarde === '' ? 0 : Number(waarde);
     }
 
     function leesInvoer() {
@@ -1055,15 +1059,25 @@ if (typeof document !== 'undefined' && document.getElementById('spec_table')) {
         notarisLabel += `<br><em>waaronder ${fmt(DEBOURS_FORFAIT)} débours: een schatting, geen tarief</em>`;
 
         const makelaarTekst = inv.makelaarOptie === 'geen' ? '-' : `${inv.makelaarPerc}%`;
+        /* De bruto meerwaarde is de verkoopprijs min de aankoopsom en de
+         * aftrekbare kosten. Het abattement voor bezitsduur is daar nog niet op
+         * toegepast; "na aftrek" hoort dus alleen boven het belastbare bedrag. */
         const pvToelichting = res.pvReden === 'vrijstelling hoofdverblijf'
             ? 'Vrijstelling: Hoofdverblijf'
             : res.pvReden === 'geen winst na aftrek'
-                ? 'Geen winst na aftrek'
-                : `Winst na aftrek: ${fmt(res.brutoMeerwaarde)}<br>Aftrek: ${res.abatIr.toFixed(1)}% (IR) / ${res.abatPs.toFixed(1)}% (Soc)`;
+                ? 'Geen meerwaarde na aftrek van de kosten'
+                : `Bruto meerwaarde: ${fmt(res.brutoMeerwaarde)}`
+                  + `<br>Abattement bezitsduur: ${res.abatIr.toFixed(1)}% (IR) / ${res.abatPs.toFixed(1)}% (Soc)`
+                  + `<br>Belastbaar na aftrek: ${fmt(res.belastbaarIr)} (IR)`;
         const surtaxeToelichting = inv.isBouwgrond
             ? 'Niet van toepassing: bouwgrond'
             : `Boven ${fmt(SURTAXE_DREMPEL)} per verkoper, ${inv.aantalVerkopers} verkoper(s)`;
-        const onbekend = (post) => res.onbekendePosten.includes(post) ? '<em>niet opgegeven</em>' : '';
+
+        /* Een onbekende post krijgt geen bedrag: "niet opgegeven" naast
+         * "€ 0,00" spreekt de melding eronder tegen. */
+        const isOnbekend = (post) => res.onbekendePosten.includes(post);
+        const postToelichting = (post) => (isOnbekend(post) ? '<em>niet opgegeven</em>' : '');
+        const postBedrag = (post, bedrag) => (isOnbekend(post) ? '—' : fmt2(bedrag));
 
         const rijen = [];
         if (koopt) {
@@ -1094,18 +1108,18 @@ if (typeof document !== 'undefined' && document.getElementById('spec_table')) {
                 </tr>
                 <tr>
                     <td>Landmeter</td>
-                    <td class="spec-toelichting">${onbekend('landmeter')}</td>
-                    <td class="amount">${fmt2(res.landmeter)}</td>
+                    <td class="spec-toelichting">${postToelichting('landmeter')}</td>
+                    <td class="amount">${postBedrag('landmeter', res.landmeter)}</td>
                 </tr>
                 <tr>
                     <td>Diagnostics</td>
-                    <td class="spec-toelichting">${onbekend('diagnostics')}</td>
-                    <td class="amount">${fmt2(res.diagnostics)}</td>
+                    <td class="spec-toelichting">${postToelichting('diagnostics')}</td>
+                    <td class="amount">${postBedrag('diagnostics', res.diagnostics)}</td>
                 </tr>
                 <tr>
                     <td>Mainlevée</td>
-                    <td class="spec-toelichting">${onbekend('mainlevée')}</td>
-                    <td class="amount">${fmt2(res.mainlevee)}</td>
+                    <td class="spec-toelichting">${postToelichting('mainlevée')}</td>
+                    <td class="amount">${postBedrag('mainlevée', res.mainlevee)}</td>
                 </tr>
                 <tr style="border-top:2px solid #ddd;">
                     <td><strong>Totaal afhoudingen</strong></td>

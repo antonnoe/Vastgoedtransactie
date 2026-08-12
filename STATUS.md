@@ -357,11 +357,12 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 
 ## OPENSTAAND
 
-1. **De nieuwe schil staat naast de oude, niet in de plaats.** `nieuw.html`,
-   `schil.css` en `schil.js` draaien op de echte rekenkern en zijn in de browser
-   gecontroleerd op alle drie de routes en op 360 px breed. `index.html` blijft
-   de werkende tool tot je de vervanging in gang zet. Het originele ontwerp
-   staat ongewijzigd in `schil/` als vergelijkingspunt.
+1. **De vorige interface staat er nog als terugvaloptie.** `index.html` is nu
+   de nieuwe schil; de oude staat als `index-oud.html` en draait op dezelfde
+   rekenkern. Twee interfaces onderhouden kost dubbel: elke wijziging aan de
+   kern moet in beide worden nagelopen, en de testset dekt alleen de kern en de
+   adapter, niet de DOM van `index-oud.html`. Zet hem weg zodra je de nieuwe
+   vertrouwt. Het originele ontwerp staat ongewijzigd in `schil/`.
 2. **De hoogtemelding is niet tegen de echte artikelpagina getest.** `DOEL` in
    `schil.js` staat op `https://infofrankrijk.com`, zonder `www`, gelijk aan het
    adres in `ARTIKEL_URL`. Wijkt dat af van waar het artikel werkelijk draait,
