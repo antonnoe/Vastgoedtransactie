@@ -39,6 +39,11 @@ import {
     STANDAARD_INVOER,
     URL_VELDEN,
     BRON,
+    notarisComponenten,
+    TPF_VEFA_PCT,
+    TPF_VEFA_BASIS_PCT,
+    TPF_VEFA_ASSIETTE_PCT,
+    CSI_MINIMUM,
     houdbaarheid,
     maandenTussen,
     HOUDBAAR_ACTUEEL_MAANDEN,
@@ -85,6 +90,38 @@ check('notariskosten bestaande bouw over 400.000 euro bij 5,00% departementaal i
 // 3593,25 emolumenten + 718,65 btw + 2860 TPF + 400 CSI + 1200 debours
 check('notariskosten nieuwbouw over 400.000 euro is 8.771,90 euro',
     berekenNotarisVefa(400000), 8771.90);
+
+/* Frais d'assiette bij VEFA: art. 1647 V-b CGI schrijft 2,14 procent voor in
+ * plaats van de 2,37 die bij de gewone tarieven hoort, juist omdat het
+ * departementale tarief hier 0,70 bedraagt. Het gepubliceerde tarief van 0,715
+ * is die twee bij elkaar. Deze drie regels leggen dat vast: zou iemand het
+ * VEFA-deel op 2,37 zetten of de opslag helemaal weglaten, dan valt de eerste
+ * of de derde om. */
+const drie = (n) => Math.round(n * 1e3) / 1e3;
+check('0,70 procent met 2,14 procent frais d\'assiette geeft het tarief van 0,715',
+    drie(TPF_VEFA_BASIS_PCT * (1 + TPF_VEFA_ASSIETTE_PCT / 100)), TPF_VEFA_PCT);
+check('de VEFA-opslag is 2,14 procent en niet de 2,37 van de gewone tarieven',
+    TPF_VEFA_ASSIETTE_PCT === meta.frais_assiette_pct_van_departementaal, false);
+check('met 2,37 procent zou het tarief niet op 0,715 uitkomen',
+    drie(TPF_VEFA_BASIS_PCT * (1 + meta.frais_assiette_pct_van_departementaal / 100)) === TPF_VEFA_PCT, false);
+check('de opslag is niet weggelaten: het kale tarief is niet het gerekende tarief',
+    TPF_VEFA_BASIS_PCT === TPF_VEFA_PCT, false);
+check('nieuwbouw over 400.000 euro rekent 2.860 euro overdrachtsbelasting',
+    notarisComponenten(400000, { isNieuwbouw: true }).overdrachtsbelasting, 2860.00);
+
+/* Ondergrens van de contribution de sécurité immobilière, art. 881 F CGI:
+ * 15 euro per akte. Het percentage komt daar onder uit bij een prijs onder
+ * 15.000 euro. */
+check('CSI bij 10.000 euro is de ondergrens van 15 euro, niet 10',
+    notarisComponenten(10000, { isNieuwbouw: true }).csi, 15.00);
+check('CSI bij 20.000 euro is gewoon 0,10 procent, dus 20 euro',
+    notarisComponenten(20000, { isNieuwbouw: true }).csi, 20.00);
+check('op de grens van 15.000 euro vallen percentage en ondergrens samen',
+    notarisComponenten(15000, { isNieuwbouw: true }).csi, 15.00);
+// 307,41 emolumenten + 61,48 btw + 71,50 TPF + 15 CSI + 1200 debours. Zonder de
+// ondergrens zou hier 1.650,39 staan: vijf euro te weinig.
+check('de ondergrens werkt door in het totaal bij een prijs van 10.000 euro',
+    berekenNotarisVefa(10000), 1655.39);
 
 console.log('\nControle op de samengestelde DMTO-tarieven uit de bron');
 const samengesteld = (dep) => {
@@ -982,7 +1019,13 @@ check('elke sleutel in BRON komt voor in bronnen.json',
 check('elke post in bronnen.json heeft grondslag en status',
     Object.entries(bronnen.posten).every(([, b]) =>
         typeof b.grondslag === 'string' && b.grondslag.length > 0
-        && ['primair', 'teverifieren'].includes(b.status)), true);
+        && Object.keys(bronnen._meta.statuswaarden).includes(b.status)), true);
+/* Een post met een wettelijke grondslag moet ook zeggen wáár die staat. Bij
+ * geentarief is het ontbreken van een bron juist de mededeling. */
+check('elke post met status primair heeft een bronnaam',
+    Object.entries(bronnen.posten).filter(([, b]) => b.status === 'primair' && !b.bronnaam).map(([id]) => id).join(', '), '');
+check('geen post met status geentarief doet alsof er een bron is',
+    Object.entries(bronnen.posten).filter(([, b]) => b.status === 'geentarief' && (b.bronnaam || b.bronUrl)).map(([id]) => id).join(', '), '');
 
 console.log('\nDe schil toont geen grondslag die niet uit bronnen.json komt');
 for (const [naam, ui] of scenarios) {
@@ -1041,17 +1084,41 @@ for (const [naam, ui] of scenarios) {
 
 console.log('\nSTATUS.md en het paneel zijn dezelfde lijst');
 const statusMd = readFileSync(join(hier, 'STATUS.md'), 'utf8');
-const teVerifieren = Object.entries(bronnen.posten)
-    .filter(([, b]) => b.status === 'teverifieren').map(([id]) => id);
-check('er zijn posten met status teverifieren', teVerifieren.length > 0, true);
-for (const id of teVerifieren) {
-    check(`STATUS.md noemt ${id} onder OPENSTAAND`,
-        statusMd.slice(statusMd.indexOf('## OPENSTAAND')).includes(id), true);
+const openstaand = statusMd.slice(statusMd.indexOf('## OPENSTAAND'));
+const metStatus = (s) => Object.entries(bronnen.posten).filter(([, b]) => b.status === s).map(([id]) => id);
+
+/* Elke status die in bronnen.json voorkomt moet in _meta zijn uitgelegd, anders
+ * kan er ongemerkt een vierde bijkomen die de schil niet kent. */
+const bekend = Object.keys(bronnen._meta.statuswaarden);
+check('elke status in bronnen.json staat in _meta.statuswaarden',
+    [...new Set(Object.values(bronnen.posten).map((b) => b.status))].filter((s) => !bekend.includes(s)).join(', '), '');
+/* De schil moet elke status in woorden en in kleur kunnen tonen. Zonder tekst
+ * valt het ruwe sleutelwoord op het scherm, zonder eigen kleurregel krijgt hij
+ * de kleur van niets. */
+const schilJs = readFileSync(join(hier, 'schil.js'), 'utf8');
+const schilCss = readFileSync(join(hier, 'schil.css'), 'utf8');
+const statusTekst = schilJs.slice(schilJs.indexOf('const STATUS_TEKST'), schilJs.indexOf('};', schilJs.indexOf('const STATUS_TEKST')));
+check('de schil heeft voor elke status een tekst',
+    bekend.filter((s) => !new RegExp(`\\b${s}:`).test(statusTekst)).join(', '), '');
+check('de schil heeft voor elke status een eigen kleurregel',
+    bekend.filter((s) => !schilCss.includes(`.bron-status.${s}`)).join(', '), '');
+check('amber blijft voorbehouden aan wat nog gecontroleerd moet worden',
+    /\.bron-status\.geentarief[^}]*#fdf3d8/.test(schilCss), false);
+
+/* Wat nog gecontroleerd moet worden, staat onder OPENSTAAND. Wat geen wettelijk
+ * tarief heeft en dat ook nooit krijgt, is geen openstaande controle maar een
+ * vaststelling en staat onder AANNAMES. Wat tegen de bron is gelegd, hoort op
+ * geen van beide plaatsen meer te staan. */
+for (const id of metStatus('teverifieren')) {
+    check(`STATUS.md noemt ${id} onder OPENSTAAND`, openstaand.includes(id), true);
 }
-const primair = Object.entries(bronnen.posten)
-    .filter(([, b]) => b.status === 'primair').map(([id]) => id);
+const aannames = statusMd.slice(statusMd.indexOf('## AANNAMES'), statusMd.indexOf('## OPENSTAAND'));
+for (const id of metStatus('geentarief')) {
+    check(`STATUS.md noemt ${id} onder AANNAMES`, aannames.includes(`\`${id}\``), true);
+    check(`${id} staat niet meer onder OPENSTAAND`, openstaand.includes(`\`${id}\``), false);
+}
 check('geen post met status primair staat ten onrechte onder OPENSTAAND',
-    primair.filter((id) => statusMd.slice(statusMd.indexOf('## OPENSTAAND')).includes(`\`${id}\``)).join(', '), '');
+    metStatus('primair').filter((id) => openstaand.includes(`\`${id}\``)).join(', '), '');
 
 console.log(`\n${geslaagd} geslaagd, ${mislukt.length} mislukt.`);
 if (mislukt.length > 0) {

@@ -371,7 +371,16 @@ function verfijningLijst(container, definities, effecten) {
     }
 }
 
-const STATUS_TEKST = { primair: 'tegen de bron gelegd', teverifieren: 'nog na te gaan' };
+/* Drie statussen, twee tonen. "Nog na te gaan" is een openstaande controle en
+ * krijgt daarom amber; de andere twee zijn af. Een post die nooit een wettelijk
+ * tarief zal hebben, is geen onvoltooide controle maar een vaststelling, en
+ * hoort dus niet dezelfde kleur te krijgen als iets wat nog moet gebeuren. Amber
+ * die overal staat, houdt niemand meer tegen. */
+const STATUS_TEKST = {
+    primair: 'tegen de bron gelegd',
+    teverifieren: 'nog na te gaan',
+    geentarief: 'schatting, geen wettelijk tarief'
+};
 
 /* Het paneel toont uitsluitend wat uit bronnen.json komt. Staat er geen bron
  * bij een post, dan verschijnt hij hier niet; hij blijft wel in de opbouw. */

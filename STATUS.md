@@ -46,6 +46,43 @@ elk punt hieronder alsnog tegen de bron te leggen.
 - **Verificatie:** de drie samengestelde tarieven die de opdrachtgever uit de
   bron gaf, komen exact uit de formule: 5,00 → 6,3185 %, 4,50 → 5,8067 %,
   3,80 → 5,0901 %. Dit is als aparte assertion in `test.mjs` vastgelegd.
+- **Wetsartikelen (opdrachtgever, augustus 2026):** de gemeentelijke opslag
+  berust op art. 1584 CGI, vastgesteld op 1,20 %; voor gemeenten die daar niet
+  onder vallen geldt art. 1595 bis met hetzelfde standaardtarief. De frais
+  d'assiette berusten op art. 1647 V-a CGI, 2,37 % bovenop het departementale
+  deel dat op grond van art. 1594 A wordt geheven. Daarmee heeft ook de
+  samenstelling zelf een grondslag, en niet alleen de uitkomst ervan.
+
+### Taxe de publicité foncière bij nieuwbouw — samenstelling
+
+- Het gerekende tarief is 0,715 %. Dat is geen los getal: art. 1594 F quinquies
+  CGI geeft 0,70 %, en art. 1647 V-b CGI geeft daarbovenop frais d'assiette van
+  **2,14 %** in plaats van de 2,37 % die bij de gewone tarieven hoort, juist
+  omdat het tarief hier 0,70 bedraagt.
+- **Verificatie:** 0,70 × 1,0214 = 0,71498, afgerond 0,715 — het gepubliceerde
+  tarief. Met 2,37 % zou er 0,717 uitkomen, met een weggelaten opslag 0,700.
+  Alle drie zijn in `test.mjs` als assertion vastgelegd, zodat het VEFA-deel
+  niet ongemerkt op de 2,37 van de gewone tarieven kan worden gezet.
+- De tool rekent met het gepubliceerde 0,715 en niet met de opnieuw uitgerekende
+  0,71498. Dat scheelt bij een prijs van een miljoen euro twintig cent. Het
+  gepubliceerde getal is wat de notaris hanteert; hier iets anders van maken zou
+  een nauwkeurigheid suggereren die de bron niet geeft.
+- **Deze samenstelling staat niet in het paneel.** De post `vefa.tpf` houdt in
+  `bronnen.json` zijn eigen tekst en bronnaam (economie.gouv.fr). Ik had de
+  artikelen erin gezet, maar dan zou het paneel art. 1647 V-b toeschrijven aan
+  een bron die daar niet voor is aangeleverd. Wil je de samenstelling wél in het
+  paneel, geef dan een Legifrance-URL voor art. 1647 V-b, dan gaat de bronnaam
+  mee.
+
+### Contribution de sécurité immobilière — art. 879, 881 K en 881 F CGI
+
+- Verschuldigd door wie om de formaliteiten van art. 878 CGI verzoekt
+  (art. 879). Het tarief staat in art. 881 K: uniform 0,10 % over de in de akte
+  vermelde bedragen. Art. 881 F stelt een ondergrens van **15 euro per akte**.
+- **Verificatie:** wetsartikelen aangeleverd door de opdrachtgever, augustus
+  2026. Die ondergrens ontbrak in de tool: onder een prijs van 15.000 euro
+  rekende hij te weinig. Nu ingebouwd, met assertions onder en boven de grens
+  en op de grens zelf.
 
 ### Emolumenten van de notaris
 
@@ -225,20 +262,28 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
    heb de componentformule aangehouden, omdat dat is wat er in de akte gebeurt,
    en de testwaarde daarop gezet. **Controleer dit als je de andere keuze
    wilt.**
-2. **Débours: 1.200 euro forfaitair.** Deze post staat in de opbouw expliciet
-   als "schatting, geen tarief" gemarkeerd, naast de posten die wel een
-   wettelijk tarief zijn. Dit bedrag stond al in de bestaande code
-   en is overgenomen, ook in de nieuwe VEFA-opbouw. Het is geen wettelijk
-   tarief maar een schatting van kadaster-, uittreksel- en formaliteitskosten.
-   Het is niet uit een primaire bron bevestigd. Dat de VEFA-uitkomst met dit
-   bedrag precies op de door de opdracht genoemde 8.771,90 euro uitkomt,
-   bevestigt hooguit dat de opdracht van hetzelfde forfait uitging.
-3. **Taxe de publicité foncière VEFA 0,715 % (art. 1594 F quinquies CGI),
-   contribution de sécurité immobilière 0,10 % (art. 879 CGI), btw 20 % over de
-   emolumenten.** Deze drie zijn niet uit de primaire bron bevestigd. De CSI en
-   de btw stonden al in de bestaande code; de 0,715 % is nieuw en komt uit de
-   opdracht. Samen reproduceren ze de opgegeven VEFA-uitkomst van 8.771,90 euro
-   exact, wat een consistentiecontrole is en geen bronverificatie.
+2. **Débours: 1.200 euro forfaitair — `debours`.** Deze post staat in de opbouw
+   expliciet als "schatting, geen tarief" gemarkeerd, naast de posten die wel
+   een wettelijk tarief zijn. Dit bedrag stond al in de bestaande code en is
+   overgenomen, ook in de nieuwe VEFA-opbouw. Het is een schatting van
+   kadaster-, uittreksel- en formaliteitskosten. Er is geen wettelijk tarief en
+   er komt er ook geen; daarom staat deze post in `bronnen.json` op
+   `geentarief` en niet op `teverifieren`. Er valt niets na te gaan, alleen
+   beter te onderbouwen. Dat de VEFA-uitkomst met dit bedrag precies op de door
+   de opdracht genoemde 8.771,90 euro uitkomt, bevestigt hooguit dat de opdracht
+   van hetzelfde forfait uitging.
+3. **Btw van 20 % over de emolumenten — `emolumenten.btw`.** Het tarief zelf
+   staat vast: de emolumenten zijn een dienst tegen het algemene tarief. Er is
+   geen eigen bepaling in het CGI die dit voor notarisemolumenten regelt, en die
+   komt er ook niet. Deze post staat daarom in `bronnen.json` op `geentarief` en
+   niet op `teverifieren`: er valt niets meer na te gaan. In het paneel staat
+   hij neutraal, niet in amber.
+
+   De taxe de publicité foncière bij VEFA en de contribution de sécurité
+   immobilière stonden hier eerder ook onder. Beide hebben inmiddels een
+   wetsartikel en staan onder GEVERIFIEERD. Dat de VEFA-uitkomst met deze
+   getallen precies op de door de opdracht genoemde 8.771,90 euro uitkomt, blijft
+   een consistentiecontrole en is geen bronverificatie.
 4. **Grondslag van de surtaxe.** De heffing wordt toegepast op de belastbare
    meerwaarde ná het IR-abattement voor bezitsduur, niet na het afwijkende
    abattement voor de sociale lasten. Dit volgt uit de formulering in de
@@ -435,25 +480,23 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 
 ### Posten met status `teverifieren` in `bronnen.json`
 
-Deze vier staan in het verantwoordingspaneel als *nog na te gaan*. De lijst
-hieronder is dezelfde lijst: de testset valt om zodra een post in
-`bronnen.json` op `teverifieren` staat en hier niet wordt genoemd, of zodra een
-post op `primair` gaat staan terwijl zijn id hier nog tussen backticks staat.
-Wie er één afvinkt, werkt dus beide bestanden in één beweging bij.
+Wat in het verantwoordingspaneel als *nog na te gaan* in amber staat, staat
+hier. De testset houdt de twee lijsten gelijk: hij valt om zodra een post op
+`teverifieren` staat en hier niet wordt genoemd, en ook zodra een post op
+`primair` of `geentarief` gaat staan terwijl zijn id hier nog tussen backticks
+staat. Wie er één afvinkt, werkt beide bestanden in één beweging bij.
 
-14. **`dmto.communaal`** — de gemeentelijke taxe en de frais d'assiette. De
-    tarieven zijn afgeleid uit de gepubliceerde totalen van DGFiP en drie
-    controlewaarden van de opdrachtgever; de wetsartikelen waarop zij berusten
-    zijn niet zelf geraadpleegd. De uitkomst is daarmee gecontroleerd, de
-    grondslag niet.
-15. **`emolumenten.btw`** — de btw over de emolumenten. Er staat geen bronnaam
-    en geen bron-URL bij, omdat ik er geen heb kunnen vaststellen. Het
-    percentage zit in de kern en wordt toegepast; wat ontbreekt is de
-    vindplaats.
-16. **`csi`** — de contribution de sécurité immobilière. Het tarief is bevestigd
-    door de opdrachtgever, het wetsartikel is niet zelf geraadpleegd.
-17. **`debours`** — de débours. Dit is geen wettelijk tarief maar een
-    forfaitaire schatting op grond van ervaring, en er is geen bron die het
-    bedrag draagt. Het staat in het paneel met de vermelding dat het een
-    schatting is. Als er ooit één post uit deze lijst moet verdwijnen door hem
-    beter te onderbouwen in plaats van beter te labelen, is het deze.
+**Op dit moment staat er geen enkele post op `teverifieren`.** De vier die hier
+stonden zijn in augustus 2026 alle vier afgehandeld, met wetsartikelen die de
+opdrachtgever heeft aangeleverd. De gemeentelijke opslag en de contribution de
+sécurité immobilière staan nu op `primair` en zijn verplaatst naar GEVERIFIEERD;
+bij die tweede kwam meteen een fout aan het licht, want de ondergrens van 15 euro
+per akte ontbrak in de tool. De btw over de emolumenten en de débours staan nu op
+`geentarief`: zij hebben geen eigen wettelijke bepaling en krijgen die ook niet,
+dus er valt niets na te gaan. Die twee staan onder AANNAMES en in het paneel
+neutraal in plaats van in amber.
+
+Dat deze lijst leeg is, betekent niet dat alles klopt. Het betekent dat elke post
+die de tool gebruikt óf tegen een wetsartikel is gelegd, óf uitdrukkelijk als
+schatting is benoemd. De punten hierboven in deze sectie staan daar los van en
+blijven onverminderd open.

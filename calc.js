@@ -102,12 +102,27 @@ export const EMOLUMENTEN_TRANCHES = [
 /* BTW over de emolumenten van de notaris. */
 export const TVA_PCT = 20.0;
 
-/* Contribution de securite immobiliere, art. 879 CGI. */
+/* Contribution de securite immobiliere: verschuldigd op grond van art. 879 CGI,
+ * tarief in art. 881 K, en een ondergrens per akte in art. 881 F. Onder een
+ * prijs van 15.000 euro komt het percentage onder die ondergrens uit; dan geldt
+ * het minimum. */
 export const CSI_PCT = 0.10;
+export const CSI_MINIMUM = 15.0;
 
-/* Taxe de publicite fonciere bij een verkoop onder BTW (VEFA),
- * art. 1594 F quinquies CGI. */
+/* Taxe de publicite fonciere bij een verkoop onder BTW (VEFA).
+ *
+ * Het gepubliceerde tarief is 0,715 procent en dat is wat hier wordt gerekend.
+ * Het is samengesteld: art. 1594 F quinquies CGI geeft 0,70 procent, en art.
+ * 1647 V-b CGI geeft daarbovenop frais d'assiette van 2,14 procent in plaats
+ * van de 2,37 die bij de gewone tarieven hoort, juist omdat het tarief hier
+ * 0,70 bedraagt. De twee constanten hieronder staan er alleen om die herkomst
+ * vast te leggen; de testset legt ze naast elkaar, zodat niemand het VEFA-deel
+ * ongemerkt op 2,37 kan zetten. Gerekend wordt met het gepubliceerde tarief,
+ * niet met de opnieuw uitgerekende samenstelling: die verschilt pas in de derde
+ * decimaal en het gepubliceerde getal is wat de notaris hanteert. */
 export const TPF_VEFA_PCT = 0.715;
+export const TPF_VEFA_BASIS_PCT = 0.70;
+export const TPF_VEFA_ASSIETTE_PCT = 2.14;
 
 /* Forfaitair bedrag voor debours (kadaster, uittreksels, formaliteiten).
  * Geen wettelijk tarief maar een schatting; zie STATUS.md onder AANNAMES.
@@ -417,7 +432,9 @@ export function notarisComponenten(prijs, opties) {
     const overdrachtsbelasting = opties.isNieuwbouw
         ? prijs * (TPF_VEFA_PCT / 100)
         : berekenDmto(prijs, opties.departementaalPct, opties.meta);
-    const csi = prijs * (CSI_PCT / 100);
+    /* De ondergrens van art. 881 F bijt onder een prijs van 15.000 euro. Zonder
+     * die grens rekent de tool bij de goedkoopste panden te weinig. */
+    const csi = Math.max(prijs * (CSI_PCT / 100), CSI_MINIMUM);
     return {
         /* Bruto is voor de korting, emolumenten is erna. Een opbouw die beide
          * naast elkaar toont moet met bruto beginnen, anders staat de korting

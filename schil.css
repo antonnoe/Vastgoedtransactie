@@ -485,6 +485,9 @@ label {
 
 .bron-status.primair { background: rgba(47, 107, 58, 0.12); color: #24522d; }
 .bron-status.teverifieren { background: #fdf3d8; color: #6b5100; }
+/* Grijs en niet amber: dit is geen openstaande controle maar een vaststelling.
+   Ook niet groen, want groen zou zeggen dat er een bron onder ligt. */
+.bron-status.geentarief { background: rgba(74, 59, 55, 0.10); color: #4a3b37; }
 
 .blokkop {
     font-family: Poppins, sans-serif;

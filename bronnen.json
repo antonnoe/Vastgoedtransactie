@@ -4,7 +4,8 @@
     "bijgewerkt": "2026-08-12",
     "statuswaarden": {
       "primair": "tegen de primaire bron gelegd",
-      "teverifieren": "nog niet tegen de primaire bron gelegd"
+      "teverifieren": "nog niet tegen de primaire bron gelegd",
+      "geentarief": "geen wettelijke grondslag en die komt er ook niet; een schatting of een algemene regel zonder eigen bepaling"
     },
     "toelichting": "Waar de opdracht 'zelfde als' schreef, staat hier de volledige URL, zodat elke post op zichzelf leesbaar is en de schil er rechtstreeks naar kan verwijzen."
   },
@@ -22,11 +23,10 @@
       "status": "primair"
     },
     "dmto.communaal": {
-      "grondslag": "gemeentelijke taxe van 1,20 procent en frais d'assiette van 2,37 procent over het departementale deel",
-      "bronnaam": "DGFiP, tarieven per 1 juni 2026",
-      "bronUrl": "https://www.impots.gouv.fr/sites/default/files/media/1_metier/3_partenaire/notaires/dmto/dmto_2026-06.pdf",
-      "status": "teverifieren",
-      "opmerking": "de tarieven zijn afgeleid uit de gepubliceerde totalen; de wetsartikelen zijn niet zelf geraadpleegd"
+      "grondslag": "art. 1584 CGI, aanvullende heffing ten bate van de gemeente, vastgesteld op 1,20 procent; voor gemeenten die daar niet onder vallen geldt art. 1595 bis met hetzelfde standaardtarief. Frais d'assiette: art. 1647 V-a CGI, 2,37 procent bovenop het departementale deel geheven op grond van art. 1594 A.",
+      "bronnaam": "Legifrance",
+      "bronUrl": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000044073354",
+      "status": "primair"
     },
     "emolumenten": {
       "grondslag": "art. A444-91 Code de commerce, tabel 5 nr. 17, tarieven verlengd bij arrêté van 25 februari 2026, geldig tot 29 februari 2028",
@@ -41,24 +41,24 @@
       "status": "primair"
     },
     "emolumenten.btw": {
-      "grondslag": "btw van 20 procent over de emolumenten",
+      "grondslag": "de emolumenten zijn een dienst tegen het algemene btw-tarief van 20 procent; geen eigen bepaling in het CGI",
       "bronnaam": null,
       "bronUrl": null,
-      "status": "teverifieren"
+      "status": "geentarief",
+      "opmerking": "het tarief zelf staat vast, er is geen specifiek wetsartikel"
     },
     "csi": {
-      "grondslag": "contribution de sécurité immobilière, 0,10 procent van de prijs",
-      "bronnaam": null,
-      "bronUrl": null,
-      "status": "teverifieren",
-      "opmerking": "het tarief is bevestigd, het wetsartikel is niet zelf geraadpleegd"
+      "grondslag": "art. 879 CGI, verschuldigd door wie om de formaliteiten van art. 878 verzoekt; tarief in art. 881 K, uniform 0,10 procent over de in de akte vermelde bedragen, met een ondergrens van 15 euro per akte op grond van art. 881 F",
+      "bronnaam": "Legifrance",
+      "bronUrl": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000022335681",
+      "status": "primair"
     },
     "debours": {
       "grondslag": "geen wettelijk tarief; forfaitaire schatting van uittreksels, kadaster- en formaliteitskosten",
       "bronnaam": null,
       "bronUrl": null,
-      "status": "teverifieren",
-      "opmerking": "ervaringscijfer, geen bron"
+      "status": "geentarief",
+      "opmerking": "ervaringscijfer, bewust geen bron"
     },
     "vefa.tpf": {
       "grondslag": "art. 1594 F quinquies CGI, taxe de publicité foncière van 0,715 procent bij verkoop onder btw",
