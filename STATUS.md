@@ -52,6 +52,10 @@ elk punt hieronder alsnog tegen de bron te leggen.
   d'assiette berusten op art. 1647 V-a CGI, 2,37 % bovenop het departementale
   deel dat op grond van art. 1594 A wordt geheven. Daarmee heeft ook de
   samenstelling zelf een grondslag, en niet alleen de uitkomst ervan.
+- De bron-URL wijst naar de vigerende versie van art. 1647 CGI
+  (`LEGIARTI000054373998`, sinds 1 juli 2026), dezelfde die `vefa.assiette`
+  gebruikt. De eerder gebruikte identificatie was een oudere versie van hetzelfde
+  artikel.
 
 ### Taxe de publicité foncière bij nieuwbouw — samenstelling
 
@@ -67,12 +71,15 @@ elk punt hieronder alsnog tegen de bron te leggen.
   0,71498. Dat scheelt bij een prijs van een miljoen euro twintig cent. Het
   gepubliceerde getal is wat de notaris hanteert; hier iets anders van maken zou
   een nauwkeurigheid suggereren die de bron niet geeft.
-- **Deze samenstelling staat niet in het paneel.** De post `vefa.tpf` houdt in
-  `bronnen.json` zijn eigen tekst en bronnaam (economie.gouv.fr). Ik had de
-  artikelen erin gezet, maar dan zou het paneel art. 1647 V-b toeschrijven aan
-  een bron die daar niet voor is aangeleverd. Wil je de samenstelling wél in het
-  paneel, geef dan een Legifrance-URL voor art. 1647 V-b, dan gaat de bronnaam
-  mee.
+- **Twee delen, twee posten.** Eén post met twee bronnen zou verhullen welk deel
+  van het getal waar vandaan komt. In `bronnen.json` staan ze daarom apart:
+  `vefa.tpf` voor het kale tarief van 0,70 % (economie.gouv.fr) en
+  `vefa.assiette` voor de opslag van 2,14 % (Legifrance, art. 1647 CGI,
+  vigerende versie sinds 1 juli 2026). In het paneel staat het kale tarief onder
+  het bedrag en de opslag eronder bij de toegepaste regels — precies zoals de
+  gemeentelijke opslag dat bij bestaande bouw doet. Assertions bewaken dat beide
+  in de nieuwbouwroute staan, dat ze naar verschillende bronnen wijzen, en dat
+  de twee opslagen elkaars route niet binnenlopen.
 
 ### Contribution de sécurité immobilière — art. 879, 881 K en 881 F CGI
 

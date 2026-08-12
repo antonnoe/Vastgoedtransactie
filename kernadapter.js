@@ -385,6 +385,7 @@ function postenVerkoper(res) {
  * laag gaat over de woorden waarin de schil het toont. */
 export const REGEL_LABEL = {
     [kern.BRON.dmtoCommunaal]: 'Gemeentelijke opslag en inningskosten',
+    [kern.BRON.vefaAssiette]: 'Inningskosten over de taxe de publicité foncière',
     [kern.BRON.pvAbattement]: 'Aftrek voor bezitsduur',
     [kern.BRON.pvDeRuyter]: 'Verlaagde sociale lasten (arrest De Ruyter)',
     [kern.BRON.pvVerkrijgingOmNiet]: 'Verkrijging om niet: waarde uit de aangifte',

@@ -1054,6 +1054,25 @@ check('zonder bronnenbestand toont het paneel niets',
 check('elke regel draagt een leesbaar label, geen bron-id',
     paneelKoper.filter((r) => typeof r.post !== 'string' || r.post.length === 0 || r.post === r.bronId).join(', '), '');
 
+/* Het VEFA-tarief is één getal uit twee bronnen: het kale tarief van
+ * economie.gouv.fr en de opslag uit art. 1647 V-b op Legifrance. Het paneel moet
+ * ze allebei tonen, want anders wijst het naar één bron voor een getal dat daar
+ * niet helemaal vandaan komt. Bestaande bouw heeft zijn eigen opslag en hoort
+ * die van nieuwbouw niet te krijgen. */
+const idsVan = (i) => new Set(adapter.verantwoording(adapter.bereken(scenarios[i][1])).map((r) => r.bronId));
+const nieuwbouwIds = idsVan(2);
+const bestaandIds = idsVan(0);
+check('bij nieuwbouw staat het kale tarief in het paneel', nieuwbouwIds.has('vefa.tpf'), true);
+check('en de opslag met zijn eigen bron ernaast', nieuwbouwIds.has('vefa.assiette'), true);
+check('de twee VEFA-delen wijzen naar verschillende bronnen',
+    bronnen.posten['vefa.tpf'].bronUrl === bronnen.posten['vefa.assiette'].bronUrl, false);
+check('bij nieuwbouw staat de gemeentelijke opslag van bestaande bouw er niet bij',
+    nieuwbouwIds.has('dmto.communaal'), false);
+check('en bij bestaande bouw staat de VEFA-opslag er niet bij',
+    bestaandIds.has('vefa.assiette'), false);
+check('bij bestaande bouw staat de gemeentelijke opslag er wel',
+    bestaandIds.has('dmto.communaal'), true);
+
 /* De rol bepaalt wie wat te verantwoorden krijgt. Een koper die nooit iets
  * over een verkoop heeft ingevuld, hoort geen enkel blok over verkoperskosten
  * te zien; dat was eerder een lek in het bedrag en mag het hier niet worden. */
