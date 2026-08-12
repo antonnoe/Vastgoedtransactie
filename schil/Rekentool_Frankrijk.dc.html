@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #f6f3f1; }
+  * { box-sizing: border-box; }
+  a { color: #800000; }
+  a:hover { color: #5c0000; }
+  .if-rekentool button:focus-visible,
+  .if-rekentool input:focus-visible,
+  .if-rekentool summary:focus-visible { outline: 3px solid #2f6b3a; outline-offset: 2px; }
+  .if-rekentool input::placeholder { color: #a9998f; }
+  @keyframes ifSchermIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @media print { .if-rekentool [data-noprint] { display: none !important; } }
+</style>
+</helmet>
+<div class="if-rekentool" onClick="{{ klik }}" style="font-family: Mulish, 'Segoe UI', system-ui, sans-serif; line-height: 1.8; color: #2b2422; background: #f6f3f1; display: flex; flex-direction: column;">
+
+  <div style="width: 100%; max-width: 560px; margin: 0 auto; padding: 18px 16px 0; display: flex; flex-direction: column; gap: 18px; flex: 1;">
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <div style="font-family: Poppins, sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: #800000; line-height: 1.4;">Kosten bij koop &amp; verkoop</div>
+      <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #7a5c00; background: #fdf3d8; border: 1px solid rgba(122,92,0,0.25); border-radius: 999px; padding: 3px 10px; line-height: 1.6;">Voorbeeld</div>
+    </div>
+
+    <sc-if value="{{ toonVoortgang }}">
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <button type="button" data-actie="terug" aria-label="Vorige vraag" style="display: inline-flex; align-items: center; gap: 6px; border: none; background: none; padding: 4px 0; margin: 0; font: inherit; font-size: 14px; font-weight: 600; color: #800000; cursor: pointer;">← Terug</button>
+          <div style="font-size: 13px; color: #6b5a54;">Vraag {{ stapNr }} van {{ stapTotaal }}</div>
+        </div>
+        <div style="height: 5px; border-radius: 999px; background: rgba(128,0,0,0.10); overflow: hidden;">
+          <div style="height: 100%; border-radius: 999px; background: #800000; width: {{ pct }}; transition: width .35s cubic-bezier(.2,.7,.3,1);"></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isRol }}" hint-placeholder-val="{{ true }}">
+      <div style="animation: ifSchermIn .3s ease both; background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 18px; box-shadow: 0 1px 2px rgba(60,30,30,.05), 0 10px 28px rgba(60,30,30,.05); padding: 22px 20px;">
+        <h1 style="font-family: Poppins, sans-serif; font-size: 23px; line-height: 1.35; font-weight: 600; margin: 0 0 6px;">Gaat u kopen of verkopen?</h1>
+        <p style="margin: 0 0 18px; font-size: 15px; color: #6b5a54; line-height: 1.7;">U krijgt alleen de vragen die bij uw situatie horen. Drie vragen, dan al een bedrag.</p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button type="button" data-veld="rol" data-waarde="koper" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 14px 16px; border-radius: 13px; border: 1.5px solid {{ br_rol_koper }}; background: {{ bg_rol_koper }}; color: {{ fg_rol_koper }}; font: inherit; font-size: 16px; font-weight: 700; text-align: left; cursor: pointer; line-height: 1.5;">Ik ga kopen<span style="font-size: 13px; font-weight: 400; opacity: .75;">Wat kost de aankoop mij in totaal?</span></button>
+          <button type="button" data-veld="rol" data-waarde="verkoper" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 14px 16px; border-radius: 13px; border: 1.5px solid {{ br_rol_verkoper }}; background: {{ bg_rol_verkoper }}; color: {{ fg_rol_verkoper }}; font: inherit; font-size: 16px; font-weight: 700; text-align: left; cursor: pointer; line-height: 1.5;">Ik ga verkopen<span style="font-size: 13px; font-weight: 400; opacity: .75;">Wat houd ik netto over?</span></button>
+          <button type="button" data-veld="rol" data-waarde="beide" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 14px 16px; border-radius: 13px; border: 1.5px solid {{ br_rol_beide }}; background: {{ bg_rol_beide }}; color: {{ fg_rol_beide }}; font: inherit; font-size: 16px; font-weight: 700; text-align: left; cursor: pointer; line-height: 1.5;">Allebei<span style="font-size: 13px; font-weight: 400; opacity: .75;">Verkopen én kopen, in één overzicht</span></button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isK1 }}">
+      <div style="animation: ifSchermIn .3s ease both; background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 18px; box-shadow: 0 1px 2px rgba(60,30,30,.05), 0 10px 28px rgba(60,30,30,.05); padding: 22px 20px;">
+        <h1 style="font-family: Poppins, sans-serif; font-size: 23px; line-height: 1.35; font-weight: 600; margin: 0 0 6px;">Wat is de postcode van de woning?</h1>
+        <p style="margin: 0 0 16px; font-size: 15px; color: #6b5a54; line-height: 1.7;">Het departement bepaalt het tarief van de overdrachtsbelasting.</p>
+        <label for="veld-postcode" style="display: block; font-size: 14px; font-weight: 700; margin-bottom: 6px;">Postcode</label>
+        <input id="veld-postcode" name="postcode" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="34000" value="{{ postcode }}" onChange="{{ zetPostcode }}" style="width: 100%; padding: 14px 16px; font: inherit; font-size: 18px; font-weight: 600; letter-spacing: .06em; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc; color: #2b2422;" style-focus="border-color: #800000;">
+        <p style="margin: 8px 0 0; font-size: 13px; color: #6b5a54;">Vijf cijfers, bijvoorbeeld 34000 voor Montpellier.</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isK2 }}">
+      <div style="animation: ifSchermIn .3s ease both; background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 18px; box-shadow: 0 1px 2px rgba(60,30,30,.05), 0 10px 28px rgba(60,30,30,.05); padding: 22px 20px;">
+        <h1 style="font-family: Poppins, sans-serif; font-size: 23px; line-height: 1.35; font-weight: 600; margin: 0 0 6px;">Wat is de koopsom?
+          <button type="button" data-info="koopsom" aria-label="Uitleg bij koopsom" style="vertical-align: middle; margin-left: 4px; width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid rgba(128,0,0,0.30); background: rgba(128,0,0,0.06); color: #800000; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer;">i</button>
+        </h1>
+        <sc-if value="{{ infoKoopsom }}">
+          <div role="note" style="margin: 10px 0 4px; padding: 12px 14px; border-radius: 12px; background: rgba(128,0,0,0.05); border: 1px solid rgba(128,0,0,0.14); font-size: 14px; line-height: 1.7; color: #4a3b37;">De koopsom is de prijs die u met de verkoper afspreekt, zoals die in het voorlopige koopcontract komt te staan. Kosten van notaris, belasting en makelaar horen daar niet bij. Die rekenen wij hierna voor u uit.</div>
+        </sc-if>
+        <label for="veld-koopsom" style="display: block; font-size: 14px; font-weight: 700; margin: 14px 0 6px;">Koopsom</label>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 4px 16px; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc;">
+          <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-size: 20px; font-weight: 600; color: #800000;">€</span>
+          <input id="veld-koopsom" name="koopsom" type="text" inputmode="numeric" placeholder="400.000" value="{{ koopsom }}" onChange="{{ zetKoopsom }}" style="flex: 1; width: 100%; padding: 10px 0; font: inherit; font-size: 20px; font-weight: 700; border: none; outline: none; background: none; color: #2b2422;">
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isK3 }}">
+      <div style="animation: ifSchermIn .3s ease both; background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 18px; box-shadow: 0 1px 2px rgba(60,30,30,.05), 0 10px 28px rgba(60,30,30,.05); padding: 22px 20px;">
+        <h1 style="font-family: Poppins, sans-serif; font-size: 23px; line-height: 1.35; font-weight: 600; margin: 0 0 6px;">Bestaande woning of nieuwbouw?
+          <button type="button" data-info="type" aria-label="Uitleg bij bestaand of nieuwbouw" style="vertical-align: middle; margin-left: 4px; width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid rgba(128,0,0,0.30); background: rgba(128,0,0,0.06); color: #800000; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer;">i</button>
+        </h1>
+        <sc-if value="{{ infoType }}">
+          <div role="note" style="margin: 10px 0 4px; padding: 12px 14px; border-radius: 12px; background: rgba(128,0,0,0.05); border: 1px solid rgba(128,0,0,0.14); font-size: 14px; line-height: 1.7; color: #4a3b37;">Nieuwbouw is een woning die voor het eerst wordt geleverd, meestal gekocht van een projectontwikkelaar of op plan. Alle andere woningen gelden als bestaande bouw. Het verschil is groot: bij nieuwbouw betaalt u een heel ander soort belasting.</div>
+        </sc-if>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px;">
+          <button type="button" data-veld="type" data-waarde="bestaand" style="padding: 16px 14px; border-radius: 13px; border: 1.5px solid {{ br_type_bestaand }}; background: {{ bg_type_bestaand }}; color: {{ fg_type_bestaand }}; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; line-height: 1.5;">Bestaand</button>
+          <button type="button" data-veld="type" data-waarde="nieuwbouw" style="padding: 16px 14px; border-radius: 13px; border: 1.5px solid {{ br_type_nieuwbouw }}; background: {{ bg_type_nieuwbouw }}; color: {{ fg_type_nieuwbouw }}; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; line-height: 1.5;">Nieuwbouw</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isV0 }}">
+      <div style="animation: ifSchermIn .3s ease both; background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 18px; box-shadow: 0 1px 2px rgba(60,30,30,.05), 0 10px 28px rgba(60,30,30,.05); padding: 22px 20px;">
+        <h1 style="font-family: Poppins, sans-serif; font-size: 23px; line-height: 1.35; font-weight: 600; margin: 0 0 6px;">Was dit uw hoofdverblijf toen u verkocht?
+          <button type="button" data-info="hoofdverblijf" aria-label="Uitleg bij hoofdverblijf" style="vertical-align: middle; margin-left: 4px; width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid rgba(128,0,0,0.30); background: rgba(128,0,0,0.06); color: #800000; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer;">i</button>
+        </h1>
+        <p style="margin: 0 0 4px; font-size: 15px; color: #6b5a54; line-height: 1.7;">Eén vraag die alles kan schelen. Bij ja bent u in twee tellen klaar.</p>
+        <sc-if value="{{ infoHoofdverblijf }}">
+          <div role="note" style="margin: 10px 0 4px; padding: 12px 14px; border-radius: 12px; background: rgba(128,0,0,0.05); border: 1px solid rgba(128,0,0,0.14); font-size: 14px; line-height: 1.7; color: #4a3b37;">Uw hoofdverblijf is de woning waar u op het moment van verkoop werkelijk en gewoonlijk woonde. Een tweede woning of een verhuurd pand valt hier niet onder. Twijfelt u, ga dan uit van het adres waar u belastingaangifte deed.</div>
+        </sc-if>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px;">
+          <button type="button" data-veld="hoofdverblijf" data-waarde="ja" style="padding: 16px 14px; border-radius: 13px; border: 1.5px solid {{ br_hoofdverblijf_ja }}; background: {{ bg_hoofdverblijf_ja }}; color: {{ fg_hoofdverblijf_ja }}; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;">Ja</button>
+          <button type="button" data-veld="hoofdverblijf" data-waarde="nee" style="padding: 16px 14px; border-radius: 13px; border: 1.5px solid {{ br_hoofdverblijf_nee }}; background: {{ bg_hoofdverblijf_nee }}; color: {{ fg_hoofdverblijf_nee }}; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;">Nee</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isVB }}">
+      <div style="animation: ifSchermIn .3s ease both; background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 18px; box-shadow: 0 1px 2px rgba(60,30,30,.05), 0 10px 28px rgba(60,30,30,.05); padding: 22px 20px;">
+        <h1 style="font-family: Poppins, sans-serif; font-size: 23px; line-height: 1.35; font-weight: 600; margin: 0 0 6px;">Gaat het om bouwgrond?
+          <button type="button" data-info="bouwgrond" aria-label="Uitleg bij bouwgrond" style="vertical-align: middle; margin-left: 4px; width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid rgba(128,0,0,0.30); background: rgba(128,0,0,0.06); color: #800000; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer;">i</button>
+        </h1>
+        <p style="margin: 0 0 4px; font-size: 15px; color: #6b5a54; line-height: 1.7;">Deze vraag verandert uw bedrag, daarom staat hij hier vooraan.</p>
+        <sc-if value="{{ infoBouwgrond }}">
+          <div role="note" style="margin: 10px 0 4px; padding: 12px 14px; border-radius: 12px; background: rgba(128,0,0,0.05); border: 1px solid rgba(128,0,0,0.14); font-size: 14px; line-height: 1.7; color: #4a3b37;">Bouwgrond is een perceel dat volgens het bestemmingsplan bebouwd mag worden, zonder woning erop. Voor bouwgrond gelden andere regels dan voor een woning: een aftrekpost vervalt en een extra heffing op hoge meerwaarden geldt er niet. Twijfelt u, kijk dan in de akte of vraag het uw notaris.</div>
+        </sc-if>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px;">
+          <button type="button" data-veld="bouwgrond" data-waarde="ja" style="padding: 16px 14px; border-radius: 13px; border: 1.5px solid {{ br_bouwgrond_ja }}; background: {{ bg_bouwgrond_ja }}; color: {{ fg_bouwgrond_ja }}; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;">Ja, bouwgrond</button>
+          <button type="button" data-veld="bouwgrond" data-waarde="nee" style="padding: 16px 14px; border-radius: 13px; border: 1.5px solid {{ br_bouwgrond_nee }}; background: {{ bg_bouwgrond_nee }}; color: {{ fg_bouwgrond_nee }}; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;">Nee, een woning</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isV1 }}">
+      <div style="animation: ifSchermIn .3s ease both; background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 18px; box-shadow: 0 1px 2px rgba(60,30,30,.05), 0 10px 28px rgba(60,30,30,.05); padding: 22px 20px;">
+        <h1 style="font-family: Poppins, sans-serif; font-size: 23px; line-height: 1.35; font-weight: 600; margin: 0 0 16px;">Voor welk bedrag verkoopt u?</h1>
+        <label for="veld-verkoopprijs" style="display: block; font-size: 14px; font-weight: 700; margin-bottom: 6px;">Verkoopprijs</label>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 4px 16px; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc;">
+          <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-size: 20px; font-weight: 600; color: #800000;">€</span>
+          <input id="veld-verkoopprijs" name="verkoopprijs" type="text" inputmode="numeric" placeholder="400.000" value="{{ verkoopprijs }}" onChange="{{ zetVerkoopprijs }}" style="flex: 1; width: 100%; padding: 10px 0; font: inherit; font-size: 20px; font-weight: 700; border: none; outline: none; background: none; color: #2b2422;">
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isV2 }}">
+      <div style="animation: ifSchermIn .3s ease both; background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 18px; box-shadow: 0 1px 2px rgba(60,30,30,.05), 0 10px 28px rgba(60,30,30,.05); padding: 22px 20px;">
+        <h1 style="font-family: Poppins, sans-serif; font-size: 23px; line-height: 1.35; font-weight: 600; margin: 0 0 6px;">Hoe hebt u het pand gekregen?
+          <button type="button" data-info="verkrijging" aria-label="Uitleg bij verkrijging" style="vertical-align: middle; margin-left: 4px; width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid rgba(128,0,0,0.30); background: rgba(128,0,0,0.06); color: #800000; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer;">i</button>
+        </h1>
+        <sc-if value="{{ infoVerkrijging }}">
+          <div role="note" style="margin: 10px 0 4px; padding: 12px 14px; border-radius: 12px; background: rgba(128,0,0,0.05); border: 1px solid rgba(128,0,0,0.14); font-size: 14px; line-height: 1.7; color: #4a3b37;">Hebt u het pand gekocht, dan telt de koopprijs uit de akte. Bij een erfenis of schenking telt de waarde die destijds in de akte of aangifte is vastgelegd. Die waarde vindt u terug bij de notaris die de zaak toen heeft geregeld.</div>
+        </sc-if>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 16px;">
+          <button type="button" data-veld="verkrijging" data-waarde="gekocht" style="padding: 14px 8px; border-radius: 13px; border: 1.5px solid {{ br_verkrijging_gekocht }}; background: {{ bg_verkrijging_gekocht }}; color: {{ fg_verkrijging_gekocht }}; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;">Gekocht</button>
+          <button type="button" data-veld="verkrijging" data-waarde="geerfd" style="padding: 14px 8px; border-radius: 13px; border: 1.5px solid {{ br_verkrijging_geerfd }}; background: {{ bg_verkrijging_geerfd }}; color: {{ fg_verkrijging_geerfd }}; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;">Geërfd</button>
+          <button type="button" data-veld="verkrijging" data-waarde="geschonken" style="padding: 14px 8px; border-radius: 13px; border: 1.5px solid {{ br_verkrijging_geschonken }}; background: {{ bg_verkrijging_geschonken }}; color: {{ fg_verkrijging_geschonken }}; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;">Geschonken</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isV3 }}">
+      <div style="animation: ifSchermIn .3s ease both; background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 18px; box-shadow: 0 1px 2px rgba(60,30,30,.05), 0 10px 28px rgba(60,30,30,.05); padding: 22px 20px;">
+        <h1 style="font-family: Poppins, sans-serif; font-size: 23px; line-height: 1.35; font-weight: 600; margin: 0 0 6px;">{{ vraagAankoopprijs }}</h1>
+        <p style="margin: 0 0 16px; font-size: 15px; color: #6b5a54; line-height: 1.7;">Het bedrag zoals het in de akte staat.</p>
+        <label for="veld-aankoopprijs" style="display: block; font-size: 14px; font-weight: 700; margin-bottom: 6px;">{{ labelAankoopprijs }}</label>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 4px 16px; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc;">
+          <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-size: 20px; font-weight: 600; color: #800000;">€</span>
+          <input id="veld-aankoopprijs" name="aankoopprijs" type="text" inputmode="numeric" placeholder="200.000" value="{{ aankoopprijs }}" onChange="{{ zetAankoopprijs }}" style="flex: 1; width: 100%; padding: 10px 0; font: inherit; font-size: 20px; font-weight: 700; border: none; outline: none; background: none; color: #2b2422;">
+        </div>
+        <sc-if value="{{ toonVerkrijgingskosten }}">
+          <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(128,0,0,0.10);">
+            <label for="veld-verkrijgingskosten" style="display: block; font-size: 14px; font-weight: 700; margin-bottom: 4px;">Kosten van de verkrijging destijds</label>
+            <p style="margin: 0 0 8px; font-size: 13px; color: #6b5a54; line-height: 1.6;">Wat u toen kwijt was aan notaris, akte en belasting over de erfenis of schenking. Dit is iets anders dan de waarde van het pand hierboven. Een forfait bestaat hier niet.</p>
+            <div style="display: flex; gap: 8px; align-items: stretch;">
+              <div style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 2px 14px; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc;">
+                <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-size: 17px; font-weight: 600; color: #800000;">€</span>
+                <input id="veld-verkrijgingskosten" name="verkrijgingskosten" type="text" inputmode="numeric" placeholder="0" value="{{ verkrijgingskosten }}" onChange="{{ zetVerkrijgingskosten }}" style="flex: 1; width: 100%; padding: 10px 0; font: inherit; font-size: 17px; font-weight: 700; border: none; outline: none; background: none; color: #2b2422;">
+              </div>
+              <button type="button" data-actie="weetniet:verkrijgingskosten" style="flex: none; padding: 0 14px; border-radius: 12px; border: 1.5px solid {{ br_wn_verkrijgingskosten }}; background: {{ bg_wn_verkrijgingskosten }}; color: {{ fg_wn_verkrijgingskosten }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;">Weet ik niet</button>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ toonWaarschuwingVerkrijging }}">
+          <div role="note" style="margin-top: 16px; display: flex; gap: 12px; padding: 14px 16px; border-radius: 13px; background: #fdf3d8; border: 1px solid rgba(122,92,0,0.28);">
+            <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-weight: 700; color: #7a5c00;">!</span>
+            <div style="font-size: 14px; line-height: 1.7; color: #4a3b37;"><strong style="font-family: Poppins, sans-serif;">Let op</strong><br>{{ waarschuwingTekst }}</div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isV4 }}">
+      <div style="animation: ifSchermIn .3s ease both; background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 18px; box-shadow: 0 1px 2px rgba(60,30,30,.05), 0 10px 28px rgba(60,30,30,.05); padding: 22px 20px;">
+        <h1 style="font-family: Poppins, sans-serif; font-size: 23px; line-height: 1.35; font-weight: 600; margin: 0 0 6px;">Wanneer kreeg u het pand, en wanneer verkoopt u?</h1>
+        <p style="margin: 0 0 16px; font-size: 15px; color: #6b5a54; line-height: 1.7;">De tijd tussen die twee data bepaalt uw korting op de meerwaarde.</p>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <label for="veld-datum-verkrijging" style="display: block; font-size: 14px; font-weight: 700; margin-bottom: 6px;">Datum van verkrijging</label>
+            <input id="veld-datum-verkrijging" name="datumVerkrijging" type="date" value="{{ datumVerkrijging }}" onChange="{{ zetDatumVerkrijging }}" style="width: 100%; padding: 13px 16px; font: inherit; font-size: 16px; font-weight: 600; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc; color: #2b2422;">
+          </div>
+          <div>
+            <label for="veld-datum-verkoop" style="display: block; font-size: 14px; font-weight: 700; margin-bottom: 6px;">Datum van verkoop</label>
+            <input id="veld-datum-verkoop" name="datumVerkoop" type="date" value="{{ datumVerkoop }}" onChange="{{ zetDatumVerkoop }}" style="width: 100%; padding: 13px 16px; font: inherit; font-size: 16px; font-weight: 600; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc; color: #2b2422;">
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isUitkomst }}">
+      <div style="display: flex; flex-direction: column; gap: 16px; animation: ifSchermIn .35s ease both;">
+
+        <div style="background: #fff; border: 1px solid rgba(128,0,0,0.12); border-radius: 18px; box-shadow: 0 1px 2px rgba(60,30,30,.05), 0 14px 34px rgba(60,30,30,.07); padding: 24px 20px 20px;">
+          <div aria-live="polite" style="display: flex; flex-direction: column; gap: 4px;">
+            <p style="margin: 0; font-size: 16px; color: #4a3b37; line-height: 1.6;">{{ uitkomstZin }}</p>
+            <div style="font-family: Poppins, sans-serif; font-size: 42px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; color: {{ uitkomstKleur }};">{{ uitkomstBedrag }}</div>
+          </div>
+
+          <sc-if value="{{ toonTweedeUitkomst }}">
+            <div aria-live="polite" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(128,0,0,0.10); display: flex; flex-direction: column; gap: 4px;">
+              <p style="margin: 0; font-size: 16px; color: #4a3b37; line-height: 1.6;">{{ tweedeZin }}</p>
+              <div style="font-family: Poppins, sans-serif; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; color: #2f6b3a;">{{ tweedeBedrag }}</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ heeftOpbouw }}">
+            <div style="margin-top: 16px;">
+              <button type="button" data-actie="opbouw" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(128,0,0,0.16); background: rgba(128,0,0,0.04); color: #800000; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;"><span aria-hidden="true">{{ opbouwPijl }}</span>{{ opbouwLabel }}</button>
+              <sc-if value="{{ opbouwOpen }}">
+                <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 10px;">
+                  <sc-for list="{{ posten }}" as="post" hint-placeholder-count="3">
+                    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 10px 2px; border-bottom: 1px solid rgba(128,0,0,0.07); font-size: 15px;">
+                      <span style="color: #4a3b37;">{{ post.label }}</span>
+                      <span style="font-family: Poppins, sans-serif; font-weight: 600; color: #2b2422; white-space: nowrap;">{{ post.bedrag }}</span>
+                    </div>
+                  </sc-for>
+                  <p style="margin: 10px 0 0; font-size: 13px; color: #6b5a54; line-height: 1.6;">De posten worden per stuk ingevuld door de rekenkern. In dit prototype is alleen het totaalbedrag als voorbeeld ingevuld.</p>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ onvolledig }}">
+            <div role="note" style="margin-top: 16px; display: flex; gap: 12px; padding: 14px 16px; border-radius: 13px; background: #fdf3d8; border: 1px solid rgba(122,92,0,0.28);">
+              <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-weight: 700; color: #7a5c00;">!</span>
+              <div style="font-size: 14px; line-height: 1.7; color: #4a3b37;"><strong style="font-family: Poppins, sans-serif;">Uitkomst nog niet compleet</strong><br>U hebt bij één of meer posten "weet ik niet" gekozen. Die posten zijn niet meegerekend, dus het werkelijke bedrag ligt hoger.</div>
+            </div>
+          </sc-if>
+
+          <p style="margin: 16px 0 0; padding-top: 14px; border-top: 1px solid rgba(128,0,0,0.10); font-size: 13px; line-height: 1.7; color: #6b5a54;">Voorbeeldbedrag, geen advies. Tarieven met peildatum {{ peildatum }} · bron: {{ bron }}</p>
+        </div>
+
+        <sc-for list="{{ waarschuwingen }}" as="w" hint-placeholder-count="0">
+          <div role="note" style="display: flex; gap: 12px; padding: 16px; border-radius: 15px; background: #fdf3d8; border: 1px solid rgba(122,92,0,0.28);">
+            <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-weight: 700; color: #7a5c00;">!</span>
+            <div style="font-size: 14px; line-height: 1.7; color: #4a3b37;"><strong style="font-family: Poppins, sans-serif;">Let op</strong><br>{{ w.tekst }}</div>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ toonVervolgKnop }}">
+          <button type="button" data-actie="verder" style="width: 100%; padding: 16px; border-radius: 14px; border: none; background: #800000; color: #fff; font-family: Poppins, sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 6px 16px rgba(128,0,0,0.22);">Verder met de verkoop →</button>
+        </sc-if>
+
+        <sc-if value="{{ toonKoperVerf }}">
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <h2 style="font-family: Poppins, sans-serif; font-size: 17px; font-weight: 600; margin: 6px 0 0;">Verfijn uw aankoop</h2>
+            <p style="margin: 0 0 4px; font-size: 14px; color: #6b5a54; line-height: 1.7;">Alleen als het op u van toepassing is. Uw bedrag hierboven past zich meteen aan.</p>
+            <sc-for list="{{ koperVerfijningen }}" as="v" hint-placeholder-count="3">
+              <div style="background: #fff; border: 1.5px solid {{ v.rand }}; border-radius: 14px; padding: 4px 14px 4px; box-shadow: 0 1px 2px rgba(60,30,30,.04);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <button type="button" data-actie="{{ v.actie }}" aria-pressed="{{ v.aan }}" style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border: none; background: none; font: inherit; font-size: 15px; font-weight: 600; text-align: left; color: #2b2422; cursor: pointer; line-height: 1.5;">
+                    <span>{{ v.label }}</span>
+                    <span style="font-family: Poppins, sans-serif; font-size: 14px; font-weight: 700; white-space: nowrap; color: {{ v.effectKleur }};">{{ v.effect }}</span>
+                  </button>
+                  <button type="button" data-actie="{{ v.infoActie }}" aria-label="Uitleg" style="flex: none; width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid rgba(128,0,0,0.30); background: rgba(128,0,0,0.06); color: #800000; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer;">i</button>
+                </div>
+                <sc-if value="{{ v.infoOpen }}">
+                  <div role="note" style="margin: 0 0 12px; padding: 12px 14px; border-radius: 12px; background: rgba(128,0,0,0.05); border: 1px solid rgba(128,0,0,0.14); font-size: 14px; line-height: 1.7; color: #4a3b37;">{{ v.uitleg }}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+            <sc-if value="{{ toonMakelaarKoop }}">
+              <div style="background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+                <h3 style="font-family: Poppins, sans-serif; font-size: 15px; font-weight: 600; margin: 0;">Wie betaalt de courtage bij de aankoop?</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                  <button type="button" data-veld="mkKoopPartij" data-waarde="verkoper" style="padding: 12px 6px; border-radius: 12px; border: 1.5px solid {{ br_mkKoopPartij_verkoper }}; background: {{ bg_mkKoopPartij_verkoper }}; color: {{ fg_mkKoopPartij_verkoper }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; line-height: 1.4;">Verkoper betaalt</button>
+                  <button type="button" data-veld="mkKoopPartij" data-waarde="koper" style="padding: 12px 6px; border-radius: 12px; border: 1.5px solid {{ br_mkKoopPartij_koper }}; background: {{ bg_mkKoopPartij_koper }}; color: {{ fg_mkKoopPartij_koper }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; line-height: 1.4;">Koper betaalt</button>
+                  <button type="button" data-veld="mkKoopPartij" data-waarde="geen" style="padding: 12px 6px; border-radius: 12px; border: 1.5px solid {{ br_mkKoopPartij_geen }}; background: {{ bg_mkKoopPartij_geen }}; color: {{ fg_mkKoopPartij_geen }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; line-height: 1.4;">Geen makelaar</button>
+                </div>
+                <sc-if value="{{ toonMkKoopBedrag }}">
+                  <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                      <button type="button" data-veld="mkKoopModus" data-waarde="percentage" style="padding: 10px 6px; border-radius: 999px; border: 1.5px solid {{ br_mkKoopModus_percentage }}; background: {{ bg_mkKoopModus_percentage }}; color: {{ fg_mkKoopModus_percentage }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;">Percentage</button>
+                      <button type="button" data-veld="mkKoopModus" data-waarde="bedrag" style="padding: 10px 6px; border-radius: 999px; border: 1.5px solid {{ br_mkKoopModus_bedrag }}; background: {{ bg_mkKoopModus_bedrag }}; color: {{ fg_mkKoopModus_bedrag }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;">Vast bedrag</button>
+                    </div>
+                    <label for="veld-mk-koop" style="display: block; font-size: 14px; font-weight: 700;">Courtage</label>
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 2px 14px; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc;">
+                      <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-size: 17px; font-weight: 600; color: #800000;">{{ mkKoopTeken }}</span>
+                      <input id="veld-mk-koop" name="mkKoopWaarde" type="text" inputmode="decimal" placeholder="{{ mkKoopHint }}" value="{{ mkKoopWaarde }}" onChange="{{ zetMkKoop }}" style="flex: 1; width: 100%; padding: 10px 0; font: inherit; font-size: 17px; font-weight: 700; border: none; outline: none; background: none; color: #2b2422;">
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ toonVerkVerf }}">
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <h2 style="font-family: Poppins, sans-serif; font-size: 17px; font-weight: 600; margin: 6px 0 0;">Verfijn uw verkoop</h2>
+            <p style="margin: 0 0 4px; font-size: 14px; color: #6b5a54; line-height: 1.7;">Alleen als het op u van toepassing is. Uw bedrag hierboven past zich meteen aan.</p>
+            <sc-for list="{{ verkoperVerfijningen }}" as="v" hint-placeholder-count="4">
+              <div style="background: #fff; border: 1.5px solid {{ v.rand }}; border-radius: 14px; padding: 4px 14px 4px; box-shadow: 0 1px 2px rgba(60,30,30,.04);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <button type="button" data-actie="{{ v.actie }}" aria-pressed="{{ v.aan }}" style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border: none; background: none; font: inherit; font-size: 15px; font-weight: 600; text-align: left; color: #2b2422; cursor: pointer; line-height: 1.5;">
+                    <span>{{ v.label }}</span>
+                    <span style="font-family: Poppins, sans-serif; font-size: 14px; font-weight: 700; white-space: nowrap; color: {{ v.effectKleur }};">{{ v.effect }}</span>
+                  </button>
+                  <button type="button" data-actie="{{ v.infoActie }}" aria-label="Uitleg" style="flex: none; width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid rgba(128,0,0,0.30); background: rgba(128,0,0,0.06); color: #800000; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer;">i</button>
+                </div>
+                <sc-if value="{{ v.infoOpen }}">
+                  <div role="note" style="margin: 0 0 12px; padding: 12px 14px; border-radius: 12px; background: rgba(128,0,0,0.05); border: 1px solid rgba(128,0,0,0.14); font-size: 14px; line-height: 1.7; color: #4a3b37;">{{ v.uitleg }}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+            <sc-if value="{{ toonMakelaarVerk }}">
+              <div style="background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+                <h3 style="font-family: Poppins, sans-serif; font-size: 15px; font-weight: 600; margin: 0;">Wie betaalt de courtage bij de verkoop?</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                  <button type="button" data-veld="mkVerkPartij" data-waarde="verkoper" style="padding: 12px 6px; border-radius: 12px; border: 1.5px solid {{ br_mkVerkPartij_verkoper }}; background: {{ bg_mkVerkPartij_verkoper }}; color: {{ fg_mkVerkPartij_verkoper }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; line-height: 1.4;">Verkoper betaalt</button>
+                  <button type="button" data-veld="mkVerkPartij" data-waarde="koper" style="padding: 12px 6px; border-radius: 12px; border: 1.5px solid {{ br_mkVerkPartij_koper }}; background: {{ bg_mkVerkPartij_koper }}; color: {{ fg_mkVerkPartij_koper }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; line-height: 1.4;">Koper betaalt</button>
+                  <button type="button" data-veld="mkVerkPartij" data-waarde="geen" style="padding: 12px 6px; border-radius: 12px; border: 1.5px solid {{ br_mkVerkPartij_geen }}; background: {{ bg_mkVerkPartij_geen }}; color: {{ fg_mkVerkPartij_geen }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; line-height: 1.4;">Geen makelaar</button>
+                </div>
+                <sc-if value="{{ toonMkVerkBedrag }}">
+                  <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                      <button type="button" data-veld="mkVerkModus" data-waarde="percentage" style="padding: 10px 6px; border-radius: 999px; border: 1.5px solid {{ br_mkVerkModus_percentage }}; background: {{ bg_mkVerkModus_percentage }}; color: {{ fg_mkVerkModus_percentage }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;">Percentage</button>
+                      <button type="button" data-veld="mkVerkModus" data-waarde="bedrag" style="padding: 10px 6px; border-radius: 999px; border: 1.5px solid {{ br_mkVerkModus_bedrag }}; background: {{ bg_mkVerkModus_bedrag }}; color: {{ fg_mkVerkModus_bedrag }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;">Vast bedrag</button>
+                    </div>
+                    <label for="veld-mk-verk" style="display: block; font-size: 14px; font-weight: 700;">Courtage</label>
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 2px 14px; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc;">
+                      <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-size: 17px; font-weight: 600; color: #800000;">{{ mkVerkTeken }}</span>
+                      <input id="veld-mk-verk" name="mkVerkWaarde" type="text" inputmode="decimal" placeholder="{{ mkVerkHint }}" value="{{ mkVerkWaarde }}" onChange="{{ zetMkVerk }}" style="flex: 1; width: 100%; padding: 10px 0; font: inherit; font-size: 17px; font-weight: 700; border: none; outline: none; background: none; color: #2b2422;">
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{ toonAktesBedrag }}">
+              <div style="background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <label for="veld-aktes-bedrag" style="font-size: 15px; font-weight: 700;">Werkelijke aankoopkosten van destijds</label>
+                <p style="margin: 0; font-size: 13px; color: #6b5a54; line-height: 1.6;">Notaris, akte en belasting die u bij de aankoop betaalde, volgens de akte. De kern kiest zelf wat gunstiger is: dit bedrag of het forfait.</p>
+                <div style="display: flex; align-items: center; gap: 8px; padding: 2px 14px; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc;">
+                  <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-size: 17px; font-weight: 600; color: #800000;">€</span>
+                  <input id="veld-aktes-bedrag" name="aktesBedrag" type="text" inputmode="numeric" placeholder="0" value="{{ aktesBedrag }}" onChange="{{ zetAktesBedrag }}" style="flex: 1; width: 100%; padding: 10px 0; font: inherit; font-size: 17px; font-weight: 700; border: none; outline: none; background: none; color: #2b2422;">
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ toonVerbouwdBedrag }}">
+              <div style="background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <label for="veld-verbouwd-bedrag" style="font-size: 15px; font-weight: 700;">Bedrag van de verbouwingsfacturen</label>
+                <p style="margin: 0; font-size: 13px; color: #6b5a54; line-height: 1.6;">Het totaal van de facturen van het bedrijf dat het werk deed, op naam van de eigenaar. De kern kiest zelf wat gunstiger is: dit bedrag of het forfait.</p>
+                <div style="display: flex; align-items: center; gap: 8px; padding: 2px 14px; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc;">
+                  <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-size: 17px; font-weight: 600; color: #800000;">€</span>
+                  <input id="veld-verbouwd-bedrag" name="verbouwdBedrag" type="text" inputmode="numeric" placeholder="0" value="{{ verbouwdBedrag }}" onChange="{{ zetVerbouwdBedrag }}" style="flex: 1; width: 100%; padding: 10px 0; font: inherit; font-size: 17px; font-weight: 700; border: none; outline: none; background: none; color: #2b2422;">
+                </div>
+              </div>
+            </sc-if>
+            <div style="background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+              <label for="veld-aantal" style="font-size: 15px; font-weight: 600; line-height: 1.5;">Met hoeveel personen verkoopt u?</label>
+              <div style="display: flex; align-items: center; gap: 6px; flex: none;">
+                <button type="button" data-actie="aantal:-" aria-label="Eén verkoper minder" style="width: 40px; height: 40px; border-radius: 12px; border: 1.5px solid rgba(128,0,0,0.25); background: #fff; color: #800000; font-family: Poppins, sans-serif; font-size: 20px; font-weight: 700; line-height: 1; cursor: pointer;">−</button>
+                <input id="veld-aantal" name="aantalVerkopers" type="text" inputmode="numeric" readonly="readonly" value="{{ aantalVerkopers }}" style="width: 48px; padding: 9px 0; text-align: center; font-family: Poppins, sans-serif; font-size: 17px; font-weight: 700; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc; color: #2b2422;">
+                <button type="button" data-actie="aantal:+" aria-label="Eén verkoper meer" style="width: 40px; height: 40px; border-radius: 12px; border: 1.5px solid rgba(128,0,0,0.25); background: #fff; color: #800000; font-family: Poppins, sans-serif; font-size: 20px; font-weight: 700; line-height: 1; cursor: pointer;">+</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ toonKostenvelden }}">
+          <div style="background: #fff; border: 1px solid rgba(128,0,0,0.10); border-radius: 16px; padding: 18px 16px; display: flex; flex-direction: column; gap: 16px;">
+            <h3 style="font-family: Poppins, sans-serif; font-size: 16px; font-weight: 600; margin: 0;">Welke verkoopkosten maakt u?</h3>
+            <div>
+              <label for="veld-diagnostics" style="display: block; font-size: 14px; font-weight: 700; margin-bottom: 6px;">Verplichte keuringen (diagnostics)</label>
+              <div style="display: flex; gap: 8px; align-items: stretch;">
+                <div style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 2px 14px; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc;">
+                  <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-size: 17px; font-weight: 600; color: #800000;">€</span>
+                  <input id="veld-diagnostics" name="diagnostics" type="text" inputmode="numeric" placeholder="0" value="{{ diagnostics }}" onChange="{{ zetDiagnostics }}" style="flex: 1; width: 100%; padding: 10px 0; font: inherit; font-size: 17px; font-weight: 700; border: none; outline: none; background: none; color: #2b2422;">
+                </div>
+                <button type="button" data-actie="weetniet:diagnostics" style="flex: none; padding: 0 14px; border-radius: 12px; border: 1.5px solid {{ br_wn_diagnostics }}; background: {{ bg_wn_diagnostics }}; color: {{ fg_wn_diagnostics }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;">Weet ik niet</button>
+              </div>
+            </div>
+            <div>
+              <label for="veld-doorhaling" style="display: block; font-size: 14px; font-weight: 700; margin-bottom: 6px;">Doorhaling van de hypotheek</label>
+              <div style="display: flex; gap: 8px; align-items: stretch;">
+                <div style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 2px 14px; border: 1.5px solid rgba(128,0,0,0.18); border-radius: 12px; background: #fffdfc;">
+                  <span aria-hidden="true" style="font-family: Poppins, sans-serif; font-size: 17px; font-weight: 600; color: #800000;">€</span>
+                  <input id="veld-doorhaling" name="doorhaling" type="text" inputmode="numeric" placeholder="0" value="{{ doorhaling }}" onChange="{{ zetDoorhaling }}" style="flex: 1; width: 100%; padding: 10px 0; font: inherit; font-size: 17px; font-weight: 700; border: none; outline: none; background: none; color: #2b2422;">
+                </div>
+                <button type="button" data-actie="weetniet:doorhaling" style="flex: none; padding: 0 14px; border-radius: 12px; border: 1.5px solid {{ br_wn_doorhaling }}; background: {{ bg_wn_doorhaling }}; color: {{ fg_wn_doorhaling }}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;">Weet ik niet</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <button type="button" data-actie="herstart" data-noprint="1" style="align-self: center; margin: 4px 0 8px; padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(128,0,0,0.20); background: none; color: #800000; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;">Opnieuw beginnen</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ toonVerderKnop }}">
+      <button type="button" data-actie="verder" disabled="{{ nietKlaar }}" style="width: 100%; padding: 16px; border-radius: 14px; border: none; background: #800000; color: #fff; font-family: Poppins, sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; opacity: {{ verderOpacity }}; box-shadow: 0 6px 16px rgba(128,0,0,0.20); transition: opacity .2s ease;">{{ verderLabel }}</button>
+    </sc-if>
+
+    <div style="flex: 1;"></div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:880},&quot;startRoute&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;vraag&quot;,&quot;koper&quot;,&quot;verkoper&quot;,&quot;beide&quot;],&quot;default&quot;:&quot;vraag&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;},&quot;autoDoor&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Gedrag&quot;}}">
+class Component extends DCLogic {
+  // Doeladres van de hoogtemelding. Moet EXACT overeenkomen met het adres waar
+  // de pagina op draait, inclusief protocol en eventueel www — anders gooit de
+  // browser het bericht stil weg. Draait de site op www.infofrankrijk.com,
+  // zet dat hier dan neer (of stuur vanuit de pagina zelf het juiste adres mee).
+  static DOEL = 'https://infofrankrijk.com';
+
+  state = {
+    route: null,
+    stap: 0,
+    kern: null,
+    antwoorden: this.leeg(),
+    weetNiet: {},
+    verfijning: {},
+    info: {},
+    opbouwOpen: false,
+  };
+
+  leeg() {
+    return {
+      postcode: '', koopsom: '', type: null, hoofdverblijf: null, bouwgrond: null,
+      verkoopprijs: '', verkrijging: null, aankoopprijs: '', datumVerkrijging: '', datumVerkoop: '',
+      diagnostics: '', doorhaling: '', aantalVerkopers: 1,
+      verkrijgingskosten: '', aktesBedrag: '', verbouwdBedrag: '',
+      mkKoopPartij: null, mkKoopModus: 'percentage', mkKoopWaarde: '',
+      mkVerkPartij: null, mkVerkModus: 'percentage', mkVerkWaarde: '',
+    };
+  }
+
+  componentDidMount() {
+    import('./kernadapter.js').then(kern => this.setState({ kern }));
+    const sr = this.props.startRoute;
+    if (sr && sr !== 'vraag') this.setState({ route: sr, stap: 1 });
+    const meld = () => {
+      const el = document.querySelector('.if-rekentool');
+      const h = Math.ceil((el ? el.getBoundingClientRect().height : document.body.scrollHeight) + 2);
+      if (h !== this._h) {
+        this._h = h;
+        try { window.parent.postMessage({ type: 'if-tool-hoogte', hoogte: h }, Component.DOEL); } catch (e) {}
+      }
+    };
+    this._ro = new ResizeObserver(meld);
+    const wrap = document.querySelector('.if-rekentool');
+    this._ro.observe(wrap || document.body);
+    meld();
+  }
+  componentWillUnmount() { if (this._ro) this._ro.disconnect(); }
+
+  flow() {
+    const a = this.state.antwoorden, r = this.state.route;
+    const koper = ['k1', 'k2', 'k3'];
+    const verk = a.hoofdverblijf === 'ja' ? ['v0'] : ['v0', 'vB', 'v1', 'v2', 'v3', 'v4'];
+    if (r === 'koper') return ['rol'].concat(koper, ['res']);
+    if (r === 'verkoper') return ['rol'].concat(verk, ['res']);
+    if (r === 'beide') return ['rol'].concat(koper, ['kres'], verk, ['res']);
+    return ['rol'];
+  }
+  huidig() { const f = this.flow(); return f[Math.min(this.state.stap, f.length - 1)]; }
+
+  cijfers(s) { return String(s || '').replace(/[^0-9]/g, ''); }
+  format(s) { const c = this.cijfers(s); return c ? Number(c).toLocaleString('nl-NL') : ''; }
+  euro(n) { return n == null ? '—' : '€ ' + Math.round(n).toLocaleString('nl-NL'); }
+
+  zet(veld, waarde) { this.setState(s => ({ antwoorden: Object.assign({}, s.antwoorden, { [veld]: waarde }) })); }
+  zetBedrag(veld, e) { this.zet(veld, this.format(e.target.value)); }
+
+  ga(delta) {
+    const f = this.flow();
+    this.setState(s => ({ stap: Math.max(0, Math.min(f.length - 1, s.stap + delta)) }));
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  klaar() {
+    const a = this.state.antwoorden;
+    switch (this.huidig()) {
+      case 'rol': return !!this.state.route;
+      case 'k1': return this.cijfers(a.postcode).length === 5;
+      case 'k2': return this.cijfers(a.koopsom).length > 0;
+      case 'k3': return !!a.type;
+      case 'v0': return !!a.hoofdverblijf;
+      case 'vB': return !!a.bouwgrond;
+      case 'v1': return this.cijfers(a.verkoopprijs).length > 0;
+      case 'v2': return !!a.verkrijging;
+      case 'v3': {
+        if (this.cijfers(a.aankoopprijs).length === 0) return false;
+        const erf = a.verkrijging === 'geerfd' || a.verkrijging === 'geschonken';
+        return !erf || this.state.weetNiet.verkrijgingskosten || this.cijfers(a.verkrijgingskosten).length > 0;
+      }
+      case 'v4': return !!a.datumVerkrijging && !!a.datumVerkoop;
+      default: return true;
+    }
+  }
+
+  klik = (e) => {
+    const keuze = e.target.closest('[data-waarde]');
+    if (keuze) {
+      const veld = keuze.dataset.veld;
+      this.zet(veld, keuze.dataset.waarde);
+      if (veld === 'rol') this.setState({ route: keuze.dataset.waarde });
+      const stapVeld = ['rol', 'type', 'hoofdverblijf', 'verkrijging', 'bouwgrond'].indexOf(veld) > -1;
+      if (stapVeld && this.props.autoDoor !== false) setTimeout(() => this.ga(1), 180);
+      return;
+    }
+    const info = e.target.closest('[data-info]');
+    if (info) { const k = info.dataset.info; this.setState(s => ({ info: Object.assign({}, s.info, { [k]: !s.info[k] }) })); return; }
+    const actie = e.target.closest('[data-actie]');
+    if (!actie) return;
+    const a = actie.dataset.actie;
+    if (a === 'verder') { if (this.klaar()) this.ga(1); return; }
+    if (a === 'terug') { this.ga(-1); return; }
+    if (a === 'opbouw') { this.setState(s => ({ opbouwOpen: !s.opbouwOpen })); return; }
+    if (a === 'herstart') { this.setState({ route: null, stap: 0, antwoorden: this.leeg(), verfijning: {}, weetNiet: {}, info: {}, opbouwOpen: false }); return; }
+    if (a.indexOf('aantal:') === 0) {
+      const d = a.slice(7) === '+' ? 1 : -1;
+      this.setState(s => ({ antwoorden: Object.assign({}, s.antwoorden, { aantalVerkopers: Math.max(1, Math.min(20, (s.antwoorden.aantalVerkopers || 1) + d)) }) }));
+      return;
+    }
+    if (a.indexOf('verfijn:') === 0) { const k = a.slice(8); this.setState(s => ({ verfijning: Object.assign({}, s.verfijning, { [k]: !s.verfijning[k] }) })); return; }
+    if (a.indexOf('vinfo:') === 0) { const k = a.slice(6); this.setState(s => ({ info: Object.assign({}, s.info, { [k]: !s.info[k] }) })); return; }
+    if (a.indexOf('weetniet:') === 0) {
+      const k = a.slice(9);
+      this.setState(s => ({ weetNiet: Object.assign({}, s.weetNiet, { [k]: !s.weetNiet[k] }), antwoorden: Object.assign({}, s.antwoorden, { [k]: '' }) }));
+    }
+  };
+
+  verfijningenKoper(kern, ui) {
+    const eff = kern ? kern.effectenKoper(ui) : {};
+    return [
+      { id: 'eersteWoning', label: 'Ik koop voor het eerst een eigen woning', uitleg: 'Bedoeld voor wie nu voor het eerst een woning koopt om zelf in te wonen. In sommige departementen scheelt dat in de overdrachtsbelasting. Hebt u eerder al een eigen woning gehad, dan geldt dit niet.', effect: eff.eersteWoning },
+      { id: 'makelaarKoop', label: 'Er is een makelaar bij de aankoop', uitleg: 'In de opdracht aan de makelaar staat wie de courtage betaalt: de koper of de verkoper. Staat het bedrag ten laste van de koper, dan hoort het bij uw totale aankoopkosten. Kijk het na in de opdracht of vraag het aan de makelaar.', effect: eff.makelaarKoper },
+      { id: 'kortingHonorarium', label: 'Ik vraag de wettelijke korting op het notarishonorarium', uitleg: 'De notaris mag u binnen wettelijke grenzen een korting geven op zijn eigen honorarium, boven een bepaalde koopsom. Belasting en verschotten vallen daar niet onder. U moet er zelf om vragen, vóór de akte.', effect: eff.kortingHonorarium },
+    ];
+  }
+
+  verfijningenVerkoper(kern, ui) {
+    const eff = kern ? kern.effectenVerkoper(ui) : {};
+    return [
+      { id: 'fiscaalBuiten', label: 'Ik woon fiscaal buiten Frankrijk', uitleg: 'Bent u voor de belasting geen inwoner van Frankrijk, dan geldt een ander regime voor de meerwaarde, met eigen vrijstellingen en een fiscaal vertegenwoordiger bij hogere bedragen. Uw bedrag hierboven verandert er niet door. Laat uw situatie nakijken.', effect: null },
+      { id: 'verzekerdBuiten', label: 'Ik ben voor ziektekosten verzekerd buiten Frankrijk', uitleg: 'Woont of verzekert u zich buiten Frankrijk voor ziektekosten, dan kan een deel van de heffingen op de meerwaarde anders uitpakken. U toont dat aan met een verklaring van uw verzekeraar. Twijfelt u, laat dit dan uit.', effect: eff.ziektekosten },
+      { id: 'gemeubileerdReel', label: 'De woning was gemeubileerd verhuurd onder het reële stelsel', uitleg: 'Bij gemeubileerde verhuur onder het reële stelsel is er in de boekhouding vaak op het pand afgeschreven. Dat kan de meerwaarde bij verkoop anders laten uitvallen dan deze tool laat zien. Vraag uw boekhouder om de cijfers.', effect: null },
+      { id: 'aktes', label: 'Ik heb de akte en de facturen van toen nog', uitleg: 'Met de oude akte en facturen mag u de destijds gemaakte kosten meetellen bij uw aankoopprijs. Dat verlaagt de meerwaarde. Zonder bewijsstukken geldt vaak een vast forfait.', effect: eff.bewijsstukken },
+      { id: 'verbouwd', label: 'Ik heb laten verbouwen door een bedrijf, met facturen', uitleg: 'Werk dat door een erkend bedrijf is uitgevoerd en gefactureerd, mag onder voorwaarden bij de aankoopprijs worden opgeteld. Zelf geklust of zwart betaald telt niet mee. Bewaar de facturen op naam van de eigenaar.', effect: eff.verbouwd },
+      { id: 'makelaarVerk', label: 'Er is een makelaar bij de verkoop', uitleg: 'In de verkoopopdracht staat wie de courtage betaalt en hoe hoog die is: een percentage van de prijs of een vast bedrag. Betaalt u die als verkoper, dan gaat hij van uw opbrengst af. Neem het over zoals het in de opdracht staat.', effect: null },
+      { id: 'verkoopkosten', label: 'Ik maak verkoopkosten (keuringen, doorhaling)', uitleg: 'Denk aan de verplichte keuringen van de woning en het doorhalen van een oude hypotheek. Die kosten gaan van uw opbrengst af. Weet u een bedrag niet, kies dan "weet ik niet" — de post blijft dan buiten de berekening.', effect: null },
+    ];
+  }
+
+  renderVals() {
+    const s = this.state, a = s.antwoorden, kern = s.kern;
+    const nu = this.huidig();
+    const f = this.flow();
+    const vragen = f.filter(x => x !== 'res' && x !== 'kres' && x !== 'rol');
+    const idx = vragen.indexOf(nu);
+    const isRes = nu === 'res' || nu === 'kres';
+    const ui = Object.assign({}, a, { rol: s.route, weetNiet: s.weetNiet });
+    const meta = kern ? kern.laadMeta() : {};
+    const courtage = (veld, modus) => e => {
+      const rauw = e.target.value;
+      this.zet(veld, modus === 'bedrag' ? this.format(rauw) : rauw.replace(/[^0-9,.]/g, '').slice(0, 6));
+    };
+
+    const v = {
+      klik: this.klik,
+      zetPostcode: e => this.zet('postcode', e.target.value.replace(/[^0-9]/g, '').slice(0, 5)),
+      zetKoopsom: e => this.zetBedrag('koopsom', e),
+      zetVerkoopprijs: e => this.zetBedrag('verkoopprijs', e),
+      zetAankoopprijs: e => this.zetBedrag('aankoopprijs', e),
+      zetDiagnostics: e => this.zetBedrag('diagnostics', e),
+      zetDoorhaling: e => this.zetBedrag('doorhaling', e),
+      zetVerkrijgingskosten: e => this.zetBedrag('verkrijgingskosten', e),
+      zetAktesBedrag: e => this.zetBedrag('aktesBedrag', e),
+      zetVerbouwdBedrag: e => this.zetBedrag('verbouwdBedrag', e),
+      zetDatumVerkrijging: e => this.zet('datumVerkrijging', e.target.value),
+      zetDatumVerkoop: e => this.zet('datumVerkoop', e.target.value),
+      zetMkKoop: courtage('mkKoopWaarde', a.mkKoopModus),
+      zetMkVerk: courtage('mkVerkWaarde', a.mkVerkModus),
+      isRol: nu === 'rol', isK1: nu === 'k1', isK2: nu === 'k2', isK3: nu === 'k3',
+      isV0: nu === 'v0', isVB: nu === 'vB', isV1: nu === 'v1', isV2: nu === 'v2', isV3: nu === 'v3', isV4: nu === 'v4',
+      isUitkomst: isRes,
+      toonVoortgang: !isRes && nu !== 'rol',
+      stapNr: idx + 1, stapTotaal: vragen.length,
+      pct: Math.round(((idx + 1) / Math.max(1, vragen.length)) * 100) + '%',
+      postcode: a.postcode, koopsom: a.koopsom, verkoopprijs: a.verkoopprijs,
+      aankoopprijs: a.aankoopprijs, datumVerkrijging: a.datumVerkrijging, datumVerkoop: a.datumVerkoop,
+      diagnostics: a.diagnostics, doorhaling: a.doorhaling,
+      verkrijgingskosten: a.verkrijgingskosten, aktesBedrag: a.aktesBedrag, verbouwdBedrag: a.verbouwdBedrag,
+      aantalVerkopers: a.aantalVerkopers || 1,
+      mkKoopWaarde: a.mkKoopWaarde, mkVerkWaarde: a.mkVerkWaarde,
+      mkKoopTeken: a.mkKoopModus === 'bedrag' ? '€' : '%',
+      mkVerkTeken: a.mkVerkModus === 'bedrag' ? '€' : '%',
+      mkKoopHint: a.mkKoopModus === 'bedrag' ? '12.000' : '4,5',
+      mkVerkHint: a.mkVerkModus === 'bedrag' ? '12.000' : '4,5',
+      infoKoopsom: !!s.info.koopsom, infoType: !!s.info.type, infoBouwgrond: !!s.info.bouwgrond,
+      infoHoofdverblijf: !!s.info.hoofdverblijf, infoVerkrijging: !!s.info.verkrijging,
+      opbouwOpen: s.opbouwOpen,
+      opbouwLabel: s.opbouwOpen ? 'Verberg de opbouw' : 'Bekijk de opbouw',
+      opbouwPijl: s.opbouwOpen ? '▾' : '▸',
+      peildatum: meta.peildatum || '—',
+      bron: meta.bron || '—',
+      vraagAankoopprijs: a.verkrijging === 'gekocht' ? 'Voor welk bedrag hebt u het gekocht?' : 'Wat was de waarde bij verkrijging?',
+      labelAankoopprijs: a.verkrijging === 'gekocht' ? 'Aankoopprijs destijds' : 'Waarde bij verkrijging',
+    };
+
+    [['rol', 'koper'], ['rol', 'verkoper'], ['rol', 'beide'], ['type', 'bestaand'], ['type', 'nieuwbouw'],
+     ['hoofdverblijf', 'ja'], ['hoofdverblijf', 'nee'], ['bouwgrond', 'ja'], ['bouwgrond', 'nee'],
+     ['verkrijging', 'gekocht'], ['verkrijging', 'geerfd'], ['verkrijging', 'geschonken'],
+     ['mkKoopPartij', 'verkoper'], ['mkKoopPartij', 'koper'], ['mkKoopPartij', 'geen'],
+     ['mkVerkPartij', 'verkoper'], ['mkVerkPartij', 'koper'], ['mkVerkPartij', 'geen'],
+     ['mkKoopModus', 'percentage'], ['mkKoopModus', 'bedrag'],
+     ['mkVerkModus', 'percentage'], ['mkVerkModus', 'bedrag']]
+      .forEach(([veld, w]) => {
+        const aan = veld === 'rol' ? s.route === w : a[veld] === w;
+        v['bg_' + veld + '_' + w] = aan ? '#800000' : '#ffffff';
+        v['fg_' + veld + '_' + w] = aan ? '#ffffff' : '#3a2f2d';
+        v['br_' + veld + '_' + w] = aan ? '#800000' : 'rgba(128,0,0,0.18)';
+      });
+    ['diagnostics', 'doorhaling', 'verkrijgingskosten'].forEach(k => {
+      const aan = !!s.weetNiet[k];
+      v['bg_wn_' + k] = aan ? '#800000' : '#ffffff';
+      v['fg_wn_' + k] = aan ? '#ffffff' : '#800000';
+      v['br_wn_' + k] = aan ? '#800000' : 'rgba(128,0,0,0.25)';
+    });
+
+    const klaar = this.klaar();
+    const keuzeScherm = nu === 'k3' || nu === 'v0' || nu === 'vB' || nu === 'v2';
+    v.toonVerderKnop = !isRes && nu !== 'rol' && (!keuzeScherm || this.props.autoDoor === false);
+    v.nietKlaar = !klaar;
+    v.verderOpacity = klaar ? 1 : 0.45;
+    v.verderLabel = nu === 'k3' || nu === 'v4' ? 'Toon mijn bedrag' : 'Verder';
+
+    const koperKant = s.route === 'koper' || s.route === 'beide';
+    const verkoperKant = s.route === 'verkoper' || s.route === 'beide';
+    const koperRes = kern && koperKant ? kern.berekenKoper(ui, s.verfijning) : null;
+    const verkRes = kern && verkoperKant ? kern.berekenVerkoper(ui, s.verfijning) : null;
+    const vrijgesteld = !!(verkRes && verkRes.vrijgesteld);
+
+    v.toonTweedeUitkomst = false;
+    v.uitkomstKleur = '#800000';
+    v.heeftOpbouw = true;
+    v.posten = [];
+    v.toonVervolgKnop = nu === 'kres';
+
+    if (nu === 'kres' || (isRes && s.route === 'koper')) {
+      v.uitkomstZin = a.type === 'nieuwbouw' ? 'Bovenop de koopsom kost deze nieuwbouwwoning u in totaal' : 'Bovenop de koopsom kost deze aankoop u in totaal';
+      v.uitkomstBedrag = this.euro(koperRes ? koperRes.totaal : null);
+      v.posten = (koperRes ? koperRes.posten : []).map(p => ({ label: p.label, bedrag: this.euro(p.bedrag) }));
+    } else if (isRes && verkoperKant && vrijgesteld) {
+      v.uitkomstZin = 'Dit was uw hoofdverblijf, dus over de meerwaarde betaalt u';
+      v.uitkomstBedrag = '€ 0';
+      v.uitkomstKleur = '#2f6b3a';
+      v.heeftOpbouw = false;
+      if (s.route === 'beide') {
+        v.toonTweedeUitkomst = true;
+        v.tweedeZin = 'En uw aankoop kost u in totaal';
+        v.tweedeBedrag = this.euro(koperRes ? koperRes.totaal : null);
+      }
+    } else if (isRes) {
+      v.uitkomstZin = s.route === 'beide' ? 'Van de verkoop houdt u netto over' : 'Na belasting en kosten houdt u van deze verkoop over';
+      v.uitkomstBedrag = this.euro(verkRes ? verkRes.netto : null);
+      v.uitkomstKleur = '#2f6b3a';
+      v.posten = (verkRes ? verkRes.posten : []).map(p => ({ label: p.label, bedrag: this.euro(p.bedrag) }));
+      if (s.route === 'beide') {
+        v.toonTweedeUitkomst = true;
+        v.tweedeZin = 'Uw aankoop kost u in totaal';
+        v.tweedeBedrag = this.euro(koperRes ? koperRes.totaal : null);
+      }
+    }
+
+    const maak = lijst => lijst.map(r => {
+      const aan = !!s.verfijning[r.id];
+      return {
+        label: r.label, uitleg: r.uitleg,
+        actie: 'verfijn:' + r.id, infoActie: 'vinfo:' + r.id,
+        aan: aan ? 'true' : 'false',
+        infoOpen: !!s.info[r.id],
+        rand: aan ? '#800000' : 'rgba(128,0,0,0.12)',
+        effect: r.effect != null ? (r.effect < 0 ? '− ' : '+ ') + this.euro(Math.abs(r.effect)) : (aan ? 'via rekenkern' : 'Aanzetten'),
+        effectKleur: r.effect != null ? '#2f6b3a' : '#8a7a74',
+      };
+    });
+    v.koperVerfijningen = maak(this.verfijningenKoper(kern, ui));
+    v.verkoperVerfijningen = maak(this.verfijningenVerkoper(kern, ui));
+    v.toonKoperVerf = isRes && koperKant;
+    v.toonVerkVerf = nu === 'res' && verkoperKant && !vrijgesteld;
+    v.toonAktesBedrag = !!s.verfijning.aktes;
+    v.toonVerbouwdBedrag = !!s.verfijning.verbouwd;
+    v.toonMakelaarKoop = !!s.verfijning.makelaarKoop;
+    v.toonMakelaarVerk = !!s.verfijning.makelaarVerk;
+    v.toonMkKoopBedrag = !!a.mkKoopPartij && a.mkKoopPartij !== 'geen';
+    v.toonMkVerkBedrag = !!a.mkVerkPartij && a.mkVerkPartij !== 'geen';
+    v.toonKostenvelden = nu === 'res' && verkoperKant && !vrijgesteld && !!s.verfijning.verkoopkosten;
+    v.onvolledig = isRes && !!(s.weetNiet.diagnostics || s.weetNiet.doorhaling || s.weetNiet.verkrijgingskosten);
+
+    const erfschenk = a.verkrijging === 'geerfd' || a.verkrijging === 'geschonken';
+    const tekstErf = 'Bij een geërfd of geschonken pand rekent deze tool niet alles mee, zoals kosten van de nalatenschap of een verdeling tussen erfgenamen. Laat uw uitkomst nakijken door uw notaris.';
+    v.toonVerkrijgingskosten = erfschenk && nu === 'v3';
+    v.toonWaarschuwingVerkrijging = erfschenk && nu === 'v3';
+    v.waarschuwingTekst = tekstErf;
+    const w = [];
+    if (isRes && !vrijgesteld) {
+      if (erfschenk) w.push({ tekst: tekstErf });
+      if ((a.aantalVerkopers || 1) > 1) w.push({ tekst: 'U verkoopt met meer dan één eigenaar. De uitkomst hierboven geldt voor de verkoop als geheel; per eigenaar kan het anders uitpakken. Vraag uw notaris om een berekening per persoon.' });
+      if (s.verfijning.fiscaalBuiten) w.push({ tekst: 'U woont fiscaal buiten Frankrijk. Dan geldt een ander regime met eigen vrijstellingen en soms een fiscaal vertegenwoordiger. Deze tool rekent dat niet voor u uit; laat uw situatie nakijken.' });
+      if (s.verfijning.gemeubileerdReel) w.push({ tekst: 'Bij gemeubileerde verhuur onder het reële stelsel is er meestal op het pand afgeschreven. Uw werkelijke meerwaarde kan daardoor hoger zijn dan hierboven staat. Vraag uw boekhouder om de cijfers.' });
+    }
+    v.waarschuwingen = w;
+    return v;
+  }
+}
+
+</script>
+</body>
+</html>
