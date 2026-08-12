@@ -6,9 +6,12 @@
     <title>Vastgoedtransactie Analyse - InfoFrankrijk</title>
 
     <!-- De tool hoort niet zelfstandig te ranken naast het artikel waarin hij
-         is ingebed. De canonical ontbreekt bewust: die kan er pas in zodra de
-         URL van het artikel bekend is. Zie STATUS.md onder OPENSTAAND. -->
+         is ingebed. De canonical wijst naar dat artikel en staat hier statisch,
+         omdat een via JavaScript geinjecteerde canonical minder zwaar weegt.
+         Dezelfde URL staat als ARTIKEL_URL in calc.js; test.mjs faalt zodra de
+         twee uit elkaar lopen. -->
     <meta name="robots" content="noindex, follow">
+    <link rel="canonical" href="https://infofrankrijk.com/vastgoed-transactiekosten/">
 
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -90,7 +93,16 @@
 
         <div id="sectie_verkoper_bedragen">
             <div class="input-group">
-                <label for="aankoopprijs">Oorspronkelijke Aankoopsom (€)</label>
+                <label for="verkrijging">Hoe hebt u dit pand verkregen?</label>
+                <select id="verkrijging" onchange="calculate()">
+                    <option value="gekocht">Gekocht</option>
+                    <option value="geerfd">Geërfd</option>
+                    <option value="geschonken">Geschonken gekregen</option>
+                </select>
+                <div class="hint" id="verkrijging_hint"></div>
+            </div>
+            <div class="input-group">
+                <label for="aankoopprijs" id="aankoopprijs_label">Oorspronkelijke Aankoopsom (€)</label>
                 <input type="number" id="aankoopprijs" value="200000" step="1000" min="0" oninput="calculate()">
             </div>
             <div class="input-group">
@@ -144,13 +156,13 @@
                     <div class="hint" style="margin-left:20px;">De taxe op hoge meerwaarden geldt niet voor bouwgrond.</div>
                 </div>
                 <div class="input-group">
-                    <label for="aankoopkosten_modus">Aankoopkosten bij de aankoop destijds</label>
+                    <label for="aankoopkosten_modus" id="aankoopkosten_modus_label">Kosten van de verkrijging destijds</label>
                     <select id="aankoopkosten_modus" onchange="calculate()">
                         <option value="forfait">Forfait van 7,5% van de aankoopsom</option>
                         <option value="werkelijk">Werkelijke kosten, op bewijsstukken</option>
                     </select>
                     <div id="aankoopkosten_eigen_wrapper" style="margin-top:8px;">
-                        <label for="aankoopkosten_eigen">Werkelijke aankoopkosten (€)</label>
+                        <label for="aankoopkosten_eigen" id="aankoopkosten_eigen_label">Werkelijke aankoopkosten (€)</label>
                         <input type="number" id="aankoopkosten_eigen" value="" min="0" step="100" oninput="calculate()">
                     </div>
                     <div class="hint" id="aankoopkosten_advies"></div>

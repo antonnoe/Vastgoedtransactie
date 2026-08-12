@@ -21,6 +21,8 @@ import {
     departementaalTarief,
     berekenRemise,
     kiesKostenpost,
+    heeftAankoopkostenForfait,
+    heeftWerkzaamhedenForfait,
     berekenScenario,
     berekenGevoeligheden,
     jaarLater,
@@ -29,6 +31,7 @@ import {
     valideer,
     bepaalSignaleringen,
     SIGNALERINGEN,
+    ARTIKEL_URL,
     TERUGNAME_AFSCHRIJVINGEN_VANAF,
     STANDAARD_INVOER,
     URL_VELDEN
@@ -37,6 +40,8 @@ import {
 const hier = dirname(fileURLToPath(import.meta.url));
 const dmto = JSON.parse(readFileSync(join(hier, 'dmto.json'), 'utf8'));
 const meta = dmto._meta;
+
+const rond = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 let geslaagd = 0;
 const mislukt = [];
@@ -234,6 +239,65 @@ check('de drie posten verlagen samen de meerwaardegrondslag',
     berekenScenario({ ...STANDAARD_INVOER, landmeter: 1000, diagnostics: 800, mainlevee: 500 }, dmto).verkoopkosten,
     2300);
 
+console.log('\nWijze van verkrijging: forfait bestaat alleen bij een aankoop');
+// Art. 150 VB II 2 en 3 CGI met art. 41 duovicies I van bijlage III.
+check('bij gekocht bestaat het forfait', heeftAankoopkostenForfait('gekocht'), true);
+check('bij geerfd bestaat het forfait niet', heeftAankoopkostenForfait('geerfd'), false);
+check('bij geschonken bestaat het forfait niet', heeftAankoopkostenForfait('geschonken'), false);
+
+const gekocht = berekenScenario({ ...STANDAARD_INVOER, verkrijging: 'gekocht' }, dmto);
+const geerfd = berekenScenario({ ...STANDAARD_INVOER, verkrijging: 'geerfd' }, dmto);
+check('bij gekocht is de aftrek 7,5 procent van 200.000, dus 15.000',
+    gekocht.aankoopkosten.bedrag, 15000);
+check('bij geerfd zonder opgave is de aftrek nul', geerfd.aankoopkosten.bedrag, 0);
+check('bij geerfd meldt het model dat de verkrijgingskosten onbekend zijn',
+    geerfd.verkrijgingskostenOnbekend, true);
+check('bij gekocht is er niets onbekend', gekocht.verkrijgingskostenOnbekend, false);
+check('de gemiste aftrek maakt de meerwaarde bij geerfd 15.000 euro hoger',
+    rond(geerfd.brutoMeerwaarde - gekocht.brutoMeerwaarde), 15000);
+check('en daarmee de belasting hoger, niet lager',
+    geerfd.plusValueTax > gekocht.plusValueTax, true);
+check('en de netto-opbrengst lager dan bij een gekocht pand',
+    geerfd.nettoOpbrengst < gekocht.nettoOpbrengst, true);
+
+const geerfdMetKosten = berekenScenario(
+    { ...STANDAARD_INVOER, verkrijging: 'geerfd', aankoopkostenEigen: 18000 }, dmto);
+check('bij geerfd telt het opgegeven werkelijke bedrag wel mee',
+    geerfdMetKosten.aankoopkosten.bedrag, 18000);
+check('en dan is er niets meer onbekend',
+    geerfdMetKosten.verkrijgingskostenOnbekend, false);
+check('bij geerfd wordt de forfaitmodus genegeerd, ook als die is ingesteld',
+    berekenScenario({ ...STANDAARD_INVOER, verkrijging: 'geerfd',
+        aankoopkostenModus: 'forfait', aankoopkostenEigen: 18000 }, dmto).aankoopkosten.bedrag,
+    18000);
+check('bij geschonken geldt dezelfde route als bij geerfd',
+    berekenScenario({ ...STANDAARD_INVOER, verkrijging: 'geschonken' }, dmto).aankoopkosten.bedrag,
+    geerfd.aankoopkosten.bedrag);
+
+console.log('\nForfait voor werkzaamheden geldt niet voor kale grond');
+// BOI-RFPI-PVI-20-10-20-20: de forfaitaire verhoging geldt uitsluitend bij
+// bebouwde onroerende zaken, en is een keuze bij bezit langer dan vijf jaar.
+check('bebouwd en langer dan vijf jaar in bezit geeft het forfait',
+    heeftWerkzaamhedenForfait(10, false), true);
+check('bouwgrond geeft geen forfait, ook niet na tien jaar',
+    heeftWerkzaamhedenForfait(10, true), false);
+check('bebouwd maar korter dan vijf jaar geeft geen forfait',
+    heeftWerkzaamhedenForfait(3, false), false);
+check('precies vijf jaar geeft nog geen forfait', heeftWerkzaamhedenForfait(5, false), false);
+check('zes jaar geeft wel forfait', heeftWerkzaamhedenForfait(6, false), true);
+
+const bebouwd = berekenScenario({ ...STANDAARD_INVOER }, dmto);
+const kaleGrond = berekenScenario({ ...STANDAARD_INVOER, isBouwgrond: true }, dmto);
+check('bij bebouwd is de aftrek 15 procent van 200.000, dus 30.000',
+    bebouwd.werkzaamheden.bedrag, 30000);
+check('bij bouwgrond is de aftrek nul', kaleGrond.werkzaamheden.bedrag, 0);
+check('de meerwaarde is bij bouwgrond dus 30.000 euro hoger',
+    rond(kaleGrond.brutoMeerwaarde - bebouwd.brutoMeerwaarde), 30000);
+check('bij bouwgrond telt een opgegeven werkelijk bedrag wel mee',
+    berekenScenario({ ...STANDAARD_INVOER, isBouwgrond: true, werkzaamhedenEigen: 12000 }, dmto)
+        .werkzaamheden.bedrag, 12000);
+check('bij bouwgrond blijft de surtaxe uitgesloten', kaleGrond.surtaxe, 0);
+
 console.log('\nURL-codering heen en terug (blok D4)');
 check('de standaardinvoer levert een lege querystring', invoerNaarQuery(STANDAARD_INVOER), '');
 check('de standaardinvoer komt ongeschonden terug',
@@ -256,6 +320,7 @@ const afwijkend = {
     isGemeubileerdReeel: true,
     isBouwgrond: true,
     aantalVerkopers: 3,
+    verkrijging: 'geschonken',
     aankoopkostenModus: 'werkelijk',
     aankoopkostenEigen: 21000,
     werkzaamhedenModus: 'werkelijk',
@@ -336,6 +401,16 @@ check('niet-ingezetene en gemeubileerde verhuur komen daar bovenop',
         rol: 'verkopen', belastbareMeerwaarde: 90000,
         isNietIngezetene: true, isGemeubileerdReeel: true
     }).length, 4);
+
+console.log('\nVerwijzing naar het artikel');
+const html = readFileSync(join(hier, 'index.html'), 'utf8');
+const canonical = /<link\s+rel="canonical"\s+href="([^"]+)"/.exec(html);
+check('index.html bevat een canonical', canonical !== null, true);
+check('de canonical is gelijk aan ARTIKEL_URL in calc.js',
+    canonical && canonical[1], ARTIKEL_URL);
+check('ARTIKEL_URL bevat geen placeholder meer',
+    /VERVANG/i.test(ARTIKEL_URL), false);
+check('index.html zet robots op noindex', /name="robots"\s+content="noindex/.test(html), true);
 
 console.log('\nTerugname van afschrijvingen poort op de verkoopdatum');
 // Art. 84 van wet 2025-127 geldt voor verkopen vanaf 15 februari 2025.

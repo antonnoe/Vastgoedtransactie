@@ -13,13 +13,15 @@
  * VERWIJZING NAAR HET ARTIKEL
  * =====================================================================
  *
- * !!! VERVANG DEZE WAARDE !!!
- * Dit is een placeholder. Alle signaleringen en hulpteksten linken hiernaar.
- * Zolang hier geen echte URL staat, is de canonical bewust weggelaten uit
- * index.html: een canonical naar de verkeerde pagina is schadelijker dan geen
- * canonical. Zie STATUS.md onder OPENSTAAND.
+ * Het artikel waarin deze tool is ingebed. Alle signaleringen en de hulptekst
+ * bij De Ruyter linken hiernaartoe.
+ *
+ * Dezelfde URL staat als canonical in de head van index.html. Die moet daar
+ * statisch staan, want een via JavaScript geinjecteerde canonical weegt bij
+ * zoekmachines minder zwaar. Wijzig je hem hier, wijzig hem dan ook daar:
+ * test.mjs faalt zodra de twee uit elkaar lopen.
  */
-export const ARTIKEL_URL = 'https://www.infofrankrijk.com/VERVANG-DOOR-ARTIKEL-URL';
+export const ARTIKEL_URL = 'https://infofrankrijk.com/vastgoed-transactiekosten/';
 
 /* =====================================================================
  * TARIEVEN EN BAREMA'S
@@ -55,12 +57,37 @@ export const DEBOURS_FORFAIT = 1200.0;
 export const REMISE_DREMPEL = 100000;
 export const REMISE_MAX_PCT = 20;
 
-/* Plus-value: forfaits en tarieven. */
+/* Plus-value: forfaits en tarieven.
+ *
+ * Het forfait voor aankoopkosten geldt uitsluitend bij een verkrijging onder
+ * bezwarende titel. Bij een geerfd of geschonken pand bestaat dat forfait niet
+ * en tellen alleen de werkelijke kosten: de betaalde overdrachtsbelasting, de
+ * kosten van akte en aangifte, en zo nodig zegel- en publicatiekosten.
+ * Art. 150 VB II 2 en 3 CGI, uitgewerkt in art. 41 duovicies I van bijlage III.
+ *
+ * Het forfait voor werkzaamheden geldt uitsluitend bij bebouwd onroerend goed,
+ * niet bij kale grond, en is een keuzemogelijkheid bij bezit langer dan vijf
+ * jaar. BOI-RFPI-PVI-20-10-20-20. */
 export const FORFAIT_AANKOOPKOSTEN_PCT = 7.5;   /* art. 150 VB II 3 CGI */
 export const FORFAIT_VERBOUWING_PCT = 15.0;     /* art. 150 VB II 4 CGI, vanaf 5 jaar bezit */
+
 export const TARIEF_IR_PCT = 19.0;              /* art. 200 B CGI */
 export const TARIEF_PS_PCT = 17.2;              /* prelevements sociaux */
 export const TARIEF_PS_DE_RUYTER_PCT = 7.5;     /* prelevement de solidarite */
+
+/* Wijzen van verkrijging. Erven en schenken zijn beide verkrijgingen om niet
+ * en worden voor de aankoopkosten gelijk behandeld. */
+export const VERKRIJGING_WIJZEN = ['gekocht', 'geerfd', 'geschonken'];
+
+/** Is er bij deze wijze van verkrijging een forfait voor aankoopkosten? */
+export function heeftAankoopkostenForfait(verkrijging) {
+    return verkrijging !== 'geerfd' && verkrijging !== 'geschonken';
+}
+
+/** Is er bij deze situatie een forfait voor werkzaamheden? */
+export function heeftWerkzaamhedenForfait(jarenBezit, isBouwgrond) {
+    return !isBouwgrond && jarenBezit > 5;
+}
 
 /* Abattement voor bezitsduur, art. 150 VC CGI en art. L136-7 CSS. */
 export const ABATTEMENT_IR_PER_JAAR = 6.0;      /* jaar 6 t/m 21 */
@@ -414,12 +441,26 @@ export function berekenScenario(inv, dmtoData) {
     // Plus-value
     const verkoopkosten = landmeter + diagnostics + mainlevee;
     const prijsVoorMeerwaarde = nettoVerkoperBasis - verkoopkosten;
+    /* Bestaat het forfait in deze situatie niet, dan is er niets te kiezen:
+     * uitsluitend de werkelijke kosten tellen. Een niet opgegeven bedrag is dan
+     * geen nul maar een gat in de uitkomst, want een gemiste aftrek maakt de
+     * meerwaarde juist te hoog. Daarom wordt dat apart gemeld. */
+    const aankoopkostenForfait = heeftAankoopkostenForfait(inv.verkrijging);
+    const werkzaamhedenForfait = heeftWerkzaamhedenForfait(jarenBezit, inv.isBouwgrond);
     const aankoopkosten = kiesKostenpost(
-        aankoopprijs * (FORFAIT_AANKOOPKOSTEN_PCT / 100),
-        inv.aankoopkostenModus, inv.aankoopkostenEigen);
+        aankoopkostenForfait ? aankoopprijs * (FORFAIT_AANKOOPKOSTEN_PCT / 100) : 0,
+        aankoopkostenForfait ? inv.aankoopkostenModus : 'werkelijk',
+        inv.aankoopkostenEigen);
     const werkzaamheden = kiesKostenpost(
-        jarenBezit > 5 ? aankoopprijs * (FORFAIT_VERBOUWING_PCT / 100) : 0,
-        inv.werkzaamhedenModus, inv.werkzaamhedenEigen);
+        werkzaamhedenForfait ? aankoopprijs * (FORFAIT_VERBOUWING_PCT / 100) : 0,
+        werkzaamhedenForfait ? inv.werkzaamhedenModus : 'werkelijk',
+        inv.werkzaamhedenEigen);
+    aankoopkosten.forfaitBestaat = aankoopkostenForfait;
+    werkzaamheden.forfaitBestaat = werkzaamhedenForfait;
+
+    /* Zonder forfait en zonder opgegeven bedrag ontbreekt de aftrek volledig. */
+    const verkrijgingskostenOnbekend = !aankoopkostenForfait
+        && !(Number(inv.aankoopkostenEigen) > 0);
 
     let brutoMeerwaarde = 0;
     let abatIr = 0;
@@ -457,7 +498,7 @@ export function berekenScenario(inv, dmtoData) {
         departement, tarief, notarisKosten,
         emolumenten: berekenEmolumenten(prijsVoorNotaris), remise,
         makelaarsKosten, prijsVoorNotaris, nettoVerkoperBasis,
-        jarenBezit, aankoopkosten, werkzaamheden,
+        jarenBezit, aankoopkosten, werkzaamheden, verkrijgingskostenOnbekend,
         brutoMeerwaarde, abatIr, abatPs, belastbaarIr,
         plusValueTax, surtaxe, pvReden,
         landmeter, diagnostics, mainlevee, verkoopkosten, onbekendePosten,
@@ -490,6 +531,7 @@ export const STANDAARD_INVOER = {
     isGemeubileerdReeel: false,
     isBouwgrond: false,
     aantalVerkopers: 1,
+    verkrijging: 'gekocht',
     aankoopkostenModus: 'forfait',
     aankoopkostenEigen: 0,
     werkzaamhedenModus: 'forfait',
@@ -518,6 +560,7 @@ export const URL_VELDEN = [
     ['isGemeubileerdReeel', 'gr', 'vinkje'],
     ['isBouwgrond', 'bg', 'vinkje'],
     ['aantalVerkopers', 'av', 'getal'],
+    ['verkrijging', 'vk', 'tekst'],
     ['aankoopkostenModus', 'akm', 'tekst'],
     ['aankoopkostenEigen', 'ake', 'getal'],
     ['werkzaamhedenModus', 'wzm', 'tekst'],
@@ -729,6 +772,7 @@ if (typeof document !== 'undefined') {
             isGemeubileerdReeel: el('gemeubileerd_reeel').checked,
             isBouwgrond: el('is_bouwgrond').checked,
             aantalVerkopers: Number(el('aantal_verkopers').value) || 1,
+            verkrijging: el('verkrijging').value,
             aankoopkostenModus: el('aankoopkosten_modus').value,
             aankoopkostenEigen: Number(el('aankoopkosten_eigen').value) || 0,
             werkzaamhedenModus: el('werkzaamheden_modus').value,
@@ -764,6 +808,7 @@ if (typeof document !== 'undefined') {
         el('gemeubileerd_reeel').checked = Boolean(inv.isGemeubileerdReeel);
         el('is_bouwgrond').checked = Boolean(inv.isBouwgrond);
         el('aantal_verkopers').value = inv.aantalVerkopers;
+        el('verkrijging').value = inv.verkrijging;
         el('aankoopkosten_modus').value = inv.aankoopkostenModus;
         el('aankoopkosten_eigen').value = inv.aankoopkostenEigen || '';
         el('werkzaamheden_modus').value = inv.werkzaamhedenModus;
@@ -799,8 +844,14 @@ if (typeof document !== 'undefined') {
         toon('makelaar_perc_wrapper', inv.makelaarOptie !== 'geen');
         toon('primo_wrapper', !inv.isNieuwbouw);
         toon('remise_pct_wrapper', el('remise_aan').checked);
-        toon('aankoopkosten_eigen_wrapper', inv.aankoopkostenModus === 'werkelijk');
-        toon('werkzaamheden_eigen_wrapper', inv.werkzaamhedenModus === 'werkelijk');
+        const akForfait = heeftAankoopkostenForfait(inv.verkrijging);
+        const wzForfait = heeftWerkzaamhedenForfait(volleJaren(inv.datumAankoop, inv.datumVerkoop), inv.isBouwgrond);
+        // Zonder forfait valt er niets te kiezen: de keuzelijst verdwijnt en
+        // alleen het veld voor de werkelijke kosten blijft staan.
+        toon('aankoopkosten_modus', akForfait);
+        toon('werkzaamheden_modus', wzForfait);
+        toon('aankoopkosten_eigen_wrapper', !akForfait || inv.aankoopkostenModus === 'werkelijk');
+        toon('werkzaamheden_eigen_wrapper', !wzForfait || inv.werkzaamhedenModus === 'werkelijk');
 
         // Scenario in de URL, zodat het te bookmarken en te delen is. In een
         // sandboxed iframe zonder allow-same-origin gooit replaceState; dat mag
@@ -828,10 +879,32 @@ if (typeof document !== 'undefined') {
 
         const res = berekenScenario(inv, dmtoData);
         el('jaren_bezit_label').innerText = `Jaren bezit: ${res.jarenBezit}`;
+        // Bij een verkrijging om niet is er geen forfait om mee te vergelijken,
+        // dus geen advies over wat gunstiger is.
         el('aankoopkosten_advies').innerText =
-            inv.aankoopkostenModus === 'werkelijk' ? adviesTekst(res.aankoopkosten, 'aankoopkosten') : '';
+            (res.aankoopkosten.forfaitBestaat && inv.aankoopkostenModus === 'werkelijk')
+                ? adviesTekst(res.aankoopkosten, 'aankoopkosten') : '';
         el('werkzaamheden_advies').innerText =
-            inv.werkzaamhedenModus === 'werkelijk' ? adviesTekst(res.werkzaamheden, 'kosten') : '';
+            (res.werkzaamheden.forfaitBestaat && inv.werkzaamhedenModus === 'werkelijk')
+                ? adviesTekst(res.werkzaamheden, 'kosten') : '';
+
+        // Bij erven of schenken heet de aankoopsom iets anders: het is de
+        // waarde die voor de schenk- of erfbelasting is aangehouden.
+        const omNiet = !res.aankoopkosten.forfaitBestaat;
+        el('aankoopprijs_label').innerText = omNiet
+            ? 'Waarde bij de verkrijging (€)'
+            : 'Oorspronkelijke Aankoopsom (€)';
+        el('verkrijging_hint').innerText = omNiet
+            ? 'Bij een geërfd of geschonken pand bestaat het forfait voor aankoopkosten niet. '
+              + 'Alleen uw werkelijke kosten tellen: de betaalde overdrachtsbelasting, de kosten '
+              + 'van akte en aangifte, en zo nodig zegel- en publicatiekosten.'
+            : '';
+        el('aankoopkosten_modus_label').innerText = omNiet
+            ? 'Werkelijke kosten van de verkrijging'
+            : 'Kosten van de verkrijging destijds';
+        el('aankoopkosten_eigen_label').innerText = omNiet
+            ? 'Overdrachtsbelasting, akte, aangifte (€)'
+            : 'Werkelijke aankoopkosten (€)';
 
         // --- De uitkomst in één zin ---
         const zinnen = [];
@@ -922,15 +995,36 @@ if (typeof document !== 'undefined') {
         const opsomming = posten.length > 1
             ? `${posten.slice(0, -1).join(', ')} en ${posten[posten.length - 1]}`
             : posten[0];
-        el('onvolledig').innerHTML = (verkoopt && posten.length > 0) ? `
-            <div class="waarschuwing">
-                <div class="waarschuwing-titel">Deze uitkomst is onvolledig</div>
-                <p>U heeft geen bedrag opgegeven voor ${opsomming}.
-                ${posten.length > 1 ? 'Die posten tellen' : 'Die post telt'} daardoor niet mee,
-                niet als nul maar als onbekend. Uw werkelijke kosten liggen dus hoger dan hier
-                staat. Vul ${posten.length > 1 ? 'de bedragen' : 'het bedrag'} in zodra u
-                ${posten.length > 1 ? 'ze' : 'het'} weet.</p>
-            </div>` : '';
+        /* Twee soorten onvolledigheid, die de uitkomst tegengesteld vertekenen.
+         * Een ontbrekende kostenpost maakt de netto-opbrengst te rooskleurig.
+         * Ontbrekende verkrijgingskosten missen juist een aftrek, waardoor de
+         * meerwaarde en dus de belasting te hoog uitvallen. Die twee mogen niet
+         * onder één melding, want dan klopt de richting voor één van beide niet. */
+        const meldingen = [];
+        if (verkoopt && posten.length > 0) {
+            meldingen.push(`
+                <div class="waarschuwing">
+                    <div class="waarschuwing-titel">Deze uitkomst is onvolledig</div>
+                    <p>U heeft geen bedrag opgegeven voor ${opsomming}.
+                    ${posten.length > 1 ? 'Die posten tellen' : 'Die post telt'} daardoor niet mee,
+                    niet als nul maar als onbekend. Uw werkelijke kosten liggen dus hoger dan hier
+                    staat. Vul ${posten.length > 1 ? 'de bedragen' : 'het bedrag'} in zodra u
+                    ${posten.length > 1 ? 'ze' : 'het'} weet.</p>
+                </div>`);
+        }
+        if (verkoopt && res.verkrijgingskostenOnbekend) {
+            meldingen.push(`
+                <div class="waarschuwing">
+                    <div class="waarschuwing-titel">De kosten van uw verkrijging ontbreken</div>
+                    <p>U heeft dit pand geërfd of geschonken gekregen. Daarvoor bestaat geen
+                    forfait: alleen uw werkelijke kosten mogen van de meerwaarde af. Zolang u die
+                    niet invult, rekent deze tool zonder die aftrek, en valt de meerwaarde en
+                    daarmee de belasting hier dus te hoog uit. Wat u netto overhoudt, is in
+                    werkelijkheid hoger dan hier staat. De cijfers vindt u terug in de
+                    aangifte voor de erf- of schenkbelasting.</p>
+                </div>`);
+        }
+        el('onvolledig').innerHTML = meldingen.join('');
 
         // --- Gevoeligheden ---
         const gev = berekenGevoeligheden(inv, dmtoData);

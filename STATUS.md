@@ -1,7 +1,7 @@
 # STATUS
 
 Herkomst van elk tarief, elk bedrag en elke termijn in deze tool.
-Bijgewerkt: 2026-08-11, na de tweede ronde (blokken A tot en met F).
+Bijgewerkt: 2026-08-11, na de derde ronde.
 
 **Belangrijke beperking vooraf.** De uitvoeromgeving waarin deze wijziging is
 gemaakt, blokkeert uitgaand netwerkverkeer naar `impots.gouv.fr`,
@@ -163,6 +163,37 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 - Bij een ontbrekende of onleesbare verkoopdatum verschijnt de signalering wel.
   Te vaak waarschuwen is hier de veiligere fout.
 
+### Reikwijdte van het forfait voor kosten van de verkrijging
+
+- Het forfait van 7,5 % geldt uitsluitend bij een verkrijging onder bezwarende
+  titel. Bij een geërfd of geschonken pand bestaat dat forfait niet en tellen
+  alleen de werkelijke kosten: de betaalde overdrachtsbelasting, de kosten van
+  akte en aangifte, en zo nodig zegel- en publicatiekosten.
+- **Grondslag:** art. 150 VB II 2° en 3° CGI, uitgewerkt in art. 41 duovicies I
+  van bijlage III,
+  `https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006297889`
+- **Wijze van verificatie:** door de opdrachtgever tegen de bron gelegd.
+  Légifrance is vanuit de uitvoeromgeving geblokkeerd.
+- De tool vraagt nu hoe het pand is verkregen. Bij erven of schenken vervalt de
+  keuzelijst tussen forfait en werkelijke kosten en blijft alleen het veld voor
+  de werkelijke kosten over. Erven en schenken zijn beide verkrijgingen om
+  niet en worden identiek behandeld.
+- Dit was een correctheidsgat: tot deze wijziging kende de tool ook aan een
+  geërfd pand het forfait van 7,5 % toe, wat de belastbare meerwaarde te laag
+  maakte.
+
+### Reikwijdte van het forfait voor werkzaamheden
+
+- Het forfait van 15 % geldt uitsluitend bij bebouwd onroerend goed en niet bij
+  kale grond, en is een keuzemogelijkheid voor wie het pand langer dan vijf jaar
+  bezit.
+- **Grondslag:** BOFiP `BOI-RFPI-PVI-20-10-20-20`.
+- **Wijze van verificatie:** door de opdrachtgever tegen de bron gelegd. BOFiP
+  is vanuit de uitvoeromgeving geblokkeerd.
+- Het forfait is gepoort op het bestaande aanvinkveld bouwgrond, dat al de
+  taxe op hoge meerwaarden uitsloot. Ook hier gold tot deze wijziging het
+  forfait ten onrechte, wat de meerwaarde op kale grond te laag maakte.
+
 ### Lettertypen
 
 - Poppins en Mulish staan in `fonts/` en worden niet meer bij Google
@@ -234,9 +265,11 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
    geverifieerd. Het aftrekbare bedrag is het door de gebruiker ingevulde
    werkelijke bedrag; er is geen controle op de eis dat de kosten door de
    verkoper zijn gedragen en met bewijsstukken zijn te staven.
-8. **Tarieven IR 19 % en sociale lasten 17,2 % / 7,5 %, forfaits 7,5 % en
-   15 %.** Alle vier stonden al in de bestaande code en zijn ongewijzigd
-   overgenomen. Niet opnieuw tegen een primaire bron gelegd.
+8. **De percentages 19 %, 17,2 % / 7,5 %, 7,5 % en 15 % zelf.** Alle vier
+   stonden al in de bestaande code en zijn ongewijzigd overgenomen. Niet
+   opnieuw tegen een primaire bron gelegd. Let op het onderscheid: van de twee
+   forfaits is inmiddels wél primair vastgesteld *wanneer* zij gelden (zie
+   GEVERIFIEERD), maar niet dat de percentages 7,5 en 15 nog actueel zijn.
 9. **De vier signaleringen uit blok B zijn niet primair geverifieerd.** Dat is
    precies waarom het signaleringen zijn en geen berekeningen: ze benoemen dat
    een situatie speelt en verwijzen door, zonder één bedrag, percentage of
@@ -288,15 +321,7 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 
 ## OPENSTAAND
 
-1. **De URL van het Infofrankrijk-artikel ontbreekt.** In `calc.js` staat
-   bovenaan één constante `ARTIKEL_URL` met een placeholder-waarde. Alle
-   signaleringen en de hulptekst bij De Ruyter linken daarnaartoe. **Zolang die
-   niet is vervangen, wijzen alle links in de tool naar een niet-bestaande
-   pagina.** Om dezelfde reden staat er in `index.html` wel een
-   `robots noindex` maar bewust géén canonical: een canonical naar de verkeerde
-   pagina is schadelijker dan geen canonical. Vervang de constante en voeg de
-   canonical daarna toe.
-2. **Ik heb vanuit de uitvoeromgeving nog steeds geen primaire bron kunnen
+1. **Ik heb vanuit de uitvoeromgeving nog steeds geen primaire bron kunnen
    openen.** De netwerkproxy blokkeert impots.gouv.fr, bofip.impots.gouv.fr,
    legifrance.gouv.fr, economie.gouv.fr en service-public.fr. Wat inmiddels wel
    primair is bevestigd, staat onder GEVERIFIEERD met vermelding dat de
@@ -304,37 +329,37 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
    inmiddels één met een bevestigde bron en ingangsdatum (gemeubileerde
    verhuur); voor de andere drie geldt onverminderd dat zij daarom geen bedrag,
    percentage of termijn bevatten.
-3. **Is `dmto_2026-06.pdf` de nieuwste uitgave?** Niet vastgesteld; de
+2. **Is `dmto_2026-06.pdf` de nieuwste uitgave?** Niet vastgesteld; de
    overzichtspagina was niet bereikbaar. DGFiP publiceert maandelijks, dus dit
    moet periodiek worden nagelopen.
-4. **Calvados en Savoie.** In de bron staat bij Calvados een abattement van
+3. **Calvados en Savoie.** In de bron staat bij Calvados een abattement van
    46.000 euro en bij Savoie een verlaagd tarief van 4,00 procent. Uit de platte
    tekst is niet af te leiden op welke kolom die betrekking hebben (art. 1594 F
    ter, F sexies of F septies). Niet ingebouwd. Voor die twee departementen kan
    de tool dus te hoog uitkomen in de gevallen waarop die regelingen zien.
-5. **Overige abattements en verlaagde tarieven per departement.** `dmto.json`
+4. **Overige abattements en verlaagde tarieven per departement.** `dmto.json`
    bevat alleen `std` en `primo`. Departementale abattements en sectorale
    verlaagde tarieven uit de DGFiP-tabel zijn niet opgenomen.
-6. **De 0,5-punts verhoging is tijdelijk.** De verhoging op grond van wet
+5. **De 0,5-punts verhoging is tijdelijk.** De verhoging op grond van wet
    2025-127 loopt volgens de gangbare lezing tot en met een einddatum in 2028.
    De exacte einddatum is niet uit een primaire bron bevestigd en zit niet in
    `dmto.json`. Er is geen mechanisme dat waarschuwt als de peildatum verouderd
    is.
-7. **Voorwaarden primo-accédant.** De tool vraagt alleen of de gebruiker
+6. **Voorwaarden primo-accédant.** De tool vraagt alleen of de gebruiker
    primo-accédant is. De wettelijke voorwaarden (geen eigenaar van het
    hoofdverblijf in de twee jaar vóór de akte, en bestemming als hoofdverblijf)
    worden niet gecontroleerd of toegelicht buiten de korte tekst bij het
    invoerveld. De bronvermelding hiervoor is niet zelf geverifieerd.
-8. **Emolumenten bij VEFA.** De opdracht schrijft hetzelfde barème voor als bij
+7. **Emolumenten bij VEFA.** De opdracht schrijft hetzelfde barème voor als bij
    bestaande bouw. Of het tarif réglementé voor een VEFA-akte daadwerkelijk
    identiek is, is niet geverifieerd.
-9. **Uitzonderingen op de plus-value die de tool niet kent:** vrijstelling bij
+8. **Uitzonderingen op de plus-value die de tool niet kent:** vrijstelling bij
    een verkoopprijs tot 15.000 euro, de vrijstelling voor niet-ingezetenen, de
    vrijstelling bij herinvestering in een hoofdverblijf, bezit langer dan
    30 jaar in combinatie met andere vrijstellingen, en de behandeling van
    werkelijke in plaats van forfaitaire verbouwingskosten. Ongewijzigd ten
    opzichte van de bestaande tool.
-10. **De hoogte-meldingen zijn niet tegen de echte artikelpagina getest.** De
+9. **De hoogte-meldingen zijn niet tegen de echte artikelpagina getest.** De
     tool stuurt `{ type: 'if-tool-hoogte', hoogte }` naar het bovenliggende
     venster. Dat is in een testpagina met een iframe geverifieerd: drie
     meldingen bij het laden, convergerend naar de eindhoogte, en geen nieuwe
@@ -342,11 +367,11 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
     het daar samen goed valt, is niet vastgesteld. Let op dat `body` een
     `min-height: 100vh` heeft: de gemelde hoogte is nooit kleiner dan het
     iframe zelf.
-11. **De ontvanger van postMessage is niet beperkt.** Het bericht gaat met
+10. **De ontvanger van postMessage is niet beperkt.** Het bericht gaat met
     `'*'` naar het bovenliggende venster, omdat de origin van het artikel hier
     niet bekend is. Het bericht bevat alleen een hoogte in pixels en dus geen
     gegevens van de gebruiker, maar strenger is netter: vul de origin in zodra
     die vaststaat.
-12. **De tool rondt de plus-value en de sociale lasten niet af op hele euro's,**
+11. **De tool rondt de plus-value en de sociale lasten niet af op hele euro's,**
     terwijl de belastingdienst dat wel doet. Alleen het DMTO en de surtaxe
     worden afgerond. Dit was al zo en is niet veranderd.
