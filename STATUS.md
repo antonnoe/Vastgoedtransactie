@@ -311,31 +311,21 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
     gevoeligheid op nul uit en verdween hij. Elke gevoeligheid wordt daarom
     gemeten op de maatstaf waar het verschil landt, en de tool zegt er per
     regel bij welke dat is.
-13. **De koopsom van de koper en de verkoopprijs van de verkoper delen één
-    veld.** De rekenkern heeft alleen `verkoopprijs` en rekent de notariskosten
-    daarover, dus de koopsom landt op datzelfde veld. Beslissing van de
-    opdrachtgever. In de routes koper en verkoper apart is dat onschadelijk,
-    want er is dan maar één transactie. **In de route beide betekent het dat de
-    tool aanneemt dat het gekochte pand evenveel kost als het verkochte
-    opbrengt.** Wie een duurder of goedkoper huis koopt dan hij verkoopt, krijgt
-    aan de koperskant een verkeerd bedrag. De code heeft op die plek een
-    opmerking. Dit is de enige plek waar twee begrippen op één veld landen, en
-    het is de tegenhanger van wat voor de makelaar juist wél is opgelost.
-14. **De verkrijgingskosten bij erven of schenken lopen via
+13. **De verkrijgingskosten bij erven of schenken lopen via
     `aankoopkostenEigen` met modus `werkelijk`.** De kern heeft daar geen eigen
     veld voor. `aankoopkostenEigen` accepteert nu `null` als onbekend, naast een
     bedrag; de standaardwaarde is `null` geworden in plaats van nul. Nul en
     onbekend blijven van elkaar te onderscheiden, ook door de URL heen. Let op
     de asymmetrie: `werkzaamhedenEigen` staat nog wel op nul, omdat de schil
     daar geen "weet ik niet" voor kent.
-15. **De korting op het notarishonorarium is aan of uit, en aan betekent het
+14. **De korting op het notarishonorarium is aan of uit, en aan betekent het
     maximum.** De schil geeft een knop, de kern wil een percentage tussen nul en
     twintig. Aan wordt twintig, uit wordt nul. Twintig procent is het wettelijke
     maximum en de notaris is niet verplicht die korting te geven, **dus toont de
     stand "aan" het gunstigste geval en niet het waarschijnlijkste.** Dat hoort
     als tekst bij de knop in de schil te staan; die tekst is nog niet
     geschreven, want de schil ontbreekt.
-16. **Twee makelaarkanten, met terugval.** De kern kende één makelaaropgave,
+15. **Twee makelaarkanten, met terugval.** De kern kende één makelaaropgave,
     wat in de route beide fout ging omdat het daar twee transacties zijn. Er is
     nu een tweede set voor de aankoopkant. Die volgt de verkoopkant zolang zijn
     velden op `null` staan, zodat de routes koper en verkoper apart functioneel
@@ -343,8 +333,9 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
     aankoopkant bepaalt de grondslag van de notaris, de verkoopkant de
     netto-opbrengst en de meerwaarde. Per kant kan de courtage als percentage of
     als vast bedrag worden opgegeven; die omzetting gebeurt in de kern, niet in
-    de interface.
-17. **Corsica, Lyon, Alsace.** 2A en 2B hebben dezelfde tarieven gekregen omdat
+    de interface. De notariskosten rekenen over de koopsom, de meerwaarde over
+    de verkoopprijs.
+16. **Corsica, Lyon, Alsace.** 2A en 2B hebben dezelfde tarieven gekregen omdat
    de bron één regel voor de Collectivité de Corse heeft; 69 heeft één sleutel
    omdat de twee bronregels identieke tarieven hebben; 67 en 68 hebben elk een
    eigen sleutel onder de Collectivité européenne d'Alsace. Zo aangeleverd door

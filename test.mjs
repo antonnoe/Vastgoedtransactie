@@ -22,6 +22,7 @@ import {
     berekenRemise,
     kiesKostenpost,
     makelaarCourtage,
+    koopsomVan,
     makelaarKanten,
     heeftAankoopkostenForfait,
     heeftWerkzaamhedenForfait,
@@ -300,6 +301,49 @@ check('bij bouwgrond telt een opgegeven werkelijk bedrag wel mee',
         .werkzaamheden.bedrag, 12000);
 check('bij bouwgrond blijft de surtaxe uitgesloten', kaleGrond.surtaxe, 0);
 
+console.log('\nKoopsom en verkoopprijs staan los van elkaar');
+check('een lege koopsom volgt de verkoopprijs',
+    koopsomVan({ verkoopprijs: 400000, koopsom: null }), 400000);
+check('een ingevulde koopsom gaat voor',
+    koopsomVan({ verkoopprijs: 400000, koopsom: 550000 }), 550000);
+check('een koopsom van nul is een opgave, geen leeg veld',
+    koopsomVan({ verkoopprijs: 400000, koopsom: 0 }), 0);
+
+const zonderKoopsom = berekenScenario({ ...STANDAARD_INVOER }, dmto);
+const duurderGekocht = berekenScenario({ ...STANDAARD_INVOER, koopsom: 550000 }, dmto);
+check('zonder eigen koopsom rekent de notaris over de verkoopprijs',
+    zonderKoopsom.prijsVoorNotaris, 400000);
+check('met een eigen koopsom rekent de notaris daarover',
+    duurderGekocht.prijsVoorNotaris, 550000);
+check('de notariskosten stijgen mee met de koopsom',
+    duurderGekocht.notarisKosten > zonderKoopsom.notarisKosten, true);
+check('maar de netto-opbrengst van de verkoper blijft gelijk',
+    duurderGekocht.nettoOpbrengst, zonderKoopsom.nettoOpbrengst);
+check('en de meerwaarde ook',
+    duurderGekocht.brutoMeerwaarde, zonderKoopsom.brutoMeerwaarde);
+check('een goedkoper gekocht huis verlaagt alleen de kosten van de koper',
+    berekenScenario({ ...STANDAARD_INVOER, koopsom: 250000 }, dmto).nettoOpbrengst,
+    zonderKoopsom.nettoOpbrengst);
+check('de courtage van de aankoopmakelaar rekent over de koopsom, niet over de verkoopprijs',
+    berekenScenario({ ...STANDAARD_INVOER, koopsom: 550000,
+        aankoopMakelaarOptie: 'acquereur', aankoopMakelaarPerc: 4 }, dmto).makelaarsKostenAankoop,
+    22000);
+check('de courtage van de verkoopmakelaar rekent over de verkoopprijs',
+    berekenScenario({ ...STANDAARD_INVOER, koopsom: 550000 }, dmto).makelaarsKostenVerkoop, 24000);
+
+check('een koper zonder koopsom en zonder verkoopprijs wordt afgekeurd',
+    valideer({ ...STANDAARD_INVOER, rol: 'kopen', verkoopprijs: 0, koopsom: null }, dmto).length > 0, true);
+check('een koper met alleen een koopsom is geldig',
+    valideer({ ...STANDAARD_INVOER, rol: 'kopen', verkoopprijs: 0, koopsom: 400000 }, dmto).length, 0);
+check('een verkoper met alleen een verkoopprijs is geldig',
+    valideer({ ...STANDAARD_INVOER, rol: 'verkopen', verkoopprijs: 400000, koopsom: null }, dmto).length, 0);
+check('een negatieve koopsom wordt afgekeurd',
+    valideer({ ...STANDAARD_INVOER, koopsom: -1 }, dmto).length > 0, true);
+check('de koopsom overleeft de reis door de URL',
+    queryNaarInvoer(invoerNaarQuery({ ...STANDAARD_INVOER, koopsom: 550000 })).koopsom, 550000);
+check('een lege koopsom komt niet in de URL',
+    invoerNaarQuery({ ...STANDAARD_INVOER, koopsom: null }).includes('ks='), false);
+
 console.log('\nMakelaar: percentage en vast bedrag');
 // 6 procent van 400.000 is 24.000; beide opgaven horen hetzelfde te geven.
 check('percentage geeft dezelfde courtage als het gelijkwaardige vaste bedrag',
@@ -401,6 +445,7 @@ const afwijkend = {
     aankoopMakelaarPerc: 3,
     aankoopMakelaarBedrag: 0,
     verkoopprijs: 675000,
+    koopsom: 512000,
     aankoopprijs: 250000,
     datumAankoop: '2003-12-15',
     datumVerkoop: '2026-01-10',

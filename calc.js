@@ -106,6 +106,18 @@ export function makelaarCourtage(prijs, makelaar) {
 }
 
 /**
+ * De koopsom van de koper. Staat los van de verkoopprijs van de verkoper: in
+ * de route beide zijn het twee onafhankelijke transacties. Blijft het veld
+ * leeg, dan volgt de koopsom de verkoopprijs, zodat een aanroep met alleen
+ * verkoopprijs blijft werken.
+ */
+export function koopsomVan(inv) {
+    const k = inv.koopsom;
+    const leeg = k === null || k === undefined || k === '';
+    return Math.max(0, Number(leeg ? inv.verkoopprijs : k) || 0);
+}
+
+/**
  * De twee makelaarkanten uit de invoer. De aankoopkant volgt de verkoopkant
  * zolang zijn velden op null staan; dat houdt de routes koper en verkoper
  * apart functioneel ongewijzigd. In de route beide zijn het twee verschillende
@@ -449,25 +461,22 @@ export function berekenScenario(inv, dmtoData) {
     const diagnostics = alsBedrag(inv.diagnostics);
     const mainlevee = alsBedrag(inv.mainlevee);
 
-    /* Twee makelaarkanten. De aankoopkant bepaalt de grondslag van de notaris,
-     * de verkoopkant bepaalt wat de verkoper overhoudt en de meerwaarde. In de
-     * route beide zijn dat twee verschillende transacties.
-     *
-     * LET OP: verkoopprijs draagt hier twee begrippen. Voor de verkoper is het
-     * de verkoopprijs, voor de koper de koopsom. De kern heeft maar een
-     * prijsveld, dus in de route beide wordt aangenomen dat beide bedragen
-     * gelijk zijn. Zie STATUS.md onder AANNAMES. */
+    /* Twee transacties, twee bedragen en twee makelaarkanten. De koopsom en de
+     * aankoopkant bepalen de grondslag van de notaris; de verkoopprijs en de
+     * verkoopkant bepalen wat de verkoper overhoudt en de meerwaarde. In de
+     * route beide staan die volledig los van elkaar. */
+    const koopsom = koopsomVan(inv);
     const kanten = makelaarKanten(inv);
     const makelaarsKostenVerkoop = makelaarCourtage(verkoopprijs, kanten.verkoop);
-    const makelaarsKostenAankoop = makelaarCourtage(verkoopprijs, kanten.aankoop);
+    const makelaarsKostenAankoop = makelaarCourtage(koopsom, kanten.aankoop);
 
     const makelaarsKosten = makelaarsKostenVerkoop;
     const nettoVerkoperBasis = kanten.verkoop.optie === 'geen'
         ? verkoopprijs
         : verkoopprijs - makelaarsKostenVerkoop;
     const prijsVoorNotaris = kanten.aankoop.optie === 'acquereur'
-        ? verkoopprijs - makelaarsKostenAankoop
-        : verkoopprijs;
+        ? koopsom - makelaarsKostenAankoop
+        : koopsom;
 
     // Notariskosten. Bij bestaande bouw is een bekend departementaal tarief
     // vereist; er wordt nooit teruggevallen op een standaardtarief.
@@ -543,7 +552,7 @@ export function berekenScenario(inv, dmtoData) {
     return {
         departement, tarief, notarisKosten,
         emolumenten: berekenEmolumenten(prijsVoorNotaris), remise,
-        makelaarsKosten, makelaarsKostenVerkoop, makelaarsKostenAankoop, kanten,
+        koopsom, makelaarsKosten, makelaarsKostenVerkoop, makelaarsKostenAankoop, kanten,
         prijsVoorNotaris, nettoVerkoperBasis,
         jarenBezit, aankoopkosten, werkzaamheden, verkrijgingskostenOnbekend,
         brutoMeerwaarde, abatIr, abatPs, belastbaarIr,
@@ -576,6 +585,7 @@ export const STANDAARD_INVOER = {
     aankoopMakelaarPerc: null,
     aankoopMakelaarBedrag: null,
     verkoopprijs: 400000,
+    koopsom: null,
     aankoopprijs: 200000,
     datumAankoop: '2015-01-01',
     datumVerkoop: '2025-01-01',
@@ -611,6 +621,7 @@ export const URL_VELDEN = [
     ['aankoopMakelaarPerc', 'amp', 'getal_of_null'],
     ['aankoopMakelaarBedrag', 'amb', 'getal_of_null'],
     ['verkoopprijs', 'vp', 'getal'],
+    ['koopsom', 'ks', 'getal_of_null'],
     ['aankoopprijs', 'ap', 'getal'],
     ['datumAankoop', 'da', 'tekst'],
     ['datumVerkoop', 'dv', 'tekst'],
@@ -685,8 +696,11 @@ export function valideer(inv, dmtoData) {
     const verkoopt = inv.rol === 'verkopen' || inv.rol === 'beide';
     const negatief = (v) => v !== null && v !== undefined && v !== '' && Number(v) < 0;
 
-    if (!(Number(inv.verkoopprijs) > 0)) {
+    if (verkoopt && !(Number(inv.verkoopprijs) > 0)) {
         fouten.push('Vul een verkoopprijs groter dan nul in.');
+    }
+    if (koopt && !(koopsomVan(inv) > 0)) {
+        fouten.push('Vul een koopsom groter dan nul in.');
     }
     const bedragen = [
         ['de aankoopsom', inv.aankoopprijs],
@@ -699,7 +713,8 @@ export function valideer(inv, dmtoData) {
         ['de landmeter', inv.landmeter],
         ['de diagnostics', inv.diagnostics],
         ['de mainlevée', inv.mainlevee],
-        ['de verkoopprijs', inv.verkoopprijs]
+        ['de verkoopprijs', inv.verkoopprijs],
+        ['de koopsom', inv.koopsom]
     ];
     for (const [naam, waarde] of bedragen) {
         if (negatief(waarde)) fouten.push(`Het bedrag voor ${naam} kan niet negatief zijn.`);
