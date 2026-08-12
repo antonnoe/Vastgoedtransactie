@@ -206,7 +206,7 @@ check('een negatief eigen bedrag telt als nul',
     kiesKostenpost(15000, 'werkelijk', -500).bedrag, 0);
 
 console.log('\nGevoeligheden (blok C3)');
-const basisInvoer = { ...STANDAARD_INVOER };
+const basisInvoer = { ...STANDAARD_INVOER, aankoopMakelaarOptie: 'vendeur' };
 const gev = berekenGevoeligheden(basisInvoer, dmto);
 check('er worden nooit meer dan drie gevoeligheden getoond', gev.length <= 3, true);
 check('de courtagekeuze wordt gemeten bij de koper',
@@ -224,7 +224,7 @@ check('een verkoper krijgt geen gevoeligheid over primo-accedant',
     berekenGevoeligheden({ ...basisInvoer, rol: 'verkopen' }, dmto)
         .some((g) => g.label.includes('primo')), false);
 check('zonder makelaar vervalt de courtagegevoeligheid',
-    berekenGevoeligheden({ ...basisInvoer, makelaarOptie: 'geen' }, dmto)
+    berekenGevoeligheden({ ...basisInvoer, makelaarOptie: 'geen', aankoopMakelaarOptie: 'geen' }, dmto)
         .some((g) => g.label.includes('Courtage')), false);
 check('in departement 06, zonder verschil tussen std en primo, vervalt die gevoeligheid',
     berekenGevoeligheden({ ...basisInvoer, postcode: '06000' }, dmto)
@@ -368,10 +368,15 @@ check('elke uitkomst is identiek bij percentage en gelijkwaardig vast bedrag',
 
 console.log('\nMakelaar: twee kanten in de route beide');
 const kant = (inv) => makelaarKanten(inv);
-check('de aankoopkant volgt de verkoopkant zolang zijn velden null zijn',
-    kant(STANDAARD_INVOER).aankoop.optie, STANDAARD_INVOER.makelaarOptie);
+check('bij een enkele transactie volgt de aankoopkant de verkoopkant',
+    kant({ ...STANDAARD_INVOER, rol: 'kopen' }).aankoop.optie, STANDAARD_INVOER.makelaarOptie);
 check('en neemt dan ook het percentage over',
-    kant(STANDAARD_INVOER).aankoop.perc, STANDAARD_INVOER.makelaarPerc);
+    kant({ ...STANDAARD_INVOER, rol: 'kopen' }).aankoop.perc, STANDAARD_INVOER.makelaarPerc);
+/* In de route beide zijn het twee transacties: niets ingevuld betekent daar
+ * geen makelaar bij de aankoop, anders zou de keuze van de verkoper de kosten
+ * van de koper veranderen. */
+check('in de route beide valt de aankoopkant niet terug op de verkoopkant',
+    kant({ ...STANDAARD_INVOER, rol: 'beide' }).aankoop.optie, 'geen');
 check('een eigen waarde aan de aankoopkant overschrijft die terugval',
     kant({ ...STANDAARD_INVOER, aankoopMakelaarOptie: 'acquereur' }).aankoop.optie, 'acquereur');
 check('de verkoopkant blijft daarbij ongemoeid',
@@ -665,8 +670,14 @@ check('weet ik niet maakt diagnostics onbekend', adapter.naarKern(uiWeetNiet).di
 check('weet ik niet maakt de doorhaling onbekend', adapter.naarKern(uiWeetNiet).mainlevee, null);
 check('weet ik niet maakt de verkrijgingskosten onbekend',
     adapter.naarKern(uiWeetNiet).aankoopkostenEigen, null);
-check('een leeg veld is net zo goed onbekend',
-    adapter.naarKern({ ...uiVol, landmeter: '' }).landmeter, null);
+/* Onaangeroerd en expliciet onbekend zijn twee verschillende dingen. Alleen een
+ * klik op "weet ik niet" maakt de post onbekend; een leeg veld telt als nul. */
+check('een leeg veld dat niet is aangeraakt telt als nul, niet als onbekend',
+    adapter.naarKern({ ...uiVol, landmeter: '' }).landmeter, 0);
+check('een leeg veld met weet ik niet is wel onbekend',
+    adapter.naarKern({ ...uiVol, landmeter: '', weetNiet: { landmeter: true } }).landmeter, null);
+check('een ingevuld veld met weet ik niet is ook onbekend, de klik gaat voor',
+    adapter.naarKern({ ...uiVol, weetNiet: { landmeter: true } }).landmeter, null);
 
 check('elk kernveld dat de tabel oplevert bestaat in STANDAARD_INVOER',
     Object.keys(kernVol).every((k) => k in STANDAARD_INVOER), true);
@@ -722,6 +733,71 @@ check('de gemiste aftrek verlaagt wat de verkoper overhoudt',
     adapter.bereken(uiErf).verkoper.bedrag < adapter.bereken(uiErfBedrag).verkoper.bedrag, true);
 check('het verschil is de belasting over 18.000 euro extra meerwaarde',
     adapter.bereken(uiErfBedrag).verkoper.bedrag > adapter.bereken(uiErf).verkoper.bedrag, true);
+
+console.log('\nDe koperroute raakt geen enkele verkoperszaak');
+
+/* 1. Een onaangeroerd koperscenario mag geen enkele post als onbekend melden. */
+check('een koperscenario met alle standaardwaarden geeft een lege onbekendePosten',
+    berekenScenario({ ...STANDAARD_INVOER, rol: 'kopen' }, dmto).onbekendePosten.length, 0);
+check('en meldt ook geen ontbrekende verkrijgingskosten',
+    berekenScenario({ ...STANDAARD_INVOER, rol: 'kopen', verkrijging: 'geerfd' }, dmto)
+        .verkrijgingskostenOnbekend, false);
+check('bij de rol verkopen worden diezelfde posten wel gemeld',
+    berekenScenario({ ...STANDAARD_INVOER, rol: 'verkopen' }, dmto).onbekendePosten.length, 3);
+check('en bij beide ook', berekenScenario({ ...STANDAARD_INVOER, rol: 'beide' }, dmto)
+    .onbekendePosten.length, 3);
+
+const uiKoper = {
+    rol: 'koper', postcode: '58000', koopsom: '400.000', type: 'bestaand',
+    weetNiet: {}, verfijning: {}
+};
+check('via de schil geeft een onaangeroerd koperscherm geen melding',
+    adapter.bereken(uiKoper).onvolledig.length, 0);
+
+/* 2. Ook met "weet ik niet" op alle verkoperskosten hoort de koper niets te
+ *    merken: die posten horen niet bij zijn transactie. */
+const uiKoperOnbekend = {
+    ...uiKoper, weetNiet: { landmeter: true, diagnostics: true, doorhaling: true }
+};
+check('weet ik niet op alle verkoperskosten geeft de koper geen melding',
+    adapter.bereken(uiKoperOnbekend).onvolledig.length, 0);
+check('en laat zijn totaalbedrag ongemoeid',
+    adapter.bereken(uiKoperOnbekend).koper.bovenopKoopsom,
+    adapter.bereken(uiKoper).koper.bovenopKoopsom);
+check('ook het alles-in bedrag blijft gelijk',
+    adapter.bereken(uiKoperOnbekend).koper.bedrag, adapter.bereken(uiKoper).koper.bedrag);
+
+/* De sterkere eis: geen enkel verkopersveld mag het bedrag van de koper
+ * bewegen, en geen enkel kopersveld dat van de verkoper. */
+const basisBeide = {
+    ...STANDAARD_INVOER, rol: 'beide', koopsom: 550000, verkoopprijs: 400000,
+    datumAankoop: '2015-01-01', datumVerkoop: '2025-01-01'
+};
+const nulmeting = berekenScenario(basisBeide, dmto);
+const VERKOPERSVELDEN = {
+    verkoopprijs: 900000, aankoopprijs: 111000, datumAankoop: '1999-03-03',
+    datumVerkoop: '2030-09-09', isHoofdverblijf: true, isBouwgrond: true,
+    isNietIngezetene: true, isGemeubileerdReeel: true, deRuyter: true,
+    aantalVerkopers: 7, verkrijging: 'geschonken', aankoopkostenModus: 'werkelijk',
+    aankoopkostenEigen: 33000, werkzaamhedenModus: 'werkelijk', werkzaamhedenEigen: 44000,
+    landmeter: 1234, diagnostics: 567, mainlevee: 890,
+    makelaarOptie: 'acquereur', makelaarEenheid: 'bedrag', makelaarPerc: 9, makelaarBedrag: 55000
+};
+for (const [veld, waarde] of Object.entries(VERKOPERSVELDEN)) {
+    check(`verkopersveld ${veld} laat de kosten van de koper ongemoeid`,
+        berekenScenario({ ...basisBeide, [veld]: waarde }, dmto).totaalKostenKoper,
+        nulmeting.totaalKostenKoper);
+}
+const KOPERSVELDEN = {
+    koopsom: 975000, postcode: '75001', isNieuwbouw: true, isPrimo: true, remisePct: 20,
+    aankoopMakelaarOptie: 'acquereur', aankoopMakelaarEenheid: 'bedrag',
+    aankoopMakelaarPerc: 8, aankoopMakelaarBedrag: 41000
+};
+for (const [veld, waarde] of Object.entries(KOPERSVELDEN)) {
+    check(`kopersveld ${veld} laat de opbrengst van de verkoper ongemoeid`,
+        berekenScenario({ ...basisBeide, [veld]: waarde }, dmto).nettoOpbrengst,
+        nulmeting.nettoOpbrengst);
+}
 
 console.log('\nDe schil deelt via de URL');
 const heen = adapter.naarQuery(uiVol);

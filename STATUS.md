@@ -324,7 +324,20 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
     maximum en de notaris is niet verplicht die korting te geven, **dus toont de
     stand "aan" het gunstigste geval en niet het waarschijnlijkste.** Dat staat
     als tekst bij de knop in de schil.
-15. **Twee makelaarkanten, met terugval.** De kern kende één makelaaropgave,
+15. **Onaangeroerd en onbekend zijn twee verschillende dingen.** Een leeg
+    bedragveld dat de gebruiker heeft laten staan telt als nul en zegt niets;
+    alleen een klik op "weet ik niet" markeert de post als onbekend en roept de
+    melding op dat de uitkomst onvolledig is. Daarvoor vulde elk onaangeroerd
+    veld de lijst met onbekende posten, waardoor de melding verscheen zonder dat
+    de gebruiker iets had gedaan.
+16. **Elke post en elke melding hoort bij één rol.** Landmeter, diagnostics,
+    mainlevee, de melding over onvolledigheid, de melding over ontbrekende
+    verkrijgingskosten en alle waarschuwingen zijn verkoperszaken. In de rol
+    kopen levert de kern ze niet meer op en toont de schil ze niet. Dat is op
+    twee plaatsen vastgelegd, in de kern en in de presentatielaag, en met
+    assertions afgedekt: geen enkel verkopersveld beweegt de kosten van de
+    koper, en geen enkel kopersveld de opbrengst van de verkoper.
+17. **Twee makelaarkanten, met terugval.** De kern kende één makelaaropgave,
     wat in de route beide fout ging omdat het daar twee transacties zijn. Er is
     nu een tweede set voor de aankoopkant. Die volgt de verkoopkant zolang zijn
     velden op `null` staan, zodat de routes koper en verkoper apart functioneel
@@ -334,7 +347,7 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
     als vast bedrag worden opgegeven; die omzetting gebeurt in de kern, niet in
     de interface. De notariskosten rekenen over de koopsom, de meerwaarde over
     de verkoopprijs.
-16. **Corsica, Lyon, Alsace.** 2A en 2B hebben dezelfde tarieven gekregen omdat
+18. **Corsica, Lyon, Alsace.** 2A en 2B hebben dezelfde tarieven gekregen omdat
    de bron één regel voor de Collectivité de Corse heeft; 69 heeft één sleutel
    omdat de twee bronregels identieke tarieven hebben; 67 en 68 hebben elk een
    eigen sleutel onder de Collectivité européenne d'Alsace. Zo aangeleverd door

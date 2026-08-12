@@ -131,8 +131,17 @@ export function makelaarKanten(inv) {
         bedrag: inv.makelaarBedrag
     };
     const volgt = (waarde, terugval) => (waarde === null || waarde === undefined ? terugval : waarde);
+
+    /* Wie de courtage betaalt, moet in de route beide per kant gezegd zijn: het
+     * zijn twee transacties. Niets ingevuld betekent daar geen makelaar bij de
+     * aankoop, niet dezelfde als bij de verkoop. Zou de aankoopkant daar wel
+     * terugvallen, dan verandert de keuze van de verkoper de notariskosten van
+     * de koper, en dat is precies de koppeling die hier weg moet. Bij een enkele
+     * transactie is de terugval juist wat een opgave met een makelaar laat
+     * werken. */
+    const optieTerugval = inv.rol === 'beide' ? 'geen' : verkoop.optie;
     const aankoop = {
-        optie: volgt(inv.aankoopMakelaarOptie, verkoop.optie),
+        optie: volgt(inv.aankoopMakelaarOptie, optieTerugval),
         eenheid: volgt(inv.aankoopMakelaarEenheid, verkoop.eenheid),
         perc: volgt(inv.aankoopMakelaarPerc, verkoop.perc),
         bedrag: volgt(inv.aankoopMakelaarBedrag, verkoop.bedrag)
@@ -463,13 +472,18 @@ export function berekenScenario(inv, dmtoData) {
     const verkoopprijs = Math.max(0, Number(inv.verkoopprijs) || 0);
     const aankoopprijs = Math.max(0, Number(inv.aankoopprijs) || 0);
 
-    /* De drie verkoopkostenposten mogen onbekend zijn. Onbekend telt als nul in
-     * de berekening, maar wordt apart teruggegeven zodat de interface kan
-     * melden dat de uitkomst op dat punt onvolledig is. Er wordt geen
-     * bandbreedte of schatting voor in de plaats gezet. */
+    /* Landmeter, diagnostics en mainlevee zijn kosten van de verkoper. Wie
+     * alleen koopt, krijgt ze niet gevraagd en hoort er dus ook geen melding
+     * over te zien: onbekend is daar niet onvolledig maar niet van toepassing. */
+    const verkooptRol = inv.rol !== 'kopen';
+
+    /* De drie posten mogen onbekend zijn. Onbekend telt als nul in de
+     * berekening, maar wordt apart teruggegeven zodat de interface kan melden
+     * dat de uitkomst op dat punt onvolledig is. Er wordt geen bandbreedte of
+     * schatting voor in de plaats gezet. */
     const isOnbekend = (v) => v === null || v === undefined || v === '';
     const alsBedrag = (v) => (isOnbekend(v) ? 0 : Math.max(0, Number(v) || 0));
-    const onbekendePosten = [
+    const onbekendePosten = !verkooptRol ? [] : [
         ['landmeter', inv.landmeter],
         ['diagnostics', inv.diagnostics],
         ['mainlevée', inv.mainlevee]
@@ -531,8 +545,9 @@ export function berekenScenario(inv, dmtoData) {
     aankoopkosten.forfaitBestaat = aankoopkostenForfait;
     werkzaamheden.forfaitBestaat = werkzaamhedenForfait;
 
-    /* Zonder forfait en zonder opgegeven bedrag ontbreekt de aftrek volledig. */
-    const verkrijgingskostenOnbekend = !aankoopkostenForfait
+    /* Zonder forfait en zonder opgegeven bedrag ontbreekt de aftrek volledig.
+     * Ook dit is een verkoperszaak: het raakt de meerwaarde, niet de aankoop. */
+    const verkrijgingskostenOnbekend = verkooptRol && !aankoopkostenForfait
         && !(Number(inv.aankoopkostenEigen) > 0);
 
     let brutoMeerwaarde = 0;
@@ -827,7 +842,7 @@ export function berekenGevoeligheden(inv, dmtoData) {
  * die pagina aanwezig zijn: calc.js wordt ook geimporteerd door kernadapter.js
  * voor nieuw.html, en daar bestaan ze niet. */
 if (typeof document !== 'undefined' && document.getElementById('spec_table')) {
-    const fmt = (n) = new Intl.NumberFormat('nl-NL', {
+    const fmt = (n) => new Intl.NumberFormat('nl-NL', {
         style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0
     }).format(n);
     const fmt2 = (n) => new Intl.NumberFormat('nl-NL', {
@@ -873,6 +888,10 @@ if (typeof document !== 'undefined' && document.getElementById('spec_table')) {
             isPrimo: el('primo_accedant').checked,
             remisePct: el('remise_aan').checked ? Number(el('remise_pct').value) || 0 : 0,
             makelaarOptie: el('makelaar_optie').value,
+            /* Deze interface heeft een enkele makelaarkeuze. Sinds de kern twee
+             * kanten kent, moet die keuze expliciet voor beide gelden; in de
+             * route beide valt de aankoopkant namelijk niet meer terug. */
+            aankoopMakelaarOptie: el('makelaar_optie').value,
             makelaarPerc: Number(el('makelaar_perc').value) || 0,
             verkoopprijs: Number(el('verkoopprijs').value) || 0,
             aankoopprijs: Number(el('aankoopprijs').value) || 0,

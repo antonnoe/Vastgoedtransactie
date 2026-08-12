@@ -69,8 +69,17 @@ const getal = (v) => {
 
 const onbekend = (weetNiet, sleutel) => Boolean(weetNiet && weetNiet[sleutel]);
 
-/** Een postbedrag: null als de gebruiker "weet ik niet" koos of niets invulde. */
-const post = (ui, sleutel) => (onbekend(ui.weetNiet, sleutel) ? null : getal(ui[sleutel]));
+/**
+ * Een postbedrag. Onaangeroerd en expliciet onbekend zijn twee verschillende
+ * dingen: alleen een klik op "weet ik niet" maakt de post onbekend, en dat is
+ * wat de melding oproept dat de uitkomst onvolledig is. Een veld dat de
+ * gebruiker gewoon heeft laten staan telt als nul en zegt niets.
+ */
+const post = (ui, sleutel) => {
+    if (onbekend(ui.weetNiet, sleutel)) return null;
+    const waarde = getal(ui[sleutel]);
+    return waarde === null ? 0 : waarde;
+};
 
 /* De schil noemt de partijen koper en verkoper, de kern acquereur en vendeur. */
 const PARTIJ = { koper: 'acquereur', verkoper: 'vendeur', geen: 'geen' };

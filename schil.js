@@ -524,14 +524,19 @@ function render() {
     zetTekst('peildatum', meta.peildatum || '—');
     zetTekst('bron', meta.bron || '—');
 
-    /* Onvolledigheden */
-    const onbekend = geldig ? uitkomst.onvolledig : [];
+    /* Onvolledigheden. Beide gaan over kosten van de verkoper, dus ze horen
+     * alleen op het verkoperscherm; op de tussenuitkomst van de koper in de
+     * route beide staan de verkoopvragen nog niet eens gesteld. */
+    const verkopersMelding = verkoperKant && nu === 'res';
+    const onbekend = (geldig && verkopersMelding) ? uitkomst.onvolledig : [];
     toonEl(el('[data-toon="onvolledig"]'), onbekend.length > 0);
-    toonEl(el('[data-toon="verkrijgingOnbekend"]'), geldig && uitkomst.verkrijgingskostenOnbekend);
+    toonEl(el('[data-toon="verkrijgingOnbekend"]'),
+        geldig && verkopersMelding && uitkomst.verkrijgingskostenOnbekend);
 
     /* Waarschuwingen */
+    /* Elke waarschuwing hieronder gaat over de verkoop. */
     const waarschuwingen = [];
-    if (geldig && !vrijgesteld) {
+    if (geldig && !vrijgesteld && verkopersMelding) {
         if (erfschenk) {
             waarschuwingen.push('Bij een geërfd of geschonken pand rekent deze tool niet alles mee, zoals kosten van de nalatenschap of een verdeling tussen erfgenamen. Laat uw uitkomst nakijken door uw notaris.');
         }
