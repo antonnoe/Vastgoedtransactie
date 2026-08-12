@@ -422,6 +422,12 @@ label {
     color: var(--gedempt);
 }
 
+.post-soort {
+    font-size: 0.78em;
+    color: var(--gedempt);
+    font-weight: 400;
+}
+
 /* ── Verfijningen ──────────────────────────────────────────────────────── */
 
 .verfijning { margin-bottom: 10px; }

@@ -272,7 +272,8 @@ export function bereken(ui) {
             bovenopKoopsom: kern.kernbedrag('kopen', res) === null
                 ? null
                 : Math.round((kern.kernbedrag('kopen', res) - res.koopsom) * 100) / 100,
-            posten: postenKoper(res)
+            posten: postenKoper(res),
+            inKoopsom: inKoopsomBegrepen(res)
         },
         verkoper: {
             vrijgesteld: res.pvReden === 'vrijstelling hoofdverblijf',
@@ -284,35 +285,68 @@ export function bereken(ui) {
     };
 }
 
+/* Waar een post vandaan komt. De interface zet dit als bijschrift onder het
+ * label, zodat te zien is wat vastligt en wat niet. Twee posten met bijna
+ * dezelfde naam, waarvan de ene een tarief is en de andere een schatting,
+ * horen niet zonder onderscheid onder elkaar te staan. */
+export const SOORT_TEKST = {
+    wettelijk: 'wettelijk tarief',
+    schatting: 'schatting, geen tarief',
+    afspraak: 'afspraak met de notaris',
+    opgave: 'uw opgave'
+};
+
 function postenKoper(res) {
     const spec = res.notarisSpecificatie;
-    /* Deze posten tellen op tot wat er bovenop de koopsom komt; de koopsom
-     * zelf staat er dus niet bij. */
+    if (!spec) {
+        return [
+            { label: 'Overdrachtsbelasting', soort: 'wettelijk', bedrag: null },
+            { label: 'Notarishonorarium', soort: 'wettelijk', bedrag: null },
+            { label: 'Btw over het honorarium', soort: 'wettelijk', bedrag: null },
+            { label: 'Contribution de sécurité immobilière', soort: 'wettelijk', bedrag: null },
+            { label: 'Débours: uittreksels, kadaster en formaliteiten', soort: 'schatting', bedrag: null }
+        ];
+    }
+
+    /* Deze posten tellen op tot wat er bovenop de koopsom komt; de koopsom zelf
+     * staat er dus niet bij. Het honorarium staat hier bruto, met de korting
+     * als eigen regel erachter en de btw daar weer achter, want die valt lager
+     * uit door de korting. Zou het honorarium hier netto staan, dan telde de
+     * korting tweemaal mee en klopte de som niet met het totaal. */
     const rijen = [
-        { label: 'Overdrachtsbelasting', bedrag: spec ? spec.overdrachtsbelasting : null },
-        { label: 'Notarishonorarium', bedrag: spec ? spec.emolumenten : null },
-        { label: 'Btw over het honorarium', bedrag: spec ? spec.tva : null },
-        { label: 'Inschrijving en formaliteiten', bedrag: spec ? spec.csi : null },
-        { label: 'Akte-, kadaster- en formaliteitskosten (schatting)', bedrag: spec ? spec.debours : null }
+        { label: 'Overdrachtsbelasting', soort: 'wettelijk', bedrag: spec.overdrachtsbelasting },
+        { label: 'Notarishonorarium', soort: 'wettelijk', bedrag: spec.emolumentenBruto }
     ];
-    if (spec && spec.korting > 0) {
-        rijen.push({ label: 'Korting op het honorarium', bedrag: -spec.korting });
+    if (spec.korting > 0) {
+        rijen.push({ label: 'Korting op het honorarium', soort: 'afspraak', bedrag: -spec.korting });
     }
-    if (res.kanten.aankoop.optie === 'acquereur' && res.makelaarsKostenAankoop > 0) {
-        rijen.push({ label: 'Makelaarscourtage', bedrag: res.makelaarsKostenAankoop });
-    }
+    rijen.push(
+        { label: 'Btw over het honorarium', soort: 'wettelijk', bedrag: spec.tva },
+        { label: 'Contribution de sécurité immobilière', soort: 'wettelijk', bedrag: spec.csi },
+        { label: 'Débours: uittreksels, kadaster en formaliteiten', soort: 'schatting', bedrag: spec.debours }
+    );
     return rijen;
 }
 
+/**
+ * Posten die de koper wel betaalt maar die al in de koopsom zitten, en dus niet
+ * bovenop komen. Bij charge acquereur rekent het model de opgegeven koopsom als
+ * prijs inclusief courtage: de grondslag van de notaris is die koopsom min de
+ * courtage. De courtage in de lijst hierboven opnemen zou hem dubbel tellen.
+ */
+function inKoopsomBegrepen(res) {
+    if (res.kanten.aankoop.optie !== 'acquereur' || !(res.makelaarsKostenAankoop > 0)) return [];
+    return [{ label: 'Makelaarscourtage', soort: 'opgave', bedrag: res.makelaarsKostenAankoop }];
+}
+
 function postenVerkoper(res) {
-    const rijen = [
-        { label: 'Verkoopprijs', bedrag: res.nettoVerkoperBasis + res.makelaarsKostenVerkoop },
-        { label: 'Makelaarscourtage', bedrag: res.makelaarsKostenVerkoop > 0 ? -res.makelaarsKostenVerkoop : null },
-        { label: 'Meerwaardebelasting en sociale heffingen', bedrag: res.plusValueTax > 0 ? -res.plusValueTax : null },
-        { label: 'Heffing op hoge meerwaarden', bedrag: res.surtaxe > 0 ? -res.surtaxe : null },
-        { label: 'Verkoopkosten', bedrag: res.verkoopkosten > 0 ? -res.verkoopkosten : null }
+    return [
+        { label: 'Verkoopprijs', soort: 'opgave', bedrag: res.nettoVerkoperBasis + res.makelaarsKostenVerkoop },
+        { label: 'Makelaarscourtage', soort: 'opgave', bedrag: res.makelaarsKostenVerkoop > 0 ? -res.makelaarsKostenVerkoop : null },
+        { label: 'Meerwaardebelasting en sociale heffingen', soort: 'wettelijk', bedrag: res.plusValueTax > 0 ? -res.plusValueTax : null },
+        { label: 'Heffing op hoge meerwaarden', soort: 'wettelijk', bedrag: res.surtaxe > 0 ? -res.surtaxe : null },
+        { label: 'Verkoopkosten', soort: 'opgave', bedrag: res.verkoopkosten > 0 ? -res.verkoopkosten : null }
     ];
-    return rijen;
 }
 
 /**

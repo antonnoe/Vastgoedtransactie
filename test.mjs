@@ -810,6 +810,71 @@ for (const [veld, waarde] of Object.entries(KOPERSVELDEN)) {
         nulmeting.nettoOpbrengst);
 }
 
+console.log('\nDe opbouw telt op tot het getoonde bedrag');
+
+/* De opbouw hoort precies uit te komen op het bedrag erboven. Telt hij niet op,
+ * dan staat er ergens een post dubbel of ontbreekt er een. */
+const somVan = (posten) => rond(posten.reduce((t, p) => t + (p.bedrag || 0), 0));
+const opbouwKlopt = (naam, ui) => {
+    const r = adapter.bereken(ui);
+    check(`koperopbouw telt op tot het getoonde bedrag: ${naam}`,
+        somVan(r.koper.posten), rond(r.koper.bovenopKoopsom));
+};
+const kBasis = {
+    rol: 'koper', postcode: '63000', koopsom: '780.000', type: 'bestaand',
+    weetNiet: {}, verfijning: {}
+};
+opbouwKlopt('kaal', kBasis);
+opbouwKlopt('met primo-accédant', { ...kBasis, verfijning: { eersteWoning: true } });
+/* Deze combinatie liet de fout zien: het honorarium stond netto in de opbouw en
+ * de korting werd daarnaast nog eens afgetrokken, dus telde die dubbel. */
+opbouwKlopt('met korting op het honorarium', { ...kBasis, verfijning: { kortingHonorarium: true } });
+opbouwKlopt('met primo en korting',
+    { ...kBasis, verfijning: { eersteWoning: true, kortingHonorarium: true } });
+opbouwKlopt('met makelaar ten laste van de koper',
+    { ...kBasis, mkKoopPartij: 'koper', mkKoopModus: 'percentage', mkKoopWaarde: '4',
+        verfijning: { makelaarKoop: true } });
+opbouwKlopt('nieuwbouw', { ...kBasis, type: 'nieuwbouw' });
+opbouwKlopt('nieuwbouw met korting',
+    { ...kBasis, type: 'nieuwbouw', verfijning: { kortingHonorarium: true } });
+
+/* Het honorarium in de opbouw staat bruto; de korting is een eigen regel. */
+const metKorting = adapter.bereken({ ...kBasis, verfijning: { kortingHonorarium: true } });
+const honorarium = metKorting.koper.posten.find((p) => p.label === 'Notarishonorarium');
+const kortingRegel = metKorting.koper.posten.find((p) => p.label.startsWith('Korting'));
+check('het honorarium staat bruto in de opbouw',
+    honorarium.bedrag, berekenEmolumenten(780000));
+check('de korting staat als eigen, negatieve regel', kortingRegel.bedrag < 0, true);
+check('en de btw is berekend over het honorarium na korting',
+    rond(metKorting.koper.posten.find((p) => p.label.startsWith('Btw')).bedrag),
+    rond((honorarium.bedrag + kortingRegel.bedrag) * 0.20));
+
+/* De verfijningen mogen samen precies het verschil in het totaal verklaren. */
+const kaal = adapter.bereken(kBasis).koper.bovenopKoopsom;
+const alleenPrimo = adapter.bereken({ ...kBasis, verfijning: { eersteWoning: true } }).koper.bovenopKoopsom;
+const alleenKorting = adapter.bereken({ ...kBasis, verfijning: { kortingHonorarium: true } }).koper.bovenopKoopsom;
+const samen = adapter.bereken({ ...kBasis, verfijning: { eersteWoning: true, kortingHonorarium: true } }).koper.bovenopKoopsom;
+check('primo en korting samen scheelt evenveel als de twee apart',
+    rond((kaal - alleenPrimo) + (kaal - alleenKorting)), rond(kaal - samen));
+check('het getoonde effect van primo-accédant is wat er werkelijk gebeurt',
+    adapter.effecten(kBasis).eersteWoning, -rond(kaal - alleenPrimo));
+
+/* Wat wettelijk vastligt en wat een schatting is, moet uit de opbouw blijken. */
+const soorten = adapter.bereken(kBasis).koper.posten.map((p) => p.soort);
+check('elke post in de opbouw zegt waar hij vandaan komt',
+    soorten.every((s) => s in adapter.SOORT_TEKST), true);
+check('de contribution de sécurité immobilière heet bij zijn eigen naam',
+    adapter.bereken(kBasis).koper.posten.some((p) => p.label === 'Contribution de sécurité immobilière'), true);
+check('en staat als wettelijk tarief gemarkeerd',
+    adapter.bereken(kBasis).koper.posten
+        .find((p) => p.label === 'Contribution de sécurité immobilière').soort, 'wettelijk');
+check('de débours staan als schatting gemarkeerd',
+    adapter.bereken(kBasis).koper.posten
+        .find((p) => p.label.startsWith('Débours')).soort, 'schatting');
+check('geen twee posten dragen dezelfde naam',
+    new Set(adapter.bereken(kBasis).koper.posten.map((p) => p.label)).size,
+    adapter.bereken(kBasis).koper.posten.length);
+
 console.log('\nDe schil deelt via de URL');
 const heen = adapter.naarQuery(uiVol);
 const terug = adapter.uitQuery(heen);

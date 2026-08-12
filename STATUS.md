@@ -225,7 +225,9 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
    heb de componentformule aangehouden, omdat dat is wat er in de akte gebeurt,
    en de testwaarde daarop gezet. **Controleer dit als je de andere keuze
    wilt.**
-2. **Débours: 1.200 euro forfaitair.** Dit bedrag stond al in de bestaande code
+2. **Débours: 1.200 euro forfaitair.** Deze post staat in de opbouw expliciet
+   als "schatting, geen tarief" gemarkeerd, naast de posten die wel een
+   wettelijk tarief zijn. Dit bedrag stond al in de bestaande code
    en is overgenomen, ook in de nieuwe VEFA-opbouw. Het is geen wettelijk
    tarief maar een schatting van kadaster-, uittreksel- en formaliteitskosten.
    Het is niet uit een primaire bron bevestigd. Dat de VEFA-uitkomst met dit

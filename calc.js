@@ -356,6 +356,10 @@ export function notarisComponenten(prijs, opties) {
         : berekenDmto(prijs, opties.departementaalPct, opties.meta);
     const csi = prijs * (CSI_PCT / 100);
     return {
+        /* Bruto is voor de korting, emolumenten is erna. Een opbouw die beide
+         * naast elkaar toont moet met bruto beginnen, anders staat de korting
+         * er tweemaal in. */
+        emolumentenBruto: rond2(berekenEmolumenten(prijs)),
         emolumenten: rond2(emolumenten),
         korting: rond2(korting),
         tva: rond2(tva),

@@ -186,7 +186,13 @@
           <button type="button" class="opbouw-knop" data-actie="opbouw" aria-expanded="false">
             <span aria-hidden="true" data-tekst="opbouwPijl">▸</span><span data-tekst="opbouwLabel">Bekijk de opbouw</span>
           </button>
-          <div class="opbouw verborgen" data-toon="opbouw" data-lijst="posten"></div>
+          <div class="opbouw verborgen" data-toon="opbouw">
+            <div data-lijst="posten"></div>
+            <div class="verborgen" data-toon="inKoopsom">
+              <p class="onderschrift">Hierin niet meegeteld, want al in de koopsom begrepen:</p>
+              <div data-lijst="inKoopsom"></div>
+            </div>
+          </div>
         </div>
 
         <div class="waarschuwing verborgen" data-toon="onvolledig" role="note">

@@ -301,6 +301,14 @@ function rijLijst(container, rijen) {
         r.className = 'post';
         const l = document.createElement('span');
         l.textContent = rij.label;
+        /* Zichtbaar maken wat een tarief is en wat een schatting: twee posten
+         * met bijna dezelfde naam mogen niet als gelijkwaardig lezen. */
+        if (rij.soort) {
+            const soort = document.createElement('span');
+            soort.className = 'post-soort';
+            soort.textContent = adapter.SOORT_TEKST[rij.soort] || rij.soort;
+            l.append(document.createElement('br'), soort);
+        }
         const b = document.createElement('span');
         b.className = 'bedrag';
         b.textContent = rij.bedrag;
@@ -479,7 +487,8 @@ function render() {
     const bedragEl = el('[data-tekst="uitkomstBedrag"]');
 
     let posten = [];
-    if (nu === 'kres' || (isRes && state.route === 'koper')) {
+    const koperUitkomst = nu === 'kres' || (isRes && state.route === 'koper');
+    if (koperUitkomst) {
         zetTekst('uitkomstZin', a.type === 'nieuwbouw'
             ? 'Bovenop de koopsom kost deze nieuwbouwwoning u in totaal'
             : 'Bovenop de koopsom kost deze aankoop u in totaal');
@@ -517,7 +526,14 @@ function render() {
     zetTekst('opbouwPijl', state.opbouwOpen ? '▾' : '▸');
     const opbouwKnop = el('[data-actie="opbouw"]');
     if (opbouwKnop) opbouwKnop.setAttribute('aria-expanded', state.opbouwOpen ? 'true' : 'false');
-    rijLijst(el('[data-lijst="posten"]'), posten.map((p) => ({ label: p.label, bedrag: euro(p.bedrag) })));
+    rijLijst(el('[data-lijst="posten"]'), posten.map((p) => ({ label: p.label, soort: p.soort, bedrag: euro(p.bedrag) })));
+
+    /* Wat de koper wel betaalt maar al in de koopsom zit, staat apart: in de
+     * lijst hierboven zou het dubbel tellen. */
+    const inKoopsom = (geldig && koperUitkomst) ? uitkomst.koper.inKoopsom : [];
+    toonEl(el('[data-toon="inKoopsom"]'), inKoopsom.length > 0);
+    rijLijst(el('[data-lijst="inKoopsom"]'),
+        inKoopsom.map((p) => ({ label: p.label, soort: p.soort, bedrag: euro(p.bedrag) })));
 
     /* Peildatum en bron, uit dmto.json */
     const meta = adapter.laadMeta();
