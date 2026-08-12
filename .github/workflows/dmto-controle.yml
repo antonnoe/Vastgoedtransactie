@@ -1,0 +1,138 @@
+name: DMTO-uitgave controleren
+
+# DGFiP publiceert maandelijks een nieuwe tarievenlijst. Deze workflow kijkt
+# wekelijks of er een uitgave staat die nieuwer is dan de peildatum in
+# dmto.json, en maakt dan een issue aan.
+#
+# Hij wijzigt zelf niets aan dmto.json. Tarieven overnemen uit een PDF is
+# mensenwerk en blijft dat: een verkeerd overgenomen tarief scheelt duizenden
+# euro's en een automaat kan dat niet nakijken.
+#
+# Faalt het ophalen, dan faalt deze workflow zichtbaar. Stilte mag hier niet
+# als "alles in orde" gelezen worden.
+
+on:
+  schedule:
+    # Elke maandag om 06:00 UTC.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  controleren:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Zoek een nieuwere uitgave
+        id: zoek
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync, appendFileSync } from 'node:fs';
+
+          const OVERZICHT = 'https://www.impots.gouv.fr/droits-denregistrement';
+
+          const dmto = JSON.parse(readFileSync('dmto.json', 'utf8'));
+          const peildatum = dmto._meta.peildatum;
+          const m = /^(\d{4})-(\d{2})-\d{2}$/.exec(peildatum);
+          if (!m) {
+            console.error(`Onleesbare peildatum in dmto.json: ${peildatum}`);
+            process.exit(1);
+          }
+          const huidig = `${m[1]}-${m[2]}`;
+
+          let html;
+          try {
+            const antwoord = await fetch(OVERZICHT, {
+              headers: { 'user-agent': 'Vastgoedtransactie-controle (github actions)' }
+            });
+            if (!antwoord.ok) throw new Error(`HTTP ${antwoord.status}`);
+            html = await antwoord.text();
+          } catch (fout) {
+            // Bewust hard falen: een stille mislukking zou als "geen nieuwe
+            // uitgave" worden gelezen, en dat is precies de verkeerde conclusie.
+            console.error(`Ophalen van ${OVERZICHT} mislukt: ${fout.message}`);
+            process.exit(1);
+          }
+
+          // De uitgaven heten dmto_JJJJ-MM.pdf.
+          const gevonden = [...html.matchAll(/dmto_(\d{4})-(\d{2})\.pdf/g)]
+            .map((t) => ({ maand: `${t[1]}-${t[2]}`, bestand: t[0] }));
+
+          if (gevonden.length === 0) {
+            console.error(
+              `Op ${OVERZICHT} is geen enkel bestand met het patroon dmto_JJJJ-MM.pdf gevonden. `
+              + 'Waarschijnlijk is de pagina of de naamgeving veranderd; deze controle moet worden bijgewerkt.'
+            );
+            process.exit(1);
+          }
+
+          const nieuwste = gevonden.map((g) => g.maand).sort().at(-1);
+          const bestand = gevonden.find((g) => g.maand === nieuwste).bestand;
+          const url = `https://www.impots.gouv.fr/sites/default/files/media/1_metier/3_partenaire/notaires/dmto/${bestand}`;
+
+          console.log(`Peildatum in dmto.json: ${huidig}`);
+          console.log(`Nieuwste uitgave op de site: ${nieuwste}`);
+
+          const uit = process.env.GITHUB_OUTPUT;
+          appendFileSync(uit, `nieuwer=${nieuwste > huidig ? 'ja' : 'nee'}\n`);
+          appendFileSync(uit, `uitgave=${nieuwste}\n`);
+          appendFileSync(uit, `huidig=${huidig}\n`);
+          appendFileSync(uit, `url=${url}\n`);
+          EOF
+
+      - name: Meld de nieuwe uitgave
+        if: steps.zoek.outputs.nieuwer == 'ja'
+        uses: actions/github-script@v7
+        env:
+          UITGAVE: ${{ steps.zoek.outputs.uitgave }}
+          HUIDIG: ${{ steps.zoek.outputs.huidig }}
+          BESTAND_URL: ${{ steps.zoek.outputs.url }}
+        with:
+          script: |
+            const { UITGAVE, HUIDIG, BESTAND_URL } = process.env;
+            const titel = `Nieuwe DMTO-uitgave: ${UITGAVE}`;
+
+            // Op titel zoeken en niet op label: een label dat nog niet bestaat
+            // zou deze stap laten falen om een reden die niets met de tarieven
+            // te maken heeft.
+            const bestaand = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+            if (bestaand.data.some((i) => i.title === titel)) {
+              core.info(`Er staat al een open issue met de titel "${titel}".`);
+              return;
+            }
+
+            const body = [
+              `DGFiP heeft een uitgave van **${UITGAVE}** staan; \`dmto.json\` heeft peildatum **${HUIDIG}**.`,
+              '',
+              `Nieuw bestand: ${BESTAND_URL}`,
+              `Overzichtspagina: https://www.impots.gouv.fr/droits-denregistrement`,
+              '',
+              'Deze workflow wijzigt `dmto.json` niet. Tarieven overnemen uit een PDF is mensenwerk:',
+              'een verkeerd overgenomen tarief scheelt duizenden euro\'s en dat is niet automatisch na te kijken.',
+              '',
+              'Bij het bijwerken:',
+              '',
+              '1. Neem de tarieven per département over in `dmto.json`, velden `std` en `primo`.',
+              '2. Werk `_meta.bron` en `_meta.peildatum` bij.',
+              '3. Draai `node test.mjs`; de controle op de samengestelde tarieven valt om bij een tikfout.',
+              '4. Werk `bronnen.json` bij als de grondslag of de bronnaam is veranderd.',
+              '',
+              '_Aangemaakt door de wekelijkse controle._'
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: titel,
+              body
+            });

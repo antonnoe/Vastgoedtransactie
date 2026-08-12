@@ -37,7 +37,12 @@ import {
     ARTIKEL_URL,
     TERUGNAME_AFSCHRIJVINGEN_VANAF,
     STANDAARD_INVOER,
-    URL_VELDEN
+    URL_VELDEN,
+    BRON,
+    houdbaarheid,
+    maandenTussen,
+    HOUDBAAR_ACTUEEL_MAANDEN,
+    HOUDBAAR_CONTROLEREN_MAANDEN
 } from './calc.js';
 
 import * as adapter from './kernadapter.js';
@@ -912,6 +917,141 @@ check('de bron komt uit het bestand', adapter.laadMeta().bron, dmto._meta.uitgev
 check('een postcode buiten de tabel wordt als onbekend gemeld',
     adapter.kentPostcode('97500'), false);
 check('een postcode in de tabel wordt herkend', adapter.kentPostcode('20000'), true);
+
+console.log('\nHoudbaarheid van de tarieventabel');
+/* De grenzen zijn een beleidskeuze van deze tool, geen wettelijke regel.
+ * DGFiP publiceert maandelijks; daarop zijn ze gebaseerd. */
+check('twee maanden oud is actueel', houdbaarheid('2026-06-01', '2026-08-01'), 'actueel');
+check('de dag voor de derde maand is nog actueel', houdbaarheid('2026-06-01', '2026-08-31'), 'actueel');
+check('drie maanden oud is controleren', houdbaarheid('2026-06-01', '2026-09-01'), 'controleren');
+check('zes maanden oud is nog controleren', houdbaarheid('2026-06-01', '2026-12-01'), 'controleren');
+check('zeven maanden oud is verouderd', houdbaarheid('2026-06-01', '2027-01-01'), 'verouderd');
+check('een jaar oud is verouderd', houdbaarheid('2026-06-01', '2027-06-01'), 'verouderd');
+check('dezelfde dag is actueel', houdbaarheid('2026-06-01', '2026-06-01'), 'actueel');
+check('een onleesbare datum geeft geen oordeel', houdbaarheid('onzin', '2026-08-12'), null);
+check('maandenTussen telt volle maanden', maandenTussen('2026-06-15', '2026-08-14'), 1);
+check('en telt de maand pas op de dag zelf', maandenTussen('2026-06-15', '2026-08-15'), 2);
+check('de peildatum in dmto.json is nu niet verouderd',
+    adapter.laadMeta('2026-08-12').status, 'actueel');
+check('en zou dat over een jaar wel zijn',
+    adapter.laadMeta('2027-08-12').status, 'verouderd');
+
+console.log('\nVerantwoording: elke post wijst naar bronnen.json');
+const bronnen = JSON.parse(readFileSync(join(hier, 'bronnen.json'), 'utf8'));
+adapter.zetTarieven(dmto, bronnen);
+
+/* Posten zonder bron-id zijn opgaven van de gebruiker zelf: geen tarief en geen
+ * regel, dus valt er niets te verantwoorden. Elke andere post moet een bron
+ * hebben; deze lijst is de enige uitzondering en staat hier met reden. */
+const VRIJGESTELD_VAN_BRON = {
+    'Koopsom': 'het bedrag dat de gebruiker zelf opgeeft',
+    'Verkoopprijs': 'het bedrag dat de gebruiker zelf opgeeft',
+    'Makelaarscourtage': 'de courtage die de gebruiker zelf opgeeft, alleen waar hij als opgave in de koopsom staat'
+};
+
+const scenarios = [
+    ['koper, bestaand', { rol: 'koper', postcode: '63000', koopsom: '780.000', type: 'bestaand', weetNiet: {}, verfijning: {} }],
+    ['koper, primo en korting', { rol: 'koper', postcode: '63000', koopsom: '780.000', type: 'bestaand', weetNiet: {}, verfijning: { eersteWoning: true, kortingHonorarium: true } }],
+    ['koper, nieuwbouw', { rol: 'koper', postcode: '63000', koopsom: '780.000', type: 'nieuwbouw', weetNiet: {}, verfijning: {} }],
+    ['koper, makelaar ten laste van de koper', { rol: 'koper', postcode: '63000', koopsom: '780.000', type: 'bestaand', mkKoopPartij: 'koper', mkKoopModus: 'percentage', mkKoopWaarde: '4', weetNiet: {}, verfijning: { makelaarKoop: true } }],
+    ['verkoper, gekocht', { rol: 'verkoper', postcode: '63000', verkoopprijs: '400.000', hoofdverblijf: 'nee', bouwgrond: 'nee', verkrijging: 'gekocht', aankoopprijs: '200.000', datumVerkrijging: '2015-01-01', datumVerkoop: '2025-01-01', aantalVerkopers: 1, mkVerkPartij: 'verkoper', mkVerkModus: 'percentage', mkVerkWaarde: '6', landmeter: '900', weetNiet: {}, verfijning: { makelaarVerk: true, verkoopkosten: true } }],
+    ['verkoper, geerfd met werkelijke kosten', { rol: 'verkoper', postcode: '63000', verkoopprijs: '400.000', hoofdverblijf: 'nee', bouwgrond: 'nee', verkrijging: 'geerfd', aankoopprijs: '200.000', verkrijgingskosten: '18.000', datumVerkrijging: '2015-01-01', datumVerkoop: '2025-01-01', aantalVerkopers: 1, weetNiet: {}, verfijning: {} }],
+    ['verkoper, met alle fiscale verfijningen', { rol: 'verkoper', postcode: '63000', verkoopprijs: '900.000', hoofdverblijf: 'nee', bouwgrond: 'nee', verkrijging: 'gekocht', aankoopprijs: '200.000', aktesBedrag: '21.000', verbouwdBedrag: '48.000', datumVerkrijging: '2015-01-01', datumVerkoop: '2025-01-01', aantalVerkopers: 1, weetNiet: {}, verfijning: { fiscaalBuiten: true, verzekerdBuiten: true, gemeubileerdReel: true, aktes: true, verbouwd: true } }],
+    ['beide', { rol: 'beide', postcode: '63000', koopsom: '550.000', type: 'bestaand', verkoopprijs: '400.000', hoofdverblijf: 'nee', bouwgrond: 'nee', verkrijging: 'gekocht', aankoopprijs: '200.000', datumVerkrijging: '2015-01-01', datumVerkoop: '2025-01-01', aantalVerkopers: 1, weetNiet: {}, verfijning: {} }]
+];
+
+const gebruikteIds = new Set();
+for (const [naam, ui] of scenarios) {
+    const r = adapter.bereken(ui);
+    const posten = [...r.koper.posten, ...r.koper.inKoopsom, ...r.verkoper.posten];
+    const zonderBron = posten
+        .filter((p) => !p.bronId && !(p.label in VRIJGESTELD_VAN_BRON))
+        .map((p) => p.label);
+    check(`elke post heeft een bron of is vrijgesteld: ${naam}`, zonderBron.join(', '), '');
+    for (const p of posten) if (p.bronId) gebruikteIds.add(p.bronId);
+    for (const id of r.res.toegepasteRegels) gebruikteIds.add(id);
+}
+
+const bekendeIds = new Set(Object.keys(bronnen.posten));
+check('elk bron-id uit de code bestaat in bronnen.json',
+    [...gebruikteIds].filter((id) => !bekendeIds.has(id)).join(', '), '');
+check('geen post in bronnen.json blijft ongebruikt',
+    [...bekendeIds].filter((id) => !gebruikteIds.has(id)).join(', '), '');
+check('elke sleutel in BRON komt voor in bronnen.json',
+    Object.values(BRON).filter((id) => !bekendeIds.has(id)).join(', '), '');
+check('elke post in bronnen.json heeft grondslag en status',
+    Object.entries(bronnen.posten).every(([, b]) =>
+        typeof b.grondslag === 'string' && b.grondslag.length > 0
+        && ['primair', 'teverifieren'].includes(b.status)), true);
+
+console.log('\nDe schil toont geen grondslag die niet uit bronnen.json komt');
+for (const [naam, ui] of scenarios) {
+    const rijen = adapter.verantwoording(adapter.bereken(ui));
+    const vreemd = rijen.filter((r) => {
+        const bron = bronnen.posten[r.bronId];
+        return !bron || r.grondslag !== bron.grondslag
+            || (r.bronUrl || null) !== (bron.bronUrl || null)
+            || r.status !== bron.status;
+    }).map((r) => r.bronId);
+    check(`elke regel in het paneel komt letterlijk uit bronnen.json: ${naam}`, vreemd.join(', '), '');
+}
+const paneelKoper = adapter.verantwoording(adapter.bereken(scenarios[0][1]));
+check('het paneel is niet leeg', paneelKoper.length > 0, true);
+check('een post zonder bron staat niet in het paneel',
+    paneelKoper.some((r) => r.post === 'Koopsom'), false);
+check('maar blijft wel in de opbouw staan',
+    adapter.bereken(scenarios[3][1]).koper.inKoopsom.length, 1);
+check('elke regel draagt een blok',
+    paneelKoper.every((r) => typeof r.blok === 'string' && r.blok.length > 0), true);
+check('dezelfde bron staat niet tweemaal in hetzelfde blok',
+    new Set(paneelKoper.map((r) => `${r.blok}|${r.bronId}`)).size, paneelKoper.length);
+check('zonder bronnenbestand toont het paneel niets',
+    (() => { adapter.zetTarieven(dmto, null); const leeg = adapter.verantwoording(adapter.bereken(scenarios[0][1])); adapter.zetTarieven(dmto, bronnen); return leeg.length; })(),
+    0);
+check('elke regel draagt een leesbaar label, geen bron-id',
+    paneelKoper.filter((r) => typeof r.post !== 'string' || r.post.length === 0 || r.post === r.bronId).join(', '), '');
+
+/* De rol bepaalt wie wat te verantwoorden krijgt. Een koper die nooit iets
+ * over een verkoop heeft ingevuld, hoort geen enkel blok over verkoperskosten
+ * te zien; dat was eerder een lek in het bedrag en mag het hier niet worden. */
+for (const [naam, ui] of scenarios) {
+    const rijen = adapter.verantwoording(adapter.bereken(ui));
+    const blokken = [...new Set(rijen.map((r) => r.blok))];
+    if (ui.rol === 'koper') {
+        check(`koperroute toont geen verkopersblok: ${naam}`, blokken.includes('Kosten verkoper'), false);
+    }
+    if (ui.rol === 'verkoper') {
+        check(`verkoperroute toont geen kopersblok: ${naam}`, blokken.includes('Kosten koper'), false);
+    }
+    for (const r of rijen) {
+        if (r.blok !== 'Toegepaste regels') continue;
+        check(`toegepaste regel ${r.bronId} heeft een label (${naam})`, r.post, adapter.REGEL_LABEL[r.bronId]);
+    }
+}
+check('elke sleutel in REGEL_LABEL bestaat in bronnen.json',
+    Object.keys(adapter.REGEL_LABEL).filter((id) => !bronnen.posten[id]).join(', '), '');
+/* Een regel in een kostenblok zonder bedrag leest als een kostenpost die er
+ * niet is. Regels zonder bedrag horen onder Toegepaste regels. */
+for (const [naam, ui] of scenarios) {
+    const zonder = adapter.verantwoording(adapter.bereken(ui))
+        .filter((r) => r.blok !== 'Toegepaste regels' && (r.bedrag === null || r.bedrag === 0))
+        .map((r) => r.post);
+    check(`geen kostenregel zonder bedrag: ${naam}`, zonder.join(', '), '');
+}
+
+console.log('\nSTATUS.md en het paneel zijn dezelfde lijst');
+const statusMd = readFileSync(join(hier, 'STATUS.md'), 'utf8');
+const teVerifieren = Object.entries(bronnen.posten)
+    .filter(([, b]) => b.status === 'teverifieren').map(([id]) => id);
+check('er zijn posten met status teverifieren', teVerifieren.length > 0, true);
+for (const id of teVerifieren) {
+    check(`STATUS.md noemt ${id} onder OPENSTAAND`,
+        statusMd.slice(statusMd.indexOf('## OPENSTAAND')).includes(id), true);
+}
+const primair = Object.entries(bronnen.posten)
+    .filter(([, b]) => b.status === 'primair').map(([id]) => id);
+check('geen post met status primair staat ten onrechte onder OPENSTAAND',
+    primair.filter((id) => statusMd.slice(statusMd.indexOf('## OPENSTAAND')).includes(`\`${id}\``)).join(', '), '');
 
 console.log(`\n${geslaagd} geslaagd, ${mislukt.length} mislukt.`);
 if (mislukt.length > 0) {

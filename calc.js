@@ -24,6 +24,69 @@
 export const ARTIKEL_URL = 'https://infofrankrijk.com/vastgoed-transactiekosten/';
 
 /* =====================================================================
+ * VERANTWOORDING EN HOUDBAARHEID
+ * =====================================================================
+ *
+ * De grondslagen en bron-URL's staan niet hier maar in bronnen.json. In de code
+ * staan alleen de sleutels waarmee een post naar zijn bron verwijst.
+ */
+export const BRON = {
+    dmtoDepartementaal: 'dmto.departementaal',
+    dmtoPrimo: 'dmto.primo',
+    dmtoCommunaal: 'dmto.communaal',
+    emolumenten: 'emolumenten',
+    remise: 'emolumenten.remise',
+    btw: 'emolumenten.btw',
+    csi: 'csi',
+    debours: 'debours',
+    vefaTpf: 'vefa.tpf',
+    pvTarieven: 'pv.tarieven',
+    pvAbattement: 'pv.abattement',
+    pvForfaitAankoopkosten: 'pv.forfait.aankoopkosten',
+    pvForfaitWerkzaamheden: 'pv.forfait.werkzaamheden',
+    pvWerkelijkeAankoopkosten: 'pv.werkelijke.aankoopkosten',
+    pvVerkrijgingOmNiet: 'pv.verkrijging.omniet',
+    pvVerkoopkosten: 'pv.verkoopkosten',
+    pvSurtaxe: 'pv.surtaxe',
+    pvDeRuyter: 'pv.deruyter',
+    pvLmnp: 'pv.lmnp',
+    pvNietIngezetene: 'pv.nietingezetene'
+};
+
+/* Hoe oud de tarieventabel mag zijn voordat de tool erover begint. DGFiP
+ * publiceert maandelijks; deze grenzen zijn daarop gebaseerd. Het is een
+ * beleidskeuze van deze tool, geen wettelijke regel: nergens staat dat een
+ * tabel na een bepaalde tijd ongeldig is. */
+export const HOUDBAAR_ACTUEEL_MAANDEN = 2;
+export const HOUDBAAR_CONTROLEREN_MAANDEN = 6;
+
+/** Volle maanden tussen twee datums in ISO-notatie. */
+export function maandenTussen(vanISO, totISO) {
+    const lees = (s) => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '').trim());
+        return m ? { j: +m[1], m: +m[2], d: +m[3] } : null;
+    };
+    const a = lees(vanISO);
+    const b = lees(totISO);
+    if (!a || !b) return null;
+    let maanden = (b.j - a.j) * 12 + (b.m - a.m);
+    if (b.d < a.d) maanden -= 1;
+    return maanden;
+}
+
+/**
+ * Hoe houdbaar is de tarieventabel op deze datum?
+ * 'actueel' | 'controleren' | 'verouderd', of null bij een onleesbare datum.
+ */
+export function houdbaarheid(peildatumISO, vandaagISO) {
+    const maanden = maandenTussen(peildatumISO, vandaagISO);
+    if (maanden === null) return null;
+    if (maanden <= HOUDBAAR_ACTUEEL_MAANDEN) return 'actueel';
+    if (maanden <= HOUDBAAR_CONTROLEREN_MAANDEN) return 'controleren';
+    return 'verouderd';
+}
+
+/* =====================================================================
  * TARIEVEN EN BAREMA'S
  * ===================================================================== */
 
@@ -480,6 +543,7 @@ export function berekenScenario(inv, dmtoData) {
      * alleen koopt, krijgt ze niet gevraagd en hoort er dus ook geen melding
      * over te zien: onbekend is daar niet onvolledig maar niet van toepassing. */
     const verkooptRol = inv.rol !== 'kopen';
+    const koopt = inv.rol !== 'verkopen';
 
     /* De drie posten mogen onbekend zijn. Onbekend telt als nul in de
      * berekening, maar wordt apart teruggegeven zodat de interface kan melden
@@ -525,6 +589,20 @@ export function berekenScenario(inv, dmtoData) {
             isNieuwbouw: inv.isNieuwbouw, departementaalPct: tarief, meta, remisePct: inv.remisePct
         });
         notarisKosten = notarisSpecificatie ? notarisSpecificatie.totaal : 0;
+        if (notarisSpecificatie) {
+            /* Elke component wijst naar de post in bronnen.json die hem
+             * verantwoordt. De grondslag zelf staat daar, niet hier. */
+            notarisSpecificatie.bronnen = {
+                overdrachtsbelasting: inv.isNieuwbouw
+                    ? BRON.vefaTpf
+                    : (inv.isPrimo ? BRON.dmtoPrimo : BRON.dmtoDepartementaal),
+                emolumenten: BRON.emolumenten,
+                korting: BRON.remise,
+                tva: BRON.btw,
+                csi: BRON.csi,
+                debours: BRON.debours
+            };
+        }
     }
 
     const jarenBezit = volleJaren(inv.datumAankoop, inv.datumVerkoop);
@@ -580,6 +658,29 @@ export function berekenScenario(inv, dmtoData) {
         }
     }
 
+    /* Regels die op deze berekening zijn toegepast maar geen eigen post in de
+     * opbouw hebben. Ze horen wel in de verantwoording: de gebruiker moet
+     * kunnen nazien waarop zijn uitkomst berust, niet alleen welke bedragen er
+     * zijn opgeteld. */
+    const toegepasteRegels = [];
+    if (koopt && !inv.isNieuwbouw && departement) toegepasteRegels.push(BRON.dmtoCommunaal);
+    if (verkooptRol && !inv.isHoofdverblijf) {
+        if (brutoMeerwaarde > 0) {
+            toegepasteRegels.push(BRON.pvAbattement);
+            if (inv.deRuyter) toegepasteRegels.push(BRON.pvDeRuyter);
+        }
+        if (!aankoopkostenForfait) toegepasteRegels.push(BRON.pvVerkrijgingOmNiet);
+        toegepasteRegels.push(aankoopkosten.bedrag > 0 && !aankoopkostenForfait
+            ? BRON.pvWerkelijkeAankoopkosten
+            : (inv.aankoopkostenModus === 'werkelijk' && aankoopkostenForfait
+                ? BRON.pvWerkelijkeAankoopkosten
+                : BRON.pvForfaitAankoopkosten));
+        if (werkzaamhedenForfait) toegepasteRegels.push(BRON.pvForfaitWerkzaamheden);
+        if (verkoopkosten > 0) toegepasteRegels.push(BRON.pvVerkoopkosten);
+        if (inv.isGemeubileerdReeel) toegepasteRegels.push(BRON.pvLmnp);
+        if (inv.isNietIngezetene) toegepasteRegels.push(BRON.pvNietIngezetene);
+    }
+
     const totaalKostenVerkoper = makelaarsKosten + plusValueTax + surtaxe + verkoopkosten;
     const nettoOpbrengst = verkoopprijs - totaalKostenVerkoper;
     const totaalKostenKoper = notarisKosten === null
@@ -596,6 +697,7 @@ export function berekenScenario(inv, dmtoData) {
         brutoMeerwaarde, abatIr, abatPs, belastbaarIr,
         plusValueTax, surtaxe, pvReden,
         landmeter, diagnostics, mainlevee, verkoopkosten, onbekendePosten,
+        toegepasteRegels: [...new Set(toegepasteRegels)],
         totaalKostenVerkoper, nettoOpbrengst,
         werkelijkeWinst: nettoOpbrengst - aankoopprijs,
         totaalKostenKoper,

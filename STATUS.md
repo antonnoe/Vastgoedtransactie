@@ -380,8 +380,14 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
    verhuur); voor de andere drie geldt onverminderd dat zij daarom geen bedrag,
    percentage of termijn bevatten.
 4. **Is `dmto_2026-06.pdf` de nieuwste uitgave?** Niet vastgesteld; de
-   overzichtspagina was niet bereikbaar. DGFiP publiceert maandelijks, dus dit
-   moet periodiek worden nagelopen.
+   overzichtspagina was niet bereikbaar. Er draait nu wel een wekelijkse
+   GitHub Action (`.github/workflows/dmto-controle.yml`) die de
+   overzichtspagina afzoekt op een uitgave die nieuwer is dan de peildatum en
+   dan een issue aanmaakt. Die Action heeft nog nooit gedraaid en is dus nog
+   niet tegen de echte pagina bewezen: het patroon `dmto_JJJJ-MM.pdf` is een
+   aanname over de bestandsnamen. Verandert de pagina van opzet, dan faalt de
+   Action zichtbaar in plaats van stil — maar dat moet dan wel worden opgepakt.
+   Het overnemen van de tarieven blijft in alle gevallen handwerk.
 5. **Calvados en Savoie.** In de bron staat bij Calvados een abattement van
    46.000 euro en bij Savoie een verlaagd tarief van 4,00 procent. Uit de platte
    tekst is niet af te leiden op welke kolom die betrekking hebben (art. 1594 F
@@ -393,8 +399,9 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 7. **De 0,5-punts verhoging is tijdelijk.** De verhoging op grond van wet
    2025-127 loopt volgens de gangbare lezing tot en met een einddatum in 2028.
    De exacte einddatum is niet uit een primaire bron bevestigd en zit niet in
-   `dmto.json`. Er is geen mechanisme dat waarschuwt als de peildatum verouderd
-   is.
+   `dmto.json`. De schil waarschuwt inmiddels wel als de peildatum oud wordt,
+   maar dat is een waarschuwing over de ouderdom van het bestand en niet over
+   het aflopen van deze verhoging; die einddatum kent de tool niet.
 8. **Voorwaarden primo-accédant.** De tool vraagt alleen of de gebruiker
    primo-accédant is. De wettelijke voorwaarden (geen eigenaar van het
    hoofdverblijf in de twee jaar vóór de akte, en bestemming als hoofdverblijf)
@@ -425,3 +432,28 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 13. **De tool rondt de plus-value en de sociale lasten niet af op hele euro's,**
     terwijl de belastingdienst dat wel doet. Alleen het DMTO en de surtaxe
     worden afgerond. Dit was al zo en is niet veranderd.
+
+### Posten met status `teverifieren` in `bronnen.json`
+
+Deze vier staan in het verantwoordingspaneel als *nog na te gaan*. De lijst
+hieronder is dezelfde lijst: de testset valt om zodra een post in
+`bronnen.json` op `teverifieren` staat en hier niet wordt genoemd, of zodra een
+post op `primair` gaat staan terwijl zijn id hier nog tussen backticks staat.
+Wie er één afvinkt, werkt dus beide bestanden in één beweging bij.
+
+14. **`dmto.communaal`** — de gemeentelijke taxe en de frais d'assiette. De
+    tarieven zijn afgeleid uit de gepubliceerde totalen van DGFiP en drie
+    controlewaarden van de opdrachtgever; de wetsartikelen waarop zij berusten
+    zijn niet zelf geraadpleegd. De uitkomst is daarmee gecontroleerd, de
+    grondslag niet.
+15. **`emolumenten.btw`** — de btw over de emolumenten. Er staat geen bronnaam
+    en geen bron-URL bij, omdat ik er geen heb kunnen vaststellen. Het
+    percentage zit in de kern en wordt toegepast; wat ontbreekt is de
+    vindplaats.
+16. **`csi`** — de contribution de sécurité immobilière. Het tarief is bevestigd
+    door de opdrachtgever, het wetsartikel is niet zelf geraadpleegd.
+17. **`debours`** — de débours. Dit is geen wettelijk tarief maar een
+    forfaitaire schatting op grond van ervaring, en er is geen bron die het
+    bedrag draagt. Het staat in het paneel met de vermelding dat het een
+    schatting is. Als er ooit één post uit deze lijst moet verdwijnen door hem
+    beter te onderbouwen in plaats van beter te labelen, is het deze.

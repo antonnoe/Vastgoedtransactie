@@ -36,6 +36,7 @@ const state = {
     verfijning: {},
     info: {},
     opbouwOpen: false,
+    verantwoordingOpen: false,
     tarievenGeladen: false
 };
 
@@ -200,10 +201,12 @@ function koppelKlik() {
         if (a === 'verder') { if (klaar()) ga(1); return; }
         if (a === 'terug') { ga(-1); return; }
         if (a === 'opbouw') { state.opbouwOpen = !state.opbouwOpen; render(); return; }
+        if (a === 'verantwoording') { state.verantwoordingOpen = !state.verantwoordingOpen; render(); return; }
         if (a === 'herstart') {
             Object.assign(state, {
                 route: null, stap: 0, antwoorden: leeg(),
-                verfijning: {}, weetNiet: {}, info: {}, opbouwOpen: false
+                verfijning: {}, weetNiet: {}, info: {}, opbouwOpen: false,
+                verantwoordingOpen: false
             });
             render();
             return;
@@ -365,6 +368,73 @@ function verfijningLijst(container, definities, effecten) {
             wrap.append(uitleg);
         }
         container.append(wrap);
+    }
+}
+
+const STATUS_TEKST = { primair: 'tegen de bron gelegd', teverifieren: 'nog na te gaan' };
+
+/* Het paneel toont uitsluitend wat uit bronnen.json komt. Staat er geen bron
+ * bij een post, dan verschijnt hij hier niet; hij blijft wel in de opbouw. */
+function verantwoordingLijst(container, rijen) {
+    container.replaceChildren();
+    let vorigBlok = null;
+    for (const rij of rijen) {
+        if (rij.blok !== vorigBlok) {
+            const kop = document.createElement('div');
+            kop.className = 'blokkop';
+            kop.textContent = rij.blok;
+            container.append(kop);
+            vorigBlok = rij.blok;
+        }
+        const blok = document.createElement('div');
+        blok.className = 'bron';
+
+        const kop = document.createElement('div');
+        kop.className = 'bron-kop';
+        const naam = document.createElement('span');
+        naam.textContent = rij.post;
+        kop.append(naam);
+        if (rij.bedrag != null) {
+            const bedrag = document.createElement('span');
+            bedrag.className = 'bedrag';
+            bedrag.textContent = euro(rij.bedrag);
+            kop.append(bedrag);
+        }
+        blok.append(kop);
+
+        const grondslag = document.createElement('div');
+        grondslag.className = 'bron-grondslag';
+        grondslag.textContent = rij.grondslag;
+        blok.append(grondslag);
+
+        if (rij.bronnaam) {
+            const herkomst = document.createElement('div');
+            herkomst.className = 'bron-herkomst';
+            if (rij.bronUrl) {
+                const link = document.createElement('a');
+                link.href = rij.bronUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = rij.bronnaam;
+                herkomst.append(link);
+            } else {
+                herkomst.textContent = rij.bronnaam;
+            }
+            blok.append(herkomst);
+        }
+        if (rij.opmerking) {
+            const opm = document.createElement('div');
+            opm.className = 'bron-herkomst';
+            opm.textContent = rij.opmerking;
+            blok.append(opm);
+        }
+
+        const status = document.createElement('span');
+        status.className = `bron-status ${rij.status}`;
+        status.textContent = STATUS_TEKST[rij.status] || rij.status;
+        blok.append(status);
+
+        container.append(blok);
     }
 }
 
@@ -535,10 +605,23 @@ function render() {
     rijLijst(el('[data-lijst="inKoopsom"]'),
         inKoopsom.map((p) => ({ label: p.label, soort: p.soort, bedrag: euro(p.bedrag) })));
 
-    /* Peildatum en bron, uit dmto.json */
+    /* Peildatum, bron en houdbaarheid, uit dmto.json */
     const meta = adapter.laadMeta();
     zetTekst('peildatum', meta.peildatum || '—');
     zetTekst('bron', meta.bron || '—');
+    toonEl(el('[data-toon="verouderd"]'), meta.status === 'verouderd');
+    zetTekst('verouderdPeildatum', meta.peildatum || '—');
+    zetTekst('verouderdMaanden', meta.maandenOud == null ? '—' : String(meta.maandenOud));
+
+    /* Verantwoording: waarop berust dit? */
+    const bronnen = geldig ? adapter.verantwoording(uitkomst) : [];
+    toonEl(el('.verantwoording'), bronnen.length > 0);
+    toonEl(el('[data-toon="verantwoording"]'), state.verantwoordingOpen);
+    zetTekst('verantwoordingLabel', state.verantwoordingOpen ? 'Verberg de verantwoording' : 'Waarop berust dit?');
+    zetTekst('verantwoordingPijl', state.verantwoordingOpen ? '▾' : '▸');
+    const vKnop = el('[data-actie="verantwoording"]');
+    if (vKnop) vKnop.setAttribute('aria-expanded', state.verantwoordingOpen ? 'true' : 'false');
+    verantwoordingLijst(el('[data-lijst="verantwoording"]'), bronnen);
 
     /* Onvolledigheden. Beide gaan over kosten van de verkoper, dus ze horen
      * alleen op het verkoperscherm; op de tussenuitkomst van de koper in de

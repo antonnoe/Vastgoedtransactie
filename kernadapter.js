@@ -15,23 +15,38 @@ import * as kern from './calc.js';
 /* ── De tarieventabel ──────────────────────────────────────────────────── */
 
 let dmtoData = null;
+let bronnenData = null;
 
-/** Laadt dmto.json één keer. Gooit als het niet lukt; de schil vangt dat af. */
-export async function laadTarieven(pad = 'dmto.json') {
-    if (dmtoData) return dmtoData;
+async function haal(pad, controle) {
     const antwoord = await fetch(pad);
-    if (!antwoord.ok) throw new Error(`HTTP ${antwoord.status}`);
+    if (!antwoord.ok) throw new Error(`${pad}: HTTP ${antwoord.status}`);
     const data = await antwoord.json();
-    if (!data || !data._meta || !data.departementen) {
-        throw new Error('dmto.json mist _meta of departementen');
-    }
-    dmtoData = data;
+    controle(data);
+    return data;
+}
+
+/** Laadt dmto.json en bronnen.json één keer. Gooit als het niet lukt. */
+export async function laadTarieven(pad = 'dmto.json', bronnenPad = 'bronnen.json') {
+    if (dmtoData && bronnenData) return dmtoData;
+    [dmtoData, bronnenData] = await Promise.all([
+        haal(pad, (d) => {
+            if (!d || !d._meta || !d.departementen) throw new Error('dmto.json mist _meta of departementen');
+        }),
+        haal(bronnenPad, (d) => {
+            if (!d || !d._meta || !d.posten) throw new Error('bronnen.json mist _meta of posten');
+        })
+    ]);
     return dmtoData;
 }
 
 /** Voor gebruik buiten de browser, bijvoorbeeld in de testset. */
-export function zetTarieven(data) {
+export function zetTarieven(data, bronnen) {
     dmtoData = data;
+    /* Het weglaten van het tweede argument laat de bronnen staan; hem
+     * uitdrukkelijk op null zetten wist ze. Dat onderscheid is nodig omdat een
+     * ontbrekend bronnenbestand geen lege verantwoording mag opleveren die er
+     * uitziet alsof er niets te verantwoorden valt. */
+    if (bronnen !== undefined) bronnenData = bronnen;
     return dmtoData;
 }
 
@@ -49,13 +64,20 @@ export function nederlandseDatum(iso) {
     return `${Number(m[3])} ${MAANDEN[Number(m[2]) - 1]} ${m[1]}`;
 }
 
-/** Peildatum en bron, uit het bestand. Nooit uit de code. */
-export function laadMeta() {
-    if (!dmtoData) return { peildatum: null, bron: null, bronUrl: null };
+/**
+ * Peildatum, bron en houdbaarheid, uit het bestand. Nooit uit de code.
+ * vandaagISO is een parameter zodat de testset een vaste datum kan geven.
+ */
+export function laadMeta(vandaagISO) {
+    if (!dmtoData) return { peildatum: null, bron: null, bronUrl: null, status: null, maandenOud: null };
+    const vandaag = vandaagISO || new Date().toISOString().slice(0, 10);
     return {
         peildatum: nederlandseDatum(dmtoData._meta.peildatum),
+        peildatumISO: dmtoData._meta.peildatum,
         bron: dmtoData._meta.uitgever,
-        bronUrl: dmtoData._meta.bron
+        bronUrl: dmtoData._meta.bron,
+        status: kern.houdbaarheid(dmtoData._meta.peildatum, vandaag),
+        maandenOud: kern.maandenTussen(dmtoData._meta.peildatum, vandaag)
     };
 }
 
@@ -300,11 +322,11 @@ function postenKoper(res) {
     const spec = res.notarisSpecificatie;
     if (!spec) {
         return [
-            { label: 'Overdrachtsbelasting', soort: 'wettelijk', bedrag: null },
-            { label: 'Notarishonorarium', soort: 'wettelijk', bedrag: null },
-            { label: 'Btw over het honorarium', soort: 'wettelijk', bedrag: null },
-            { label: 'Contribution de sécurité immobilière', soort: 'wettelijk', bedrag: null },
-            { label: 'Débours: uittreksels, kadaster en formaliteiten', soort: 'schatting', bedrag: null }
+            { label: 'Overdrachtsbelasting', soort: 'wettelijk', bedrag: null, bronId: kern.BRON.dmtoDepartementaal },
+            { label: 'Notarishonorarium', soort: 'wettelijk', bedrag: null, bronId: kern.BRON.emolumenten },
+            { label: 'Btw over het honorarium', soort: 'wettelijk', bedrag: null, bronId: kern.BRON.btw },
+            { label: 'Contribution de sécurité immobilière', soort: 'wettelijk', bedrag: null, bronId: kern.BRON.csi },
+            { label: 'Débours: uittreksels, kadaster en formaliteiten', soort: 'schatting', bedrag: null, bronId: kern.BRON.debours }
         ];
     }
 
@@ -314,16 +336,16 @@ function postenKoper(res) {
      * uit door de korting. Zou het honorarium hier netto staan, dan telde de
      * korting tweemaal mee en klopte de som niet met het totaal. */
     const rijen = [
-        { label: 'Overdrachtsbelasting', soort: 'wettelijk', bedrag: spec.overdrachtsbelasting },
-        { label: 'Notarishonorarium', soort: 'wettelijk', bedrag: spec.emolumentenBruto }
+        { label: 'Overdrachtsbelasting', soort: 'wettelijk', bedrag: spec.overdrachtsbelasting, bronId: spec.bronnen.overdrachtsbelasting },
+        { label: 'Notarishonorarium', soort: 'wettelijk', bedrag: spec.emolumentenBruto, bronId: spec.bronnen.emolumenten }
     ];
     if (spec.korting > 0) {
-        rijen.push({ label: 'Korting op het honorarium', soort: 'afspraak', bedrag: -spec.korting });
+        rijen.push({ label: 'Korting op het honorarium', soort: 'afspraak', bedrag: -spec.korting, bronId: spec.bronnen.korting });
     }
     rijen.push(
-        { label: 'Btw over het honorarium', soort: 'wettelijk', bedrag: spec.tva },
-        { label: 'Contribution de sécurité immobilière', soort: 'wettelijk', bedrag: spec.csi },
-        { label: 'Débours: uittreksels, kadaster en formaliteiten', soort: 'schatting', bedrag: spec.debours }
+        { label: 'Btw over het honorarium', soort: 'wettelijk', bedrag: spec.tva, bronId: spec.bronnen.tva },
+        { label: 'Contribution de sécurité immobilière', soort: 'wettelijk', bedrag: spec.csi, bronId: spec.bronnen.csi },
+        { label: 'Débours: uittreksels, kadaster en formaliteiten', soort: 'schatting', bedrag: spec.debours, bronId: spec.bronnen.debours }
     );
     return rijen;
 }
@@ -336,17 +358,107 @@ function postenKoper(res) {
  */
 function inKoopsomBegrepen(res) {
     if (res.kanten.aankoop.optie !== 'acquereur' || !(res.makelaarsKostenAankoop > 0)) return [];
-    return [{ label: 'Makelaarscourtage', soort: 'opgave', bedrag: res.makelaarsKostenAankoop }];
+    /* Geen bron-id: dit is het bedrag dat de gebruiker zelf opgeeft, geen
+     * tarief en geen regel. Zie VRIJGESTELD_VAN_BRON in test.mjs. */
+    return [{ label: 'Makelaarscourtage', soort: 'opgave', bedrag: res.makelaarsKostenAankoop, bronId: null }];
 }
 
 function postenVerkoper(res) {
     return [
-        { label: 'Verkoopprijs', soort: 'opgave', bedrag: res.nettoVerkoperBasis + res.makelaarsKostenVerkoop },
-        { label: 'Makelaarscourtage', soort: 'opgave', bedrag: res.makelaarsKostenVerkoop > 0 ? -res.makelaarsKostenVerkoop : null },
-        { label: 'Meerwaardebelasting en sociale heffingen', soort: 'wettelijk', bedrag: res.plusValueTax > 0 ? -res.plusValueTax : null },
-        { label: 'Heffing op hoge meerwaarden', soort: 'wettelijk', bedrag: res.surtaxe > 0 ? -res.surtaxe : null },
-        { label: 'Verkoopkosten', soort: 'opgave', bedrag: res.verkoopkosten > 0 ? -res.verkoopkosten : null }
+        /* De verkoopprijs is de opgave van de gebruiker, geen tarief. */
+        { label: 'Verkoopprijs', soort: 'opgave', bedrag: res.nettoVerkoperBasis + res.makelaarsKostenVerkoop, bronId: null },
+        { label: 'Makelaarscourtage', soort: 'opgave', bedrag: res.makelaarsKostenVerkoop > 0 ? -res.makelaarsKostenVerkoop : null, bronId: kern.BRON.pvVerkoopkosten },
+        { label: 'Meerwaardebelasting en sociale heffingen', soort: 'wettelijk', bedrag: res.plusValueTax > 0 ? -res.plusValueTax : null, bronId: kern.BRON.pvTarieven },
+        { label: 'Heffing op hoge meerwaarden', soort: 'wettelijk', bedrag: res.surtaxe > 0 ? -res.surtaxe : null, bronId: kern.BRON.pvSurtaxe },
+        { label: 'Verkoopkosten', soort: 'opgave', bedrag: res.verkoopkosten > 0 ? -res.verkoopkosten : null, bronId: kern.BRON.pvVerkoopkosten }
     ];
+}
+
+/* ── Verantwoording ────────────────────────────────────────────────────── */
+
+/* Sommige regels bepalen de uitkomst zonder een eigen regel in de opbouw te
+ * krijgen: de gemeentelijke opslag zit in het overdrachtsbelastingbedrag, het
+ * abattement zit in de belastbare meerwaarde. Ze horen wel verantwoord te
+ * worden, en dan met een naam die een lezer herkent. Een id als
+ * "pv.forfait.werkzaamheden" is een sleutel, geen label. De labels staan hier
+ * en niet in bronnen.json: dat bestand gaat over de grondslag en de bron, deze
+ * laag gaat over de woorden waarin de schil het toont. */
+export const REGEL_LABEL = {
+    [kern.BRON.dmtoCommunaal]: 'Gemeentelijke opslag en inningskosten',
+    [kern.BRON.pvAbattement]: 'Aftrek voor bezitsduur',
+    [kern.BRON.pvDeRuyter]: 'Verlaagde sociale lasten (arrest De Ruyter)',
+    [kern.BRON.pvVerkrijgingOmNiet]: 'Verkrijging om niet: waarde uit de aangifte',
+    [kern.BRON.pvForfaitAankoopkosten]: 'Forfait voor de aankoopkosten',
+    [kern.BRON.pvWerkelijkeAankoopkosten]: 'Werkelijke aankoopkosten',
+    [kern.BRON.pvForfaitWerkzaamheden]: 'Forfait voor werkzaamheden',
+    [kern.BRON.pvVerkoopkosten]: 'Aftrekbare verkoopkosten',
+    [kern.BRON.pvLmnp]: 'Terugname van afschrijvingen bij gemeubileerde verhuur',
+    [kern.BRON.pvNietIngezetene]: 'Heffing bij niet-ingezetenen'
+};
+
+/**
+ * De lijst waarop de gebruiker kan nazien waarop zijn uitkomst berust: per post
+ * en per toegepaste regel de grondslag, de bron en of die tegen de primaire
+ * bron is gelegd. Alle tekst komt uit bronnen.json; hier staat er geen.
+ *
+ * Een post zonder bron-id is een opgave van de gebruiker zelf, geen tarief en
+ * geen regel. Die verschijnt niet in dit paneel maar blijft wel in de opbouw.
+ */
+export function verantwoording(uitkomst) {
+    if (!bronnenData || !uitkomst || !uitkomst.res) return [];
+    const res = uitkomst.res;
+    const rijen = [];
+
+    const voegToe = (blok, postnaam, bedrag, bronId) => {
+        const bron = bronnenData.posten[bronId];
+        if (!bron) return;
+        rijen.push({
+            blok,
+            bronId,
+            post: postnaam,
+            bedrag,
+            grondslag: bron.grondslag,
+            bronnaam: bron.bronnaam || null,
+            bronUrl: bron.bronUrl || null,
+            status: bron.status,
+            opmerking: bron.opmerking || null
+        });
+    };
+
+    /* Een post zonder bedrag heeft de uitkomst niet bewogen. Hem hier tussen
+     * de bedragen zetten leest als een kostenpost die er niet is. Blijft de
+     * regel wel van toepassing, dan komt hij verderop onder de toegepaste
+     * regels te staan, waar geen bedrag ook geen tegenspraak is. */
+    const metBedrag = (p) => p.bedrag !== null && p.bedrag !== 0;
+
+    /* De rol bepaalt welke blokken er staan, niet of er toevallig een bedrag
+     * uitkomt. Wie alleen koopt, hoort geen verkoperskosten te verantwoorden
+     * te krijgen: dat is de rekening van iemand anders. */
+    const rol = uitkomst.invoer.rol;
+    if (rol !== 'verkopen') {
+        for (const p of uitkomst.koper.posten.filter(metBedrag)) voegToe('Kosten koper', p.label, p.bedrag, p.bronId);
+        for (const p of uitkomst.koper.inKoopsom.filter(metBedrag)) voegToe('Kosten koper', p.label, p.bedrag, p.bronId);
+    }
+    if (rol !== 'kopen' && res.pvReden !== 'vrijstelling hoofdverblijf') {
+        for (const p of uitkomst.verkoper.posten.filter(metBedrag)) voegToe('Kosten verkoper', p.label, p.bedrag, p.bronId);
+    }
+    /* Regels zonder eigen post in de opbouw: geen bedrag, wel verantwoording.
+     * Staat de bron al onder een bedrag, dan voegt herhaling niets toe. */
+    const alGetoond = new Set(rijen.map((r) => r.bronId));
+    for (const bronId of res.toegepasteRegels) {
+        if (alGetoond.has(bronId)) continue;
+        voegToe('Toegepaste regels', REGEL_LABEL[bronId] || null, null, bronId);
+    }
+
+    /* Dezelfde bron kan door meer dan een post worden aangeroepen; hem tweemaal
+     * tonen voegt niets toe. */
+    const gezien = new Set();
+    return rijen.filter((r) => {
+        const sleutel = `${r.blok}|${r.bronId}`;
+        if (gezien.has(sleutel)) return false;
+        gezien.add(sleutel);
+        return true;
+    });
 }
 
 /**

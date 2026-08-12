@@ -182,6 +182,13 @@
           <div class="uitkomst-bedrag" data-tekst="tweedeBedrag">€ 0</div>
         </div>
 
+        <!-- Direct onder het bedrag: wie het bedrag leest moet meteen zien dat
+             de tarieven eronder oud zijn, niet pas na de opbouw. -->
+        <div class="verouderd verborgen" data-toon="verouderd" role="alert">
+          <strong>Deze tarieven zijn mogelijk achterhaald</strong>
+          <p>De tarieventabel dateert van <span data-tekst="verouderdPeildatum">—</span> en is inmiddels <span data-tekst="verouderdMaanden">—</span> maanden oud. De belastingdienst publiceert maandelijks een nieuwe uitgave, dus er is waarschijnlijk een recentere. Ga bij uw notaris na welk tarief nu geldt voordat u op dit bedrag afgaat.</p>
+        </div>
+
         <div data-toon="opbouwBlok">
           <button type="button" class="opbouw-knop" data-actie="opbouw" aria-expanded="false">
             <span aria-hidden="true" data-tekst="opbouwPijl">▸</span><span data-tekst="opbouwLabel">Bekijk de opbouw</span>
@@ -206,6 +213,16 @@
         </div>
 
         <p class="bronregel">Berekening, geen advies. Tarieven met peildatum <span data-tekst="peildatum">—</span> · bron: <span data-tekst="bron">—</span></p>
+
+        <div class="verantwoording">
+          <button type="button" class="opbouw-knop" data-actie="verantwoording" aria-expanded="false">
+            <span aria-hidden="true" data-tekst="verantwoordingPijl">▸</span><span data-tekst="verantwoordingLabel">Waarop berust dit?</span>
+          </button>
+          <div class="verborgen" data-toon="verantwoording">
+            <p class="onderschrift">Per post de grondslag en de bron. Wat als <em>nog na te gaan</em> staat, is nog niet tegen de primaire bron gelegd.</p>
+            <div data-lijst="verantwoording"></div>
+          </div>
+        </div>
       </div>
 
       <div data-lijst="waarschuwingen"></div>
