@@ -21,6 +21,8 @@ import {
     departementaalTarief,
     berekenRemise,
     kiesKostenpost,
+    makelaarCourtage,
+    makelaarKanten,
     heeftAankoopkostenForfait,
     heeftWerkzaamhedenForfait,
     berekenScenario,
@@ -298,6 +300,87 @@ check('bij bouwgrond telt een opgegeven werkelijk bedrag wel mee',
         .werkzaamheden.bedrag, 12000);
 check('bij bouwgrond blijft de surtaxe uitgesloten', kaleGrond.surtaxe, 0);
 
+console.log('\nMakelaar: percentage en vast bedrag');
+// 6 procent van 400.000 is 24.000; beide opgaven horen hetzelfde te geven.
+check('percentage geeft dezelfde courtage als het gelijkwaardige vaste bedrag',
+    makelaarCourtage(400000, { optie: 'vendeur', eenheid: 'percentage', perc: 6 }),
+    makelaarCourtage(400000, { optie: 'vendeur', eenheid: 'bedrag', bedrag: 24000 }));
+check('en dat is 24.000 euro',
+    makelaarCourtage(400000, { optie: 'vendeur', eenheid: 'bedrag', bedrag: 24000 }), 24000);
+check('geen makelaar geeft nul, ook met een bedrag ingevuld',
+    makelaarCourtage(400000, { optie: 'geen', eenheid: 'bedrag', bedrag: 24000 }), 0);
+check('een negatief bedrag telt als nul',
+    makelaarCourtage(400000, { optie: 'vendeur', eenheid: 'bedrag', bedrag: -100 }), 0);
+
+const perPercentage = berekenScenario({ ...STANDAARD_INVOER }, dmto);
+const perBedrag = berekenScenario(
+    { ...STANDAARD_INVOER, makelaarEenheid: 'bedrag', makelaarBedrag: 24000 }, dmto);
+// kanten is een echo van de invoer, geen uitkomst; die hoort hier niet in.
+const zonderEcho = ({ kanten, ...rest }) => JSON.stringify(rest);
+check('elke uitkomst is identiek bij percentage en gelijkwaardig vast bedrag',
+    zonderEcho(perBedrag), zonderEcho(perPercentage));
+
+console.log('\nMakelaar: twee kanten in de route beide');
+const kant = (inv) => makelaarKanten(inv);
+check('de aankoopkant volgt de verkoopkant zolang zijn velden null zijn',
+    kant(STANDAARD_INVOER).aankoop.optie, STANDAARD_INVOER.makelaarOptie);
+check('en neemt dan ook het percentage over',
+    kant(STANDAARD_INVOER).aankoop.perc, STANDAARD_INVOER.makelaarPerc);
+check('een eigen waarde aan de aankoopkant overschrijft die terugval',
+    kant({ ...STANDAARD_INVOER, aankoopMakelaarOptie: 'acquereur' }).aankoop.optie, 'acquereur');
+check('de verkoopkant blijft daarbij ongemoeid',
+    kant({ ...STANDAARD_INVOER, aankoopMakelaarOptie: 'acquereur' }).verkoop.optie, 'vendeur');
+
+// Aankoop charge acquereur, verkoop charge vendeur: twee verschillende
+// transacties, dus de notarisgrondslag en de netto-opbrengst lopen uiteen.
+const tweeKanten = berekenScenario({
+    ...STANDAARD_INVOER, rol: 'beide',
+    makelaarOptie: 'vendeur',
+    aankoopMakelaarOptie: 'acquereur'
+}, dmto);
+check('de notarisgrondslag volgt de aankoopkant, dus prijs min courtage',
+    tweeKanten.prijsVoorNotaris, 376000);
+check('de netto-opbrengst volgt de verkoopkant, dus courtage van de verkoper af',
+    tweeKanten.makelaarsKostenVerkoop, 24000);
+check('beide kanten leveren hier hetzelfde courtagebedrag op',
+    tweeKanten.makelaarsKostenAankoop, tweeKanten.makelaarsKostenVerkoop);
+check('de meerwaardegrondslag is die van de verkoopkant',
+    tweeKanten.nettoVerkoperBasis, 376000);
+check('een andere aankoopkant verandert de netto-opbrengst van de verkoper niet',
+    tweeKanten.nettoOpbrengst, perPercentage.nettoOpbrengst);
+check('maar wel de notariskosten van de koper',
+    tweeKanten.notarisKosten !== perPercentage.notarisKosten, true);
+
+const aankoopVastBedrag = berekenScenario({
+    ...STANDAARD_INVOER, rol: 'beide',
+    aankoopMakelaarOptie: 'acquereur',
+    aankoopMakelaarEenheid: 'bedrag', aankoopMakelaarBedrag: 24000
+}, dmto);
+check('een vast bedrag aan de aankoopkant geeft dezelfde grondslag als het percentage',
+    aankoopVastBedrag.prijsVoorNotaris, tweeKanten.prijsVoorNotaris);
+check('en dezelfde notariskosten', aankoopVastBedrag.notarisKosten, tweeKanten.notarisKosten);
+
+console.log('\nVerkrijgingskosten mogen onbekend zijn');
+check('de standaardinvoer laat de verkrijgingskosten op onbekend staan',
+    STANDAARD_INVOER.aankoopkostenEigen, null);
+const erfOnbekend = berekenScenario({ ...STANDAARD_INVOER, verkrijging: 'geerfd' }, dmto);
+const erfBekend = berekenScenario(
+    { ...STANDAARD_INVOER, verkrijging: 'geerfd', aankoopkostenEigen: 18000 }, dmto);
+check('onbekend geeft geen aftrek', erfOnbekend.aankoopkosten.bedrag, 0);
+check('onbekend wordt als zodanig gemeld', erfOnbekend.verkrijgingskostenOnbekend, true);
+check('een ingevuld bedrag geeft wel aftrek', erfBekend.aankoopkosten.bedrag, 18000);
+check('en dan is er niets onbekend', erfBekend.verkrijgingskostenOnbekend, false);
+check('de gemiste aftrek maakt de belasting bij onbekend hoger',
+    erfOnbekend.plusValueTax > erfBekend.plusValueTax, true);
+check('nul is iets anders dan onbekend: nul is een opgave',
+    berekenScenario({ ...STANDAARD_INVOER, verkrijging: 'geerfd', aankoopkostenEigen: 0 }, dmto)
+        .verkrijgingskostenOnbekend, true);
+check('onbekende verkrijgingskosten komen niet in de URL',
+    invoerNaarQuery({ ...STANDAARD_INVOER, aankoopkostenEigen: null }).includes('ake='), false);
+check('en overleven de reis als onbekend',
+    queryNaarInvoer(invoerNaarQuery({ ...STANDAARD_INVOER, aankoopkostenEigen: null }))
+        .aankoopkostenEigen, null);
+
 console.log('\nURL-codering heen en terug (blok D4)');
 check('de standaardinvoer levert een lege querystring', invoerNaarQuery(STANDAARD_INVOER), '');
 check('de standaardinvoer komt ongeschonden terug',
@@ -310,7 +393,13 @@ const afwijkend = {
     isPrimo: true,
     remisePct: 15,
     makelaarOptie: 'acquereur',
+    makelaarEenheid: 'bedrag',
     makelaarPerc: 4.5,
+    makelaarBedrag: 19500,
+    aankoopMakelaarOptie: 'vendeur',
+    aankoopMakelaarEenheid: 'percentage',
+    aankoopMakelaarPerc: 3,
+    aankoopMakelaarBedrag: 0,
     verkoopprijs: 675000,
     aankoopprijs: 250000,
     datumAankoop: '2003-12-15',

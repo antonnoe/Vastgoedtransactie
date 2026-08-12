@@ -89,6 +89,45 @@ export function heeftWerkzaamhedenForfait(jarenBezit, isBouwgrond) {
     return !isBouwgrond && jarenBezit > 5;
 }
 
+/* Een makelaaropgave: wie betaalt, en of het bedrag een percentage van de
+ * prijs is of een vast bedrag. De omzetting van percentage naar euro's gebeurt
+ * hier, niet in de interface: de presentatielaag bevat geen rekenregel. */
+export const MAKELAAR_EENHEDEN = ['percentage', 'bedrag'];
+export const MAKELAAR_PARTIJEN = ['vendeur', 'acquereur', 'geen'];
+
+/**
+ * Courtage in euro's voor een makelaaropgave.
+ * makelaar: {optie, eenheid, perc, bedrag}
+ */
+export function makelaarCourtage(prijs, makelaar) {
+    if (!makelaar || makelaar.optie === 'geen') return 0;
+    if (makelaar.eenheid === 'bedrag') return Math.max(0, Number(makelaar.bedrag) || 0);
+    return Math.max(0, prijs) * (Math.max(0, Number(makelaar.perc) || 0) / 100);
+}
+
+/**
+ * De twee makelaarkanten uit de invoer. De aankoopkant volgt de verkoopkant
+ * zolang zijn velden op null staan; dat houdt de routes koper en verkoper
+ * apart functioneel ongewijzigd. In de route beide zijn het twee verschillende
+ * transacties en kunnen de kanten van elkaar verschillen.
+ */
+export function makelaarKanten(inv) {
+    const verkoop = {
+        optie: inv.makelaarOptie,
+        eenheid: inv.makelaarEenheid || 'percentage',
+        perc: inv.makelaarPerc,
+        bedrag: inv.makelaarBedrag
+    };
+    const volgt = (waarde, terugval) => (waarde === null || waarde === undefined ? terugval : waarde);
+    const aankoop = {
+        optie: volgt(inv.aankoopMakelaarOptie, verkoop.optie),
+        eenheid: volgt(inv.aankoopMakelaarEenheid, verkoop.eenheid),
+        perc: volgt(inv.aankoopMakelaarPerc, verkoop.perc),
+        bedrag: volgt(inv.aankoopMakelaarBedrag, verkoop.bedrag)
+    };
+    return { verkoop, aankoop };
+}
+
 /* Abattement voor bezitsduur, art. 150 VC CGI en art. L136-7 CSS. */
 export const ABATTEMENT_IR_PER_JAAR = 6.0;      /* jaar 6 t/m 21 */
 export const ABATTEMENT_IR_JAAR_22 = 4.0;       /* jaar 22, brengt totaal op 100 */
@@ -394,7 +433,6 @@ export function berekenScenario(inv, dmtoData) {
     const meta = dmtoData._meta;
     const verkoopprijs = Math.max(0, Number(inv.verkoopprijs) || 0);
     const aankoopprijs = Math.max(0, Number(inv.aankoopprijs) || 0);
-    const makelaarPerc = Math.max(0, Number(inv.makelaarPerc) || 0);
 
     /* De drie verkoopkostenposten mogen onbekend zijn. Onbekend telt als nul in
      * de berekening, maar wordt apart teruggegeven zodat de interface kan
@@ -411,18 +449,25 @@ export function berekenScenario(inv, dmtoData) {
     const diagnostics = alsBedrag(inv.diagnostics);
     const mainlevee = alsBedrag(inv.mainlevee);
 
-    // Makelaar en grondslagen
-    let makelaarsKosten = 0;
-    let prijsVoorNotaris = verkoopprijs;
-    let nettoVerkoperBasis = verkoopprijs;
-    if (inv.makelaarOptie === 'acquereur') {
-        makelaarsKosten = verkoopprijs * (makelaarPerc / 100);
-        prijsVoorNotaris = verkoopprijs - makelaarsKosten;
-        nettoVerkoperBasis = verkoopprijs - makelaarsKosten;
-    } else if (inv.makelaarOptie === 'vendeur') {
-        makelaarsKosten = verkoopprijs * (makelaarPerc / 100);
-        nettoVerkoperBasis = verkoopprijs - makelaarsKosten;
-    }
+    /* Twee makelaarkanten. De aankoopkant bepaalt de grondslag van de notaris,
+     * de verkoopkant bepaalt wat de verkoper overhoudt en de meerwaarde. In de
+     * route beide zijn dat twee verschillende transacties.
+     *
+     * LET OP: verkoopprijs draagt hier twee begrippen. Voor de verkoper is het
+     * de verkoopprijs, voor de koper de koopsom. De kern heeft maar een
+     * prijsveld, dus in de route beide wordt aangenomen dat beide bedragen
+     * gelijk zijn. Zie STATUS.md onder AANNAMES. */
+    const kanten = makelaarKanten(inv);
+    const makelaarsKostenVerkoop = makelaarCourtage(verkoopprijs, kanten.verkoop);
+    const makelaarsKostenAankoop = makelaarCourtage(verkoopprijs, kanten.aankoop);
+
+    const makelaarsKosten = makelaarsKostenVerkoop;
+    const nettoVerkoperBasis = kanten.verkoop.optie === 'geen'
+        ? verkoopprijs
+        : verkoopprijs - makelaarsKostenVerkoop;
+    const prijsVoorNotaris = kanten.aankoop.optie === 'acquereur'
+        ? verkoopprijs - makelaarsKostenAankoop
+        : verkoopprijs;
 
     // Notariskosten. Bij bestaande bouw is een bekend departementaal tarief
     // vereist; er wordt nooit teruggevallen op een standaardtarief.
@@ -492,12 +537,14 @@ export function berekenScenario(inv, dmtoData) {
     const nettoOpbrengst = verkoopprijs - totaalKostenVerkoper;
     const totaalKostenKoper = notarisKosten === null
         ? null
-        : rond2(prijsVoorNotaris + notarisKosten + (inv.makelaarOptie === 'acquereur' ? makelaarsKosten : 0));
+        : rond2(prijsVoorNotaris + notarisKosten
+            + (kanten.aankoop.optie === 'acquereur' ? makelaarsKostenAankoop : 0));
 
     return {
         departement, tarief, notarisKosten,
         emolumenten: berekenEmolumenten(prijsVoorNotaris), remise,
-        makelaarsKosten, prijsVoorNotaris, nettoVerkoperBasis,
+        makelaarsKosten, makelaarsKostenVerkoop, makelaarsKostenAankoop, kanten,
+        prijsVoorNotaris, nettoVerkoperBasis,
         jarenBezit, aankoopkosten, werkzaamheden, verkrijgingskostenOnbekend,
         brutoMeerwaarde, abatIr, abatPs, belastbaarIr,
         plusValueTax, surtaxe, pvReden,
@@ -521,7 +568,13 @@ export const STANDAARD_INVOER = {
     isPrimo: false,
     remisePct: 0,
     makelaarOptie: 'vendeur',
+    makelaarEenheid: 'percentage',
     makelaarPerc: 6,
+    makelaarBedrag: 0,
+    aankoopMakelaarOptie: null,
+    aankoopMakelaarEenheid: null,
+    aankoopMakelaarPerc: null,
+    aankoopMakelaarBedrag: null,
     verkoopprijs: 400000,
     aankoopprijs: 200000,
     datumAankoop: '2015-01-01',
@@ -533,7 +586,7 @@ export const STANDAARD_INVOER = {
     aantalVerkopers: 1,
     verkrijging: 'gekocht',
     aankoopkostenModus: 'forfait',
-    aankoopkostenEigen: 0,
+    aankoopkostenEigen: null,
     werkzaamhedenModus: 'forfait',
     werkzaamhedenEigen: 0,
     landmeter: null,
@@ -550,7 +603,13 @@ export const URL_VELDEN = [
     ['isPrimo', 'pa', 'vinkje'],
     ['remisePct', 'rm', 'getal'],
     ['makelaarOptie', 'mo', 'tekst'],
+    ['makelaarEenheid', 'me', 'tekst'],
     ['makelaarPerc', 'mp', 'getal'],
+    ['makelaarBedrag', 'mb', 'getal'],
+    ['aankoopMakelaarOptie', 'amo', 'tekst'],
+    ['aankoopMakelaarEenheid', 'ame', 'tekst'],
+    ['aankoopMakelaarPerc', 'amp', 'getal_of_null'],
+    ['aankoopMakelaarBedrag', 'amb', 'getal_of_null'],
     ['verkoopprijs', 'vp', 'getal'],
     ['aankoopprijs', 'ap', 'getal'],
     ['datumAankoop', 'da', 'tekst'],
@@ -562,7 +621,7 @@ export const URL_VELDEN = [
     ['aantalVerkopers', 'av', 'getal'],
     ['verkrijging', 'vk', 'tekst'],
     ['aankoopkostenModus', 'akm', 'tekst'],
-    ['aankoopkostenEigen', 'ake', 'getal'],
+    ['aankoopkostenEigen', 'ake', 'getal_of_null'],
     ['werkzaamhedenModus', 'wzm', 'tekst'],
     ['werkzaamhedenEigen', 'wze', 'getal'],
     ['landmeter', 'lm', 'getal_of_null'],
@@ -632,6 +691,9 @@ export function valideer(inv, dmtoData) {
     const bedragen = [
         ['de aankoopsom', inv.aankoopprijs],
         ['de makelaarscourtage', inv.makelaarPerc],
+        ['het vaste makelaarsbedrag', inv.makelaarBedrag],
+        ['de makelaarscourtage bij de aankoop', inv.aankoopMakelaarPerc],
+        ['het vaste makelaarsbedrag bij de aankoop', inv.aankoopMakelaarBedrag],
         ['de werkelijke aankoopkosten', inv.aankoopkostenEigen],
         ['de werkelijke kosten van werkzaamheden', inv.werkzaamhedenEigen],
         ['de landmeter', inv.landmeter],
@@ -694,11 +756,18 @@ export function berekenGevoeligheden(inv, dmtoData) {
         uit.push({ label, metriek, delta, gunstig: metriek === 'koper' ? delta < 0 : delta > 0 });
     };
 
-    if (inv.makelaarOptie === 'vendeur' || inv.makelaarOptie === 'acquereur') {
-        const anders = inv.makelaarOptie === 'vendeur' ? 'acquereur' : 'vendeur';
+    /* De courtagekeuze wordt omgedraaid aan de kant die bij de rol hoort: voor
+     * een koper de aankoopkant, voor een verkoper de verkoopkant. */
+    const kanten = makelaarKanten(inv);
+    const kant = koopt ? kanten.aankoop : kanten.verkoop;
+    if (kant.optie === 'vendeur' || kant.optie === 'acquereur') {
+        const anders = kant.optie === 'vendeur' ? 'acquereur' : 'vendeur';
         const naam = anders === 'acquereur' ? 'charge acquéreur' : 'charge vendeur';
+        const variant = koopt
+            ? { ...inv, aankoopMakelaarOptie: anders }
+            : { ...inv, makelaarOptie: anders };
         voegToe(`Courtage ${naam} in plaats van de huidige keuze`,
-            koopt ? 'koper' : 'verkoper', { ...inv, makelaarOptie: anders });
+            koopt ? 'koper' : 'verkoper', variant);
     }
     if (koopt && !inv.isNieuwbouw && !inv.isPrimo
         && basis.departement && basis.departement.primo < basis.departement.std) {

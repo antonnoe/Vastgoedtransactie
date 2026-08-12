@@ -1,7 +1,7 @@
 # STATUS
 
 Herkomst van elk tarief, elk bedrag en elke termijn in deze tool.
-Bijgewerkt: 2026-08-11, na de derde ronde.
+Bijgewerkt: 2026-08-12, na de kernkant van de schilkoppeling.
 
 **Belangrijke beperking vooraf.** De uitvoeromgeving waarin deze wijziging is
 gemaakt, blokkeert uitgaand netwerkverkeer naar `impots.gouv.fr`,
@@ -311,7 +311,40 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
     gevoeligheid op nul uit en verdween hij. Elke gevoeligheid wordt daarom
     gemeten op de maatstaf waar het verschil landt, en de tool zegt er per
     regel bij welke dat is.
-13. **Corsica, Lyon, Alsace.** 2A en 2B hebben dezelfde tarieven gekregen omdat
+13. **De koopsom van de koper en de verkoopprijs van de verkoper delen één
+    veld.** De rekenkern heeft alleen `verkoopprijs` en rekent de notariskosten
+    daarover, dus de koopsom landt op datzelfde veld. Beslissing van de
+    opdrachtgever. In de routes koper en verkoper apart is dat onschadelijk,
+    want er is dan maar één transactie. **In de route beide betekent het dat de
+    tool aanneemt dat het gekochte pand evenveel kost als het verkochte
+    opbrengt.** Wie een duurder of goedkoper huis koopt dan hij verkoopt, krijgt
+    aan de koperskant een verkeerd bedrag. De code heeft op die plek een
+    opmerking. Dit is de enige plek waar twee begrippen op één veld landen, en
+    het is de tegenhanger van wat voor de makelaar juist wél is opgelost.
+14. **De verkrijgingskosten bij erven of schenken lopen via
+    `aankoopkostenEigen` met modus `werkelijk`.** De kern heeft daar geen eigen
+    veld voor. `aankoopkostenEigen` accepteert nu `null` als onbekend, naast een
+    bedrag; de standaardwaarde is `null` geworden in plaats van nul. Nul en
+    onbekend blijven van elkaar te onderscheiden, ook door de URL heen. Let op
+    de asymmetrie: `werkzaamhedenEigen` staat nog wel op nul, omdat de schil
+    daar geen "weet ik niet" voor kent.
+15. **De korting op het notarishonorarium is aan of uit, en aan betekent het
+    maximum.** De schil geeft een knop, de kern wil een percentage tussen nul en
+    twintig. Aan wordt twintig, uit wordt nul. Twintig procent is het wettelijke
+    maximum en de notaris is niet verplicht die korting te geven, **dus toont de
+    stand "aan" het gunstigste geval en niet het waarschijnlijkste.** Dat hoort
+    als tekst bij de knop in de schil te staan; die tekst is nog niet
+    geschreven, want de schil ontbreekt.
+16. **Twee makelaarkanten, met terugval.** De kern kende één makelaaropgave,
+    wat in de route beide fout ging omdat het daar twee transacties zijn. Er is
+    nu een tweede set voor de aankoopkant. Die volgt de verkoopkant zolang zijn
+    velden op `null` staan, zodat de routes koper en verkoper apart functioneel
+    ongewijzigd blijven en alle bestaande assertions blijven gelden. De
+    aankoopkant bepaalt de grondslag van de notaris, de verkoopkant de
+    netto-opbrengst en de meerwaarde. Per kant kan de courtage als percentage of
+    als vast bedrag worden opgegeven; die omzetting gebeurt in de kern, niet in
+    de interface.
+17. **Corsica, Lyon, Alsace.** 2A en 2B hebben dezelfde tarieven gekregen omdat
    de bron één regel voor de Collectivité de Corse heeft; 69 heeft één sleutel
    omdat de twee bronregels identieke tarieven hebben; 67 en 68 hebben elk een
    eigen sleutel onder de Collectivité européenne d'Alsace. Zo aangeleverd door
@@ -321,7 +354,23 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 
 ## OPENSTAAND
 
-1. **Ik heb vanuit de uitvoeromgeving nog steeds geen primaire bron kunnen
+1. **De nieuwe schil is niet aangeleverd, dus de koppeling is half.** De
+   presentatielaag, `kernadapter.js` met `naarKern()` en de stub-rekenkern
+   zitten niet in de repo. Wat daardoor niet is gedaan: de adapter ombouwen naar
+   `berekenScenario` / `kernbedrag` / `berekenGevoeligheden`, de vertaaltabel,
+   het aansluiten van `invoerNaarQuery` en `queryNaarInvoer` op de schil, het
+   veld landmeter in de schil, en de controle van de constante `DOEL` voor de
+   hoogtemelding. **De oude interface staat er daarom nog en is niet
+   verwijderd**, conform de instructie die verwijdering pas toestaat na een
+   browsercontrole van de nieuwe.
+2. **`DOEL` voor de hoogtemelding is niet geverifieerd.** Het artikel draait
+   volgens `ARTIKEL_URL` op `https://infofrankrijk.com/vastgoed-transactiekosten/`,
+   dus zonder `www`. De origin die de schil als doel moet gebruiken is dan
+   `https://infofrankrijk.com`. Wijkt dat af van waar het artikel werkelijk
+   draait, ook alleen in het `www`-deel, dan gooit de browser het bericht stil
+   weg. De huidige interface stuurt naar `'*'`; zie ook het punt hieronder over
+   het beperken van de ontvanger.
+3. **Ik heb vanuit de uitvoeromgeving nog steeds geen primaire bron kunnen
    openen.** De netwerkproxy blokkeert impots.gouv.fr, bofip.impots.gouv.fr,
    legifrance.gouv.fr, economie.gouv.fr en service-public.fr. Wat inmiddels wel
    primair is bevestigd, staat onder GEVERIFIEERD met vermelding dat de
@@ -329,37 +378,37 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
    inmiddels één met een bevestigde bron en ingangsdatum (gemeubileerde
    verhuur); voor de andere drie geldt onverminderd dat zij daarom geen bedrag,
    percentage of termijn bevatten.
-2. **Is `dmto_2026-06.pdf` de nieuwste uitgave?** Niet vastgesteld; de
+4. **Is `dmto_2026-06.pdf` de nieuwste uitgave?** Niet vastgesteld; de
    overzichtspagina was niet bereikbaar. DGFiP publiceert maandelijks, dus dit
    moet periodiek worden nagelopen.
-3. **Calvados en Savoie.** In de bron staat bij Calvados een abattement van
+5. **Calvados en Savoie.** In de bron staat bij Calvados een abattement van
    46.000 euro en bij Savoie een verlaagd tarief van 4,00 procent. Uit de platte
    tekst is niet af te leiden op welke kolom die betrekking hebben (art. 1594 F
    ter, F sexies of F septies). Niet ingebouwd. Voor die twee departementen kan
    de tool dus te hoog uitkomen in de gevallen waarop die regelingen zien.
-4. **Overige abattements en verlaagde tarieven per departement.** `dmto.json`
+6. **Overige abattements en verlaagde tarieven per departement.** `dmto.json`
    bevat alleen `std` en `primo`. Departementale abattements en sectorale
    verlaagde tarieven uit de DGFiP-tabel zijn niet opgenomen.
-5. **De 0,5-punts verhoging is tijdelijk.** De verhoging op grond van wet
+7. **De 0,5-punts verhoging is tijdelijk.** De verhoging op grond van wet
    2025-127 loopt volgens de gangbare lezing tot en met een einddatum in 2028.
    De exacte einddatum is niet uit een primaire bron bevestigd en zit niet in
    `dmto.json`. Er is geen mechanisme dat waarschuwt als de peildatum verouderd
    is.
-6. **Voorwaarden primo-accédant.** De tool vraagt alleen of de gebruiker
+8. **Voorwaarden primo-accédant.** De tool vraagt alleen of de gebruiker
    primo-accédant is. De wettelijke voorwaarden (geen eigenaar van het
    hoofdverblijf in de twee jaar vóór de akte, en bestemming als hoofdverblijf)
    worden niet gecontroleerd of toegelicht buiten de korte tekst bij het
    invoerveld. De bronvermelding hiervoor is niet zelf geverifieerd.
-7. **Emolumenten bij VEFA.** De opdracht schrijft hetzelfde barème voor als bij
+9. **Emolumenten bij VEFA.** De opdracht schrijft hetzelfde barème voor als bij
    bestaande bouw. Of het tarif réglementé voor een VEFA-akte daadwerkelijk
    identiek is, is niet geverifieerd.
-8. **Uitzonderingen op de plus-value die de tool niet kent:** vrijstelling bij
+10. **Uitzonderingen op de plus-value die de tool niet kent:** vrijstelling bij
    een verkoopprijs tot 15.000 euro, de vrijstelling voor niet-ingezetenen, de
    vrijstelling bij herinvestering in een hoofdverblijf, bezit langer dan
    30 jaar in combinatie met andere vrijstellingen, en de behandeling van
    werkelijke in plaats van forfaitaire verbouwingskosten. Ongewijzigd ten
    opzichte van de bestaande tool.
-9. **De hoogte-meldingen zijn niet tegen de echte artikelpagina getest.** De
+11. **De hoogte-meldingen zijn niet tegen de echte artikelpagina getest.** De
     tool stuurt `{ type: 'if-tool-hoogte', hoogte }` naar het bovenliggende
     venster. Dat is in een testpagina met een iframe geverifieerd: drie
     meldingen bij het laden, convergerend naar de eindhoogte, en geen nieuwe
@@ -367,11 +416,11 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
     het daar samen goed valt, is niet vastgesteld. Let op dat `body` een
     `min-height: 100vh` heeft: de gemelde hoogte is nooit kleiner dan het
     iframe zelf.
-10. **De ontvanger van postMessage is niet beperkt.** Het bericht gaat met
+12. **De ontvanger van postMessage is niet beperkt.** Het bericht gaat met
     `'*'` naar het bovenliggende venster, omdat de origin van het artikel hier
     niet bekend is. Het bericht bevat alleen een hoogte in pixels en dus geen
     gegevens van de gebruiker, maar strenger is netter: vul de origin in zodra
     die vaststaat.
-11. **De tool rondt de plus-value en de sociale lasten niet af op hele euro's,**
+13. **De tool rondt de plus-value en de sociale lasten niet af op hele euro's,**
     terwijl de belastingdienst dat wel doet. Alleen het DMTO en de surtaxe
     worden afgerond. Dit was al zo en is niet veranderd.
