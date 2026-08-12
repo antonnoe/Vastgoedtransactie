@@ -1,7 +1,7 @@
 # STATUS
 
 Herkomst van elk tarief, elk bedrag en elke termijn in deze tool.
-Bijgewerkt: 2026-08-12, na de kernkant van de schilkoppeling.
+Bijgewerkt: 2026-08-12, na de koppeling van de nieuwe schil op de rekenkern.
 
 **Belangrijke beperking vooraf.** De uitvoeromgeving waarin deze wijziging is
 gemaakt, blokkeert uitgaand netwerkverkeer naar `impots.gouv.fr`,
@@ -322,9 +322,8 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
     maximum.** De schil geeft een knop, de kern wil een percentage tussen nul en
     twintig. Aan wordt twintig, uit wordt nul. Twintig procent is het wettelijke
     maximum en de notaris is niet verplicht die korting te geven, **dus toont de
-    stand "aan" het gunstigste geval en niet het waarschijnlijkste.** Dat hoort
-    als tekst bij de knop in de schil te staan; die tekst is nog niet
-    geschreven, want de schil ontbreekt.
+    stand "aan" het gunstigste geval en niet het waarschijnlijkste.** Dat staat
+    als tekst bij de knop in de schil.
 15. **Twee makelaarkanten, met terugval.** De kern kende één makelaaropgave,
     wat in de route beide fout ging omdat het daar twee transacties zijn. Er is
     nu een tweede set voor de aankoopkant. Die volgt de verkoopkant zolang zijn
@@ -345,22 +344,17 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 
 ## OPENSTAAND
 
-1. **De nieuwe schil is niet aangeleverd, dus de koppeling is half.** De
-   presentatielaag, `kernadapter.js` met `naarKern()` en de stub-rekenkern
-   zitten niet in de repo. Wat daardoor niet is gedaan: de adapter ombouwen naar
-   `berekenScenario` / `kernbedrag` / `berekenGevoeligheden`, de vertaaltabel,
-   het aansluiten van `invoerNaarQuery` en `queryNaarInvoer` op de schil, het
-   veld landmeter in de schil, en de controle van de constante `DOEL` voor de
-   hoogtemelding. **De oude interface staat er daarom nog en is niet
-   verwijderd**, conform de instructie die verwijdering pas toestaat na een
-   browsercontrole van de nieuwe.
-2. **`DOEL` voor de hoogtemelding is niet geverifieerd.** Het artikel draait
-   volgens `ARTIKEL_URL` op `https://infofrankrijk.com/vastgoed-transactiekosten/`,
-   dus zonder `www`. De origin die de schil als doel moet gebruiken is dan
-   `https://infofrankrijk.com`. Wijkt dat af van waar het artikel werkelijk
-   draait, ook alleen in het `www`-deel, dan gooit de browser het bericht stil
-   weg. De huidige interface stuurt naar `'*'`; zie ook het punt hieronder over
-   het beperken van de ontvanger.
+1. **De nieuwe schil staat naast de oude, niet in de plaats.** `nieuw.html`,
+   `schil.css` en `schil.js` draaien op de echte rekenkern en zijn in de browser
+   gecontroleerd op alle drie de routes en op 360 px breed. `index.html` blijft
+   de werkende tool tot je de vervanging in gang zet. Het originele ontwerp
+   staat ongewijzigd in `schil/` als vergelijkingspunt.
+2. **De hoogtemelding is niet tegen de echte artikelpagina getest.** `DOEL` in
+   `schil.js` staat op `https://infofrankrijk.com`, zonder `www`, gelijk aan het
+   adres in `ARTIKEL_URL`. Wijkt dat af van waar het artikel werkelijk draait,
+   ook alleen in het `www`-deel, dan gooit de browser elk bericht stil weg. In
+   tegenstelling tot de oude interface stuurt de nieuwe niet meer naar `'*'`,
+   dus dit is nu een harde eis in plaats van een nette gewoonte.
 3. **Ik heb vanuit de uitvoeromgeving nog steeds geen primaire bron kunnen
    openen.** De netwerkproxy blokkeert impots.gouv.fr, bofip.impots.gouv.fr,
    legifrance.gouv.fr, economie.gouv.fr en service-public.fr. Wat inmiddels wel

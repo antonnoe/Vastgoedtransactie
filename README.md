@@ -26,9 +26,13 @@ De tool werkt volledig in de browser (HTML + CSS + JS), zonder server of backend
 ## 📁 Projectstructuur
 
 /
-├── index.html → hoofdapplicatie (interface)
+├── index.html → de huidige, werkende interface
+├── nieuw.html → de nieuwe interface, nog naast de oude
+├── schil.css / schil.js → opmaak en presentatielaag van nieuw.html
+├── kernadapter.js → vertaalt tussen de interface en de rekenkern
+├── schil/ → het originele ontwerp, ongewijzigd, draait niet
 ├── styles.css → layout, ontwerp, mobiele weergave
-├── calc.js → volledige functionaliteit & berekeningen
+├── calc.js → de rekenkern, plus de interface van index.html
 ├── dmto.json → DMTO-tarieven per département (DGFiP), met bron en peildatum
 ├── test.mjs → testset, draait met `node test.mjs`
 └── STATUS.md → herkomst van tarieven en regels: geverifieerd, aannames, openstaand
