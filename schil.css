@@ -1,0 +1,544 @@
+/* Vastgoedtransactie Analyse — presentatielaag.
+ *
+ * Vertaald uit schil/Rekentool_Frankrijk.dc.html. Opmaak, flow en teksten komen
+ * daaruit; de inline stijlen zijn hier tot klassen gemaakt.
+ *
+ * Twee kleuren uit het ontwerp haalden de contrasteis van 4,5 op 1 niet en zijn
+ * vervangen door de dichtstbijzijnde die dat wel haalt: het effectlabel
+ * #8a7a74 gaf 4,10 op 1 en de placeholder #a9998f gaf 2,75 op 1; beide staan nu
+ * op #7e6e6a, dat 4,85 op 1 geeft.
+ */
+
+@font-face { font-family: 'Mulish'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/mulish-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Mulish'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/mulish-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Mulish'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/mulish-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/poppins-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/poppins-latin-700-normal.woff2') format('woff2'); }
+
+:root {
+    --bordeaux: #800000;
+    --bordeaux-donker: #5c0000;
+    --grond: #f6f3f1;
+    --tekst: #2b2422;
+    --gedempt: #6b5a54;
+    --gedempt-licht: #7e6e6a;
+    --notitie: #4a3b37;
+    --groen: #2f6b3a;
+    --rand: rgba(128, 0, 0, 0.10);
+    --rand-veld: rgba(128, 0, 0, 0.18);
+    --vulling-zacht: rgba(128, 0, 0, 0.05);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--grond);
+}
+
+body {
+    font-family: Mulish, 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.8;
+    color: var(--tekst);
+}
+
+a { color: var(--bordeaux); }
+a:hover { color: var(--bordeaux-donker); }
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+    outline: 3px solid var(--groen);
+    outline-offset: 2px;
+}
+
+input::placeholder { color: var(--gedempt-licht); }
+
+@keyframes schermIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+}
+
+@media print {
+    [data-noprint] { display: none !important; }
+}
+
+/* ── Raamwerk ──────────────────────────────────────────────────────────── */
+
+.rekentool {
+    display: flex;
+    flex-direction: column;
+    background: var(--grond);
+}
+
+.kolom {
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 18px 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    flex: 1;
+}
+
+.kop {
+    font-family: Poppins, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--bordeaux);
+    line-height: 1.4;
+}
+
+/* ── Voortgang ─────────────────────────────────────────────────────────── */
+
+.voortgang { display: flex; flex-direction: column; gap: 8px; }
+
+.voortgang-regel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.terug {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    background: none;
+    padding: 4px 0;
+    margin: 0;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--bordeaux);
+    cursor: pointer;
+}
+
+.stapteller { font-size: 13px; color: var(--gedempt); }
+
+.balk {
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(128, 0, 0, 0.10);
+    overflow: hidden;
+}
+
+.balk-vulling {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--bordeaux);
+    transition: width .35s cubic-bezier(.2, .7, .3, 1);
+}
+
+/* ── Kaart ─────────────────────────────────────────────────────────────── */
+
+.kaart {
+    animation: schermIn .3s ease both;
+    background: #fff;
+    border: 1px solid var(--rand);
+    border-radius: 18px;
+    box-shadow: 0 1px 2px rgba(60, 30, 30, .05), 0 10px 28px rgba(60, 30, 30, .05);
+    padding: 22px 20px;
+}
+
+.kaart h1 {
+    font-family: Poppins, sans-serif;
+    font-size: 23px;
+    line-height: 1.35;
+    font-weight: 600;
+    margin: 0 0 6px;
+}
+
+.kaart h2 {
+    font-family: Poppins, sans-serif;
+    font-size: 18px;
+    line-height: 1.4;
+    font-weight: 600;
+    margin: 0 0 4px;
+}
+
+.kaart h3 {
+    font-family: Poppins, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    font-weight: 600;
+    margin: 18px 0 8px;
+}
+
+.inleiding {
+    margin: 0 0 18px;
+    font-size: 15px;
+    color: var(--gedempt);
+    line-height: 1.7;
+}
+
+.onderschrift { margin: 8px 0 0; font-size: 13px; color: var(--gedempt); }
+
+/* ── Keuzeknoppen ──────────────────────────────────────────────────────── */
+
+.keuzes { display: flex; flex-direction: column; gap: 10px; }
+.keuzes-twee { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.keuzes-drie { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 16px; }
+
+.keuze {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 13px;
+    border: 1.5px solid var(--rand-veld);
+    background: #fff;
+    color: #3a2f2d;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    line-height: 1.5;
+}
+
+.keuze span {
+    font-size: 13px;
+    font-weight: 400;
+    opacity: .75;
+}
+
+.keuze-compact {
+    align-items: center;
+    text-align: center;
+    padding: 16px 14px;
+}
+
+.keuze[aria-pressed="true"] {
+    background: var(--bordeaux);
+    border-color: var(--bordeaux);
+    color: #fff;
+}
+
+/* ── Invoervelden ──────────────────────────────────────────────────────── */
+
+label {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.veld {
+    width: 100%;
+    padding: 14px 16px;
+    font: inherit;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    border: 1.5px solid var(--rand-veld);
+    border-radius: 12px;
+    background: #fffdfc;
+    color: var(--tekst);
+}
+
+.veld:focus { border-color: var(--bordeaux); }
+
+.bedragveld {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 16px;
+    border: 1.5px solid var(--rand-veld);
+    border-radius: 12px;
+    background: #fffdfc;
+}
+
+.bedragveld:focus-within { border-color: var(--bordeaux); }
+
+.bedragveld .teken {
+    font-family: Poppins, sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--bordeaux);
+}
+
+.bedragveld input {
+    flex: 1;
+    width: 100%;
+    padding: 10px 0;
+    font: inherit;
+    font-size: 20px;
+    font-weight: 700;
+    border: none;
+    outline: none;
+    background: none;
+    color: var(--tekst);
+}
+
+.datums { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+
+.post-met-knop { display: flex; gap: 8px; align-items: stretch; }
+.post-met-knop .bedragveld { flex: 1; min-width: 0; }
+
+.weet-niet {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    border-radius: 12px;
+    border: 1.5px solid rgba(128, 0, 0, 0.25);
+    background: #fff;
+    color: var(--bordeaux);
+    cursor: pointer;
+}
+
+.weet-niet[aria-pressed="true"] {
+    background: var(--bordeaux);
+    border-color: var(--bordeaux);
+    color: #fff;
+}
+
+.blok { margin-top: 18px; }
+
+/* ── Uitleg, notities en waarschuwingen ────────────────────────────────── */
+
+.info-knop {
+    vertical-align: middle;
+    margin-left: 4px;
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    border: 1.5px solid rgba(128, 0, 0, 0.30);
+    background: rgba(128, 0, 0, 0.06);
+    color: var(--bordeaux);
+    font-family: Poppins, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.notitie {
+    margin: 10px 0 4px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--vulling-zacht);
+    border: 1px solid rgba(128, 0, 0, 0.14);
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--notitie);
+}
+
+.waarschuwing {
+    display: flex;
+    gap: 10px;
+    margin: 14px 0 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #fdf3d8;
+    border: 1px solid rgba(122, 92, 0, 0.25);
+    font-size: 14px;
+    line-height: 1.7;
+    color: #4a3b1f;
+}
+
+.waarschuwing .teken {
+    flex-shrink: 0;
+    font-weight: 700;
+    color: #7a5c00;
+}
+
+/* ── Uitkomst ──────────────────────────────────────────────────────────── */
+
+.uitkomst-zin { margin: 0; font-size: 15px; color: var(--gedempt); line-height: 1.7; }
+
+.uitkomst-bedrag {
+    font-family: Poppins, sans-serif;
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--bordeaux);
+    margin-top: 2px;
+}
+
+.uitkomst-bedrag.groen { color: var(--groen); }
+
+.tweede-uitkomst {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rand);
+}
+
+.opbouw-knop {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    border: none;
+    background: none;
+    padding: 4px 0;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--bordeaux);
+    cursor: pointer;
+}
+
+.opbouw { margin-top: 10px; }
+
+.post {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(128, 0, 0, 0.08);
+    font-size: 14px;
+}
+
+.post:last-child { border-bottom: none; }
+
+.post .bedrag {
+    font-family: Poppins, sans-serif;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.bronregel {
+    margin: 16px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--rand);
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--gedempt);
+}
+
+/* ── Verfijningen ──────────────────────────────────────────────────────── */
+
+.verfijning { margin-bottom: 10px; }
+
+.verfijning-regel { display: flex; gap: 8px; align-items: stretch; }
+
+.verfijning-knop {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    text-align: left;
+    padding: 12px 14px;
+    border-radius: 13px;
+    border: 1.5px solid rgba(128, 0, 0, 0.12);
+    background: #fff;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--tekst);
+    cursor: pointer;
+    line-height: 1.5;
+}
+
+.verfijning-knop[aria-pressed="true"] { border-color: var(--bordeaux); }
+
+.verfijning-effect {
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gedempt-licht);
+    white-space: nowrap;
+}
+
+.verfijning-effect.heeft-bedrag { color: var(--groen); }
+
+/* ── Aantal verkopers ──────────────────────────────────────────────────── */
+
+.teller { display: flex; align-items: center; gap: 10px; }
+
+.teller button {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1.5px solid var(--rand-veld);
+    background: #fff;
+    color: var(--bordeaux);
+    font: inherit;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.teller input {
+    width: 64px;
+    text-align: center;
+    padding: 10px 0;
+    font: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    border: 1.5px solid var(--rand-veld);
+    border-radius: 12px;
+    background: #fffdfc;
+    color: var(--tekst);
+}
+
+/* ── Hoofdknoppen ──────────────────────────────────────────────────────── */
+
+.verder {
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+    border: none;
+    background: var(--bordeaux);
+    color: #fff;
+    font: inherit;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.verder[disabled] { opacity: .45; cursor: not-allowed; }
+
+.herstart {
+    align-self: flex-start;
+    margin-top: 18px;
+    border: none;
+    background: none;
+    padding: 4px 0;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--bordeaux);
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.verborgen { display: none !important; }
+
+.visueel-verborgen {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 400px) {
+    .kolom { padding: 14px 12px 20px; }
+    .kaart { padding: 18px 14px; border-radius: 14px; }
+    .kaart h1 { font-size: 20px; }
+    .uitkomst-bedrag { font-size: 32px; }
+    .keuzes-twee { grid-template-columns: 1fr; }
+    .datums { grid-template-columns: 1fr; }
+}

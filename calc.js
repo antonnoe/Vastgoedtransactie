@@ -333,16 +333,37 @@ export function berekenRemise(prijs, remisePct) {
 }
 
 /**
+ * De notariskosten uitgesplitst. Geeft de componenten terug waaruit het totaal
+ * is opgebouwd, zodat de interface de opbouw kan tonen zonder zelf te rekenen.
+ * opties: {isNieuwbouw, departementaalPct, meta, remisePct}
+ */
+export function notarisComponenten(prijs, opties) {
+    if (!(prijs > 0)) return null;
+    const korting = berekenRemise(prijs, opties.remisePct);
+    const emolumenten = berekenEmolumenten(prijs) - korting;
+    const tva = emolumenten * (TVA_PCT / 100);
+    const overdrachtsbelasting = opties.isNieuwbouw
+        ? prijs * (TPF_VEFA_PCT / 100)
+        : berekenDmto(prijs, opties.departementaalPct, opties.meta);
+    const csi = prijs * (CSI_PCT / 100);
+    return {
+        emolumenten: rond2(emolumenten),
+        korting: rond2(korting),
+        tva: rond2(tva),
+        overdrachtsbelasting: rond2(overdrachtsbelasting),
+        csi: rond2(csi),
+        debours: DEBOURS_FORFAIT,
+        totaal: rond2(emolumenten + tva + overdrachtsbelasting + csi + DEBOURS_FORFAIT)
+    };
+}
+
+/**
  * Notariskosten bij bestaande bouw (ancien): emolumenten na eventuele korting,
  * btw daarover, DMTO, contribution de securite immobiliere en debours.
  */
 export function berekenNotarisAncien(prijs, departementaalPct, meta, remisePct) {
     if (!(prijs > 0)) return 0;
-    const emolumenten = berekenEmolumenten(prijs) - berekenRemise(prijs, remisePct);
-    const tva = emolumenten * (TVA_PCT / 100);
-    const dmto = berekenDmto(prijs, departementaalPct, meta);
-    const csi = prijs * (CSI_PCT / 100);
-    return rond2(emolumenten + tva + dmto + csi + DEBOURS_FORFAIT);
+    return notarisComponenten(prijs, { isNieuwbouw: false, departementaalPct, meta, remisePct }).totaal;
 }
 
 /**
@@ -351,11 +372,7 @@ export function berekenNotarisAncien(prijs, departementaalPct, meta, remisePct) 
  */
 export function berekenNotarisVefa(prijs, remisePct) {
     if (!(prijs > 0)) return 0;
-    const emolumenten = berekenEmolumenten(prijs) - berekenRemise(prijs, remisePct);
-    const tva = emolumenten * (TVA_PCT / 100);
-    const tpf = prijs * (TPF_VEFA_PCT / 100);
-    const csi = prijs * (CSI_PCT / 100);
-    return rond2(emolumenten + tva + tpf + csi + DEBOURS_FORFAIT);
+    return notarisComponenten(prijs, { isNieuwbouw: true, remisePct }).totaal;
 }
 
 /**
@@ -484,10 +501,12 @@ export function berekenScenario(inv, dmtoData) {
     const tarief = departementaalTarief(departement, inv.isPrimo);
     const remise = berekenRemise(prijsVoorNotaris, inv.remisePct);
     let notarisKosten = null;
-    if (inv.isNieuwbouw) {
-        notarisKosten = berekenNotarisVefa(prijsVoorNotaris, inv.remisePct);
-    } else if (departement) {
-        notarisKosten = berekenNotarisAncien(prijsVoorNotaris, tarief, meta, inv.remisePct);
+    let notarisSpecificatie = null;
+    if (inv.isNieuwbouw || departement) {
+        notarisSpecificatie = notarisComponenten(prijsVoorNotaris, {
+            isNieuwbouw: inv.isNieuwbouw, departementaalPct: tarief, meta, remisePct: inv.remisePct
+        });
+        notarisKosten = notarisSpecificatie ? notarisSpecificatie.totaal : 0;
     }
 
     const jarenBezit = volleJaren(inv.datumAankoop, inv.datumVerkoop);
@@ -550,7 +569,7 @@ export function berekenScenario(inv, dmtoData) {
             + (kanten.aankoop.optie === 'acquereur' ? makelaarsKostenAankoop : 0));
 
     return {
-        departement, tarief, notarisKosten,
+        departement, tarief, notarisKosten, notarisSpecificatie,
         emolumenten: berekenEmolumenten(prijsVoorNotaris), remise,
         koopsom, makelaarsKosten, makelaarsKostenVerkoop, makelaarsKostenAankoop, kanten,
         prijsVoorNotaris, nettoVerkoperBasis,
@@ -696,7 +715,11 @@ export function valideer(inv, dmtoData) {
     const verkoopt = inv.rol === 'verkopen' || inv.rol === 'beide';
     const negatief = (v) => v !== null && v !== undefined && v !== '' && Number(v) < 0;
 
-    if (verkoopt && !(Number(inv.verkoopprijs) > 0)) {
+    /* Bij een hoofdverblijf is de meerwaarde vrijgesteld en hangt de uitkomst
+     * niet van de prijs af. Een verkoopprijs eisen om te kunnen melden dat er
+     * niets te betalen valt, zou de gebruiker naar een vraag sturen die er niet
+     * toe doet. */
+    if (verkoopt && !inv.isHoofdverblijf && !(Number(inv.verkoopprijs) > 0)) {
         fouten.push('Vul een verkoopprijs groter dan nul in.');
     }
     if (koopt && !(koopsomVan(inv) > 0)) {
@@ -719,7 +742,8 @@ export function valideer(inv, dmtoData) {
     for (const [naam, waarde] of bedragen) {
         if (negatief(waarde)) fouten.push(`Het bedrag voor ${naam} kan niet negatief zijn.`);
     }
-    if (verkoopt) {
+    /* Ook de bezitsduur doet er bij een vrijgesteld hoofdverblijf niet toe. */
+    if (verkoopt && !inv.isHoofdverblijf) {
         if (!inv.datumAankoop || !inv.datumVerkoop) {
             fouten.push('Vul zowel een aankoopdatum als een verkoopdatum in.');
         } else if (inv.datumVerkoop < inv.datumAankoop) {
@@ -761,14 +785,14 @@ export function berekenGevoeligheden(inv, dmtoData) {
      * daadwerkelijk landt. De courtagekeuze raakt bijvoorbeeld alleen de
      * grondslag van de notaris en dus de koper, niet de netto-opbrengst van de
      * verkoper. Meten op de verkeerde maatstaf laat hem ten onrechte wegvallen. */
-    const voegToe = (label, metriek, variant) => {
+    const voegToe = (sleutel, label, metriek, variant) => {
         const lees = (r) => (metriek === 'koper' ? r.totaalKostenKoper : r.nettoOpbrengst);
         const voor = lees(basis);
         const na = lees(berekenScenario(variant, dmtoData));
         if (voor === null || na === null) return;
         const delta = rond2(na - voor);
         if (delta === 0) return;
-        uit.push({ label, metriek, delta, gunstig: metriek === 'koper' ? delta < 0 : delta > 0 });
+        uit.push({ sleutel, label, metriek, delta, gunstig: metriek === 'koper' ? delta < 0 : delta > 0 });
     };
 
     /* De courtagekeuze wordt omgedraaid aan de kant die bij de rol hoort: voor
@@ -781,15 +805,15 @@ export function berekenGevoeligheden(inv, dmtoData) {
         const variant = koopt
             ? { ...inv, aankoopMakelaarOptie: anders }
             : { ...inv, makelaarOptie: anders };
-        voegToe(`Courtage ${naam} in plaats van de huidige keuze`,
+        voegToe('courtage', `Courtage ${naam} in plaats van de huidige keuze`,
             koopt ? 'koper' : 'verkoper', variant);
     }
     if (koopt && !inv.isNieuwbouw && !inv.isPrimo
         && basis.departement && basis.departement.primo < basis.departement.std) {
-        voegToe('Als u primo-accédant bent', 'koper', { ...inv, isPrimo: true });
+        voegToe('primo', 'Als u primo-accédant bent', 'koper', { ...inv, isPrimo: true });
     }
     if (verkoopt && !inv.isHoofdverblijf && basis.brutoMeerwaarde > 0 && basis.abatPs < 100) {
-        voegToe('Een jaar langer wachten met verkopen', 'verkoper',
+        voegToe('jaarLanger', 'Een jaar langer wachten met verkopen', 'verkoper',
             { ...inv, datumVerkoop: jaarLater(inv.datumVerkoop) });
     }
     return uit.slice(0, 3);
@@ -799,8 +823,11 @@ export function berekenGevoeligheden(inv, dmtoData) {
  * INTERFACE
  * ===================================================================== */
 
-if (typeof document !== 'undefined') {
-    const fmt = (n) => new Intl.NumberFormat('nl-NL', {
+/* De oude interface hoort bij index.html. Zij start alleen als de elementen van
+ * die pagina aanwezig zijn: calc.js wordt ook geimporteerd door kernadapter.js
+ * voor nieuw.html, en daar bestaan ze niet. */
+if (typeof document !== 'undefined' && document.getElementById('spec_table')) {
+    const fmt = (n) = new Intl.NumberFormat('nl-NL', {
         style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0
     }).format(n);
     const fmt2 = (n) => new Intl.NumberFormat('nl-NL', {

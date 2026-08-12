@@ -40,6 +40,8 @@ import {
     URL_VELDEN
 } from './calc.js';
 
+import * as adapter from './kernadapter.js';
+
 const hier = dirname(fileURLToPath(import.meta.url));
 const dmto = JSON.parse(readFileSync(join(hier, 'dmto.json'), 'utf8'));
 const meta = dmto._meta;
@@ -569,6 +571,195 @@ check('een verkoop voor de ingangsdatum houdt wel de twee algemene signaleringen
         rol: 'verkopen', belastbareMeerwaarde: 90000,
         isGemeubileerdReeel: true, datumVerkoop: '2024-01-01'
     }).length, 2);
+
+console.log('\nDe vertaaltabel van de schil naar de kern');
+adapter.zetTarieven(dmto);
+
+/* Eén volledig ingevuld schilobject, met elke keuze op een waarde die van de
+ * standaard afwijkt, zodat een vergeten veld opvalt. */
+const uiVol = {
+    rol: 'beide',
+    postcode: '20000',
+    koopsom: '550.000',
+    verkoopprijs: '400.000',
+    type: 'nieuwbouw',
+    hoofdverblijf: 'nee',
+    bouwgrond: 'ja',
+    verkrijging: 'geerfd',
+    aankoopprijs: '200.000',
+    verkrijgingskosten: '18.000',
+    datumVerkrijging: '2003-12-15',
+    datumVerkoop: '2026-01-10',
+    aantalVerkopers: 3,
+    mkKoopPartij: 'koper', mkKoopModus: 'bedrag', mkKoopWaarde: '12.000',
+    mkVerkPartij: 'verkoper', mkVerkModus: 'percentage', mkVerkWaarde: '4,5',
+    landmeter: '1.250', diagnostics: '800', doorhaling: '650',
+    aktesBedrag: '21.000', verbouwdBedrag: '48.000',
+    weetNiet: {},
+    verfijning: {
+        eersteWoning: true, kortingHonorarium: true, fiscaalBuiten: true,
+        verzekerdBuiten: true, gemeubileerdReel: true, verbouwd: true
+    }
+};
+const kernVol = adapter.naarKern(uiVol);
+
+check('rol koper wordt kopen', adapter.naarKern({ rol: 'koper' }).rol, 'kopen');
+check('rol verkoper wordt verkopen', adapter.naarKern({ rol: 'verkoper' }).rol, 'verkopen');
+check('rol beide blijft beide', kernVol.rol, 'beide');
+check('postcode gaat ongewijzigd door', kernVol.postcode, '20000');
+check('koopsom wordt een getal zonder scheidingstekens', kernVol.koopsom, 550000);
+check('verkoopprijs idem', kernVol.verkoopprijs, 400000);
+check('type nieuwbouw wordt isNieuwbouw true', kernVol.isNieuwbouw, true);
+check('type bestaand wordt isNieuwbouw false',
+    adapter.naarKern({ type: 'bestaand' }).isNieuwbouw, false);
+check('hoofdverblijf ja wordt true',
+    adapter.naarKern({ hoofdverblijf: 'ja' }).isHoofdverblijf, true);
+check('hoofdverblijf nee wordt false', kernVol.isHoofdverblijf, false);
+check('bouwgrond ja wordt true', kernVol.isBouwgrond, true);
+check('bouwgrond nee wordt false',
+    adapter.naarKern({ bouwgrond: 'nee' }).isBouwgrond, false);
+check('verkrijging gaat ongewijzigd door', kernVol.verkrijging, 'geerfd');
+check('aankoopprijs gaat door', kernVol.aankoopprijs, 200000);
+check('datumVerkrijging wordt datumAankoop', kernVol.datumAankoop, '2003-12-15');
+check('datumVerkoop gaat door', kernVol.datumVerkoop, '2026-01-10');
+check('aantalVerkopers gaat door', kernVol.aantalVerkopers, 3);
+check('eersteWoning wordt isPrimo', kernVol.isPrimo, true);
+check('fiscaalBuiten wordt isNietIngezetene', kernVol.isNietIngezetene, true);
+check('gemeubileerdReel wordt isGemeubileerdReeel', kernVol.isGemeubileerdReeel, true);
+check('verzekerdBuiten wordt deRuyter', kernVol.deRuyter, true);
+check('kortingHonorarium aan wordt het wettelijke maximum',
+    kernVol.remisePct, 20);
+check('kortingHonorarium uit wordt nul',
+    adapter.naarKern({}).remisePct, 0);
+
+check('mkVerkPartij verkoper wordt vendeur', kernVol.makelaarOptie, 'vendeur');
+check('mkKoopPartij koper wordt acquereur', kernVol.aankoopMakelaarOptie, 'acquereur');
+check('geen makelaar blijft geen',
+    adapter.naarKern({ mkVerkPartij: 'geen' }).makelaarOptie, 'geen');
+check('een niet gekozen makelaar telt als geen',
+    adapter.naarKern({}).makelaarOptie, 'geen');
+check('mkVerkModus percentage komt in makelaarEenheid', kernVol.makelaarEenheid, 'percentage');
+check('mkKoopModus bedrag komt in aankoopMakelaarEenheid', kernVol.aankoopMakelaarEenheid, 'bedrag');
+check('een courtage met komma wordt een kommagetal', kernVol.makelaarPerc, 4.5);
+check('een courtage als bedrag wordt een heel bedrag', kernVol.aankoopMakelaarBedrag, 12000);
+
+check('bij erven komt verkrijgingskosten in aankoopkostenEigen',
+    kernVol.aankoopkostenEigen, 18000);
+check('en staat de modus op werkelijk', kernVol.aankoopkostenModus, 'werkelijk');
+check('bij een aankoop met de verfijning aktes komt aktesBedrag daarin',
+    adapter.naarKern({ verkrijging: 'gekocht', aktesBedrag: '21.000', verfijning: { aktes: true } })
+        .aankoopkostenEigen, 21000);
+check('zonder die verfijning blijft het forfait staan',
+    adapter.naarKern({ verkrijging: 'gekocht', aktesBedrag: '21.000' }).aankoopkostenModus, 'forfait');
+check('verbouwd met facturen zet de modus op werkelijk', kernVol.werkzaamhedenModus, 'werkelijk');
+check('en geeft het bedrag door', kernVol.werkzaamhedenEigen, 48000);
+check('zonder die verfijning blijft het forfait staan',
+    adapter.naarKern({ verbouwdBedrag: '48.000' }).werkzaamhedenModus, 'forfait');
+
+check('diagnostics gaat door', kernVol.diagnostics, 800);
+check('doorhaling wordt mainlevee', kernVol.mainlevee, 650);
+check('landmeter gaat door', kernVol.landmeter, 1250);
+const uiWeetNiet = { ...uiVol, weetNiet: { landmeter: true, diagnostics: true, doorhaling: true, verkrijgingskosten: true } };
+check('weet ik niet maakt landmeter onbekend', adapter.naarKern(uiWeetNiet).landmeter, null);
+check('weet ik niet maakt diagnostics onbekend', adapter.naarKern(uiWeetNiet).diagnostics, null);
+check('weet ik niet maakt de doorhaling onbekend', adapter.naarKern(uiWeetNiet).mainlevee, null);
+check('weet ik niet maakt de verkrijgingskosten onbekend',
+    adapter.naarKern(uiWeetNiet).aankoopkostenEigen, null);
+check('een leeg veld is net zo goed onbekend',
+    adapter.naarKern({ ...uiVol, landmeter: '' }).landmeter, null);
+
+check('elk kernveld dat de tabel oplevert bestaat in STANDAARD_INVOER',
+    Object.keys(kernVol).every((k) => k in STANDAARD_INVOER), true);
+check('de tabel vult elk kernveld',
+    Object.keys(STANDAARD_INVOER).every((k) => k in kernVol), true);
+
+console.log('\nMakelaar: percentage en vast bedrag geven hetzelfde via de schil');
+const uiPct = {
+    rol: 'verkoper', postcode: '58000', verkoopprijs: '400.000', hoofdverblijf: 'nee',
+    bouwgrond: 'nee', verkrijging: 'gekocht', aankoopprijs: '200.000',
+    datumVerkrijging: '2015-01-01', datumVerkoop: '2025-01-01', aantalVerkopers: 1,
+    mkVerkPartij: 'verkoper', mkVerkModus: 'percentage', mkVerkWaarde: '6',
+    weetNiet: {}, verfijning: { makelaarVerk: true }
+};
+const uiBedrag = { ...uiPct, mkVerkModus: 'bedrag', mkVerkWaarde: '24.000' };
+check('zes procent van 400.000 is hetzelfde als 24.000 euro vast',
+    adapter.bereken(uiBedrag).verkoper.bedrag, adapter.bereken(uiPct).verkoper.bedrag);
+check('en dat is een echt bedrag, geen null',
+    typeof adapter.bereken(uiPct).verkoper.bedrag, 'number');
+
+console.log('\nRoute beide met verschillende makelaarpartijen aan weerszijden');
+const uiBeide = {
+    ...uiPct, rol: 'beide', koopsom: '550.000', type: 'bestaand',
+    mkKoopPartij: 'koper', mkKoopModus: 'percentage', mkKoopWaarde: '4',
+    verfijning: { makelaarVerk: true, makelaarKoop: true }
+};
+const beide = adapter.bereken(uiBeide);
+check('de koper betaalt zijn eigen courtage over de koopsom',
+    beide.res.makelaarsKostenAankoop, 22000);
+check('de verkoper betaalt de zijne over de verkoopprijs',
+    beide.res.makelaarsKostenVerkoop, 24000);
+check('de notarisgrondslag is de koopsom min de courtage van de koper',
+    beide.res.prijsVoorNotaris, 528000);
+check('de meerwaardegrondslag is de verkoopprijs min de courtage van de verkoper',
+    beide.res.nettoVerkoperBasis, 376000);
+check('een andere partij aan de aankoopkant verandert de netto-opbrengst niet',
+    adapter.bereken({ ...uiBeide, mkKoopPartij: 'verkoper' }).verkoper.bedrag,
+    beide.verkoper.bedrag);
+check('maar wel wat de koper bovenop de koopsom kwijt is',
+    adapter.bereken({ ...uiBeide, mkKoopPartij: 'verkoper' }).koper.bovenopKoopsom
+        !== beide.koper.bovenopKoopsom, true);
+
+console.log('\nErven met en zonder opgegeven verkrijgingskosten, via de schil');
+const uiErf = {
+    ...uiPct, verkrijging: 'geerfd', verkrijgingskosten: '', weetNiet: { verkrijgingskosten: true }
+};
+const uiErfBedrag = { ...uiErf, verkrijgingskosten: '18.000', weetNiet: {} };
+check('onbekende verkrijgingskosten worden gemeld',
+    adapter.bereken(uiErf).verkrijgingskostenOnbekend, true);
+check('met een bedrag is er niets onbekend',
+    adapter.bereken(uiErfBedrag).verkrijgingskostenOnbekend, false);
+check('de gemiste aftrek verlaagt wat de verkoper overhoudt',
+    adapter.bereken(uiErf).verkoper.bedrag < adapter.bereken(uiErfBedrag).verkoper.bedrag, true);
+check('het verschil is de belasting over 18.000 euro extra meerwaarde',
+    adapter.bereken(uiErfBedrag).verkoper.bedrag > adapter.bereken(uiErf).verkoper.bedrag, true);
+
+console.log('\nDe schil deelt via de URL');
+const heen = adapter.naarQuery(uiVol);
+const terug = adapter.uitQuery(heen);
+check('de postcode overleeft de reis', terug.antwoorden.postcode, '20000');
+check('de koopsom komt geformatteerd terug', terug.antwoorden.koopsom, '550.000');
+check('de verkrijging komt terug', terug.antwoorden.verkrijging, 'geerfd');
+check('bouwgrond komt terug', terug.antwoorden.bouwgrond, 'ja');
+check('hoofdverblijf komt terug', terug.antwoorden.hoofdverblijf, 'nee');
+check('het woningtype komt terug', terug.antwoorden.type, 'nieuwbouw');
+check('de datums komen terug', terug.antwoorden.datumVerkrijging, '2003-12-15');
+check('het aantal verkopers komt terug', terug.antwoorden.aantalVerkopers, 3);
+check('de aanstaande verfijningen komen terug',
+    terug.verfijning.eersteWoning && terug.verfijning.kortingHonorarium
+    && terug.verfijning.fiscaalBuiten && terug.verfijning.verbouwd, true);
+check('een uitstaande verfijning blijft uit', Boolean(terug.verfijning.aktes), false);
+check('de makelaarpartijen komen terug',
+    `${terug.antwoorden.mkKoopPartij}/${terug.antwoorden.mkVerkPartij}`, 'koper/verkoper');
+check('de courtage-eenheden komen terug',
+    `${terug.antwoorden.mkKoopModus}/${terug.antwoorden.mkVerkModus}`, 'bedrag/percentage');
+const terugWeetNiet = adapter.uitQuery(adapter.naarQuery(uiWeetNiet));
+check('weet ik niet overleeft de reis',
+    Boolean(terugWeetNiet.weetNiet.landmeter && terugWeetNiet.weetNiet.diagnostics
+        && terugWeetNiet.weetNiet.doorhaling), true);
+check('een leeg antwoord blijft leeg zonder er een keuze van te maken',
+    adapter.uitQuery('').antwoorden.hoofdverblijf, undefined);
+
+console.log('\nZonder tarieventabel rekent de schil niet');
+check('de peildatum is opgemaakt als Nederlandse datum',
+    adapter.nederlandseDatum('2026-06-01'), '1 juni 2026');
+check('een onleesbare datum wordt niet verzonnen',
+    adapter.nederlandseDatum('onzin'), 'onzin');
+check('de peildatum komt uit het bestand, niet uit de code',
+    adapter.laadMeta().peildatum, adapter.nederlandseDatum(dmto._meta.peildatum));
+check('de bron komt uit het bestand', adapter.laadMeta().bron, dmto._meta.uitgever);
+check('een postcode buiten de tabel wordt als onbekend gemeld',
+    adapter.kentPostcode('97500'), false);
+check('een postcode in de tabel wordt herkend', adapter.kentPostcode('20000'), true);
 
 console.log(`\n${geslaagd} geslaagd, ${mislukt.length} mislukt.`);
 if (mislukt.length > 0) {
