@@ -197,8 +197,19 @@ check('97700 staat niet in de tabel', zoekDepartement(dmto, '97700'), null);
 check('Monaco/98000 staat niet in de tabel', zoekDepartement(dmto, '98000'), null);
 
 console.log('\nPrimo-accedant');
-check('departement 65 heeft primo 3,80 en standaard 4,50, verschil 0,70 punt',
-    departementaalTarief(zoekDepartement(dmto, '65000'), true), 3.80);
+check('departement 73 (Savoie) heeft primo 4,00 en standaard 5,00',
+    departementaalTarief(zoekDepartement(dmto, '73000'), true), 4.00);
+check('departement 73 standaard is 5,00',
+    departementaalTarief(zoekDepartement(dmto, '73000'), false), 5.00);
+check('departement 36 (Indre) heeft primo 3,80',
+    departementaalTarief(zoekDepartement(dmto, '36000'), true), 3.80);
+check('departement 65 (Hautes-Pyrenees) heeft primo 4,50, geen kavelverkooptarief',
+    departementaalTarief(zoekDepartement(dmto, '65000'), true), 4.50);
+check('alle andere departementen hebben primo 4,50',
+    Object.keys(dmto.departementen).filter((c) => !['36', '73'].includes(c)
+        && dmto.departementen[c].primo !== 4.5).join(', '), '');
+check('er zijn 101 departementen met een primo-tarief',
+    Object.values(dmto.departementen).filter((d) => typeof d.primo === 'number').length, 101);
 check('departement 65 standaard is 4,50',
     departementaalTarief(zoekDepartement(dmto, '65000'), false), 4.50);
 check('departement 06 zonder verhoging heeft primo gelijk aan standaard',

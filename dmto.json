@@ -9,7 +9,8 @@
     "frais_assiette_pct_van_departementaal": 2.37,
     "veld_std": "departementaal tarief buiten primo-accedant",
     "veld_primo": "departementaal tarief voor een eerste eigen woning als hoofdverblijf",
-    "openstaand": "In de bron staan bij Calvados een abattement van 46.000 euro en bij Savoie een verlaagd tarief van 4,00 procent. Uit de platte tekst is niet af te leiden op welke kolom die betrekking hebben, art. 1594 F ter, F sexies of F septies. Niet ingebouwd, wel vermelden in STATUS.md onder OPENSTAAND."
+    "openstaand": "In de bron staat bij Calvados een abattement van 46.000 euro. Uit de platte tekst is niet af te leiden op welke kolom dat betrekking heeft, art. 1594 F ter, F sexies of F septies. Niet ingebouwd, wel vermelden in STATUS.md onder OPENSTAAND. Het Savoie-punt is opgelost: primo 4,00 procent (art. 1594 F septies CGI), verwerkt in het veld primo.",
+    "primo_controle": "De primo-tarieven zijn gecontroleerd tegen Peil (p.fr.dmto.departementaal_primo) op de verificatiedatum 2026-10-19: 4,50 procent overal, behalve Indre (36) 3,80 en Savoie (73) 4,00. De 3,80 bij Hautes-Pyrenees (65) is een kavelverkooptarief (art. 1594 F sexies CGI) en geen primo-tarief."
   },
   "departementen": {
     "01": { "naam": "Ain", "std": 5.00, "primo": 4.50 },
@@ -77,7 +78,7 @@
     "62": { "naam": "Pas-de-Calais", "std": 5.00, "primo": 4.50 },
     "63": { "naam": "Puy-de-Dome", "std": 5.00, "primo": 4.50 },
     "64": { "naam": "Pyrenees-Atlantiques", "std": 5.00, "primo": 4.50 },
-    "65": { "naam": "Hautes-Pyrenees", "std": 4.50, "primo": 3.80 },
+    "65": { "naam": "Hautes-Pyrenees", "std": 4.50, "primo": 4.50 },
     "66": { "naam": "Pyrenees-Orientales", "std": 5.00, "primo": 4.50 },
     "67": { "naam": "Bas-Rhin (Collectivite europeenne d'Alsace)", "std": 5.00, "primo": 4.50 },
     "68": { "naam": "Haut-Rhin (Collectivite europeenne d'Alsace)", "std": 5.00, "primo": 4.50 },
@@ -85,7 +86,7 @@
     "70": { "naam": "Haute-Saone", "std": 5.00, "primo": 4.50 },
     "71": { "naam": "Saone-et-Loire", "std": 4.50, "primo": 4.50 },
     "72": { "naam": "Sarthe", "std": 5.00, "primo": 4.50 },
-    "73": { "naam": "Savoie", "std": 5.00, "primo": 4.50 },
+    "73": { "naam": "Savoie", "std": 5.00, "primo": 4.00 },
     "74": { "naam": "Haute-Savoie", "std": 5.00, "primo": 4.50 },
     "75": { "naam": "Paris", "std": 5.00, "primo": 4.50 },
     "76": { "naam": "Seine-Maritime", "std": 5.00, "primo": 4.50 },

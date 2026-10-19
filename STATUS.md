@@ -167,8 +167,13 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
 
 - Het primo-tarief wordt uitsluitend uit het veld `primo` in `dmto.json`
   gelezen en nooit afgeleid door 0,5 punt van het standaardtarief af te
-  trekken. Departement 65 (Hautes-Pyrénées) bewijst waarom: standaard 4,50 en
-  primo 3,80, een verschil van 0,70 punt. Dit is als assertion vastgelegd.
+  trekken. Departement 73 (Savoie) bewijst waarom: standaard 5,00 en
+  primo 4,00, een verschil van 1,00 punt (art. 1594 F septies CGI); Indre (36)
+  heeft 3,80 voor beide. Dit is als assertion vastgelegd.
+- Gecontroleerd tegen Peil (`p.fr.dmto.departementaal_primo`, verificatie
+  2026-10-19): primo 4,50 overal, behalve Indre 3,80 en Savoie 4,00. De 3,80
+  bij Hautes-Pyrénées was een kavelverkooptarief (art. 1594 F sexies CGI) en
+  geen primo-tarief; die staat nu op 4,50.
 - Grondslag zoals opgegeven bij de bron: art. 116 II van wet 2025-127 van
   14 februari 2025.
 
@@ -440,11 +445,12 @@ Ingebouwd barème (PV = belastbare meerwaarde na abattement voor bezitsduur):
    aanname over de bestandsnamen. Verandert de pagina van opzet, dan faalt de
    Action zichtbaar in plaats van stil — maar dat moet dan wel worden opgepakt.
    Het overnemen van de tarieven blijft in alle gevallen handwerk.
-5. **Calvados en Savoie.** In de bron staat bij Calvados een abattement van
-   46.000 euro en bij Savoie een verlaagd tarief van 4,00 procent. Uit de platte
-   tekst is niet af te leiden op welke kolom die betrekking hebben (art. 1594 F
-   ter, F sexies of F septies). Niet ingebouwd. Voor die twee departementen kan
-   de tool dus te hoog uitkomen in de gevallen waarop die regelingen zien.
+5. **Calvados.** In de bron staat bij Calvados een abattement van 46.000 euro.
+   Uit de platte tekst is niet af te leiden op welke kolom dat betrekking heeft
+   (art. 1594 F ter, F sexies of F septies). Niet ingebouwd. Voor dit
+   departement kan de tool dus te hoog uitkomen in de gevallen waarop de
+   regeling ziet. Het Savoie-punt is opgelost: primo 4,00 procent, verwerkt in
+   `dmto.json`.
 6. **Overige abattements en verlaagde tarieven per departement.** `dmto.json`
    bevat alleen `std` en `primo`. Departementale abattements en sectorale
    verlaagde tarieven uit de DGFiP-tabel zijn niet opgenomen.
