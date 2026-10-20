@@ -187,8 +187,8 @@
         ]
       },
       "waarde_weergave": "vanaf 50.000 euro belastbare meerwaarde, 2 tot 6 procent met afvlakking per tranche",
-      "bron_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000048806252",
-      "verificatiedatum": "2026-08-12"
+      "bron_url": "https://bofip.impots.gouv.fr/bofip/8597-PGP.html/identifiant=BOI-RFPI-TPVIE-20-20230718",
+      "verificatiedatum": "2026-10-20"
     },
     {
       "id": "p.fr.pv.tarief_ir",
@@ -244,8 +244,8 @@
       "naam": "Prélèvement de solidarité bij De Ruyter",
       "waarde": 0.075,
       "waarde_weergave": "7,5 procent",
-      "bron_url": "https://bofip.impots.gouv.fr/doctrine/BOI-RFPI-PVINR-20-20",
-      "verificatiedatum": "2026-08-12"
+      "bron_url": "https://bofip.impots.gouv.fr/bofip/7508-PGP.html/identifiant=BOI-RFPI-PVINR-20-20-20220629",
+      "verificatiedatum": "2026-10-20"
     }
   ]
 }
