@@ -617,3 +617,30 @@ label {
     .keuzes-twee { grid-template-columns: 1fr; }
     .datums { grid-template-columns: 1fr; }
 }
+
+/* Voorbehoud, aannames en Peil-label. Stempel en voettekst zijn alleen zichtbaar als PEIL_LABEL_AAN in peil.js true is. */
+.voorbehoud .bronregel { margin-top: 16px; }
+.aanname {
+    margin: 10px 0 0;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--gedempt);
+}
+.aanname strong { color: var(--tekst); }
+.peil-stempel:focus-visible, .peil-alinea a:focus-visible { outline: 2px solid var(--bordeaux); outline-offset: 3px; border-radius: 4px; }
+.peil-stempel-rij { display: flex; justify-content: flex-end; margin-top: 12px; }
+.peil-stempel { display: inline-flex; align-items: center; gap: 9px; min-height: 44px; padding: 4px 12px 4px 4px; border: 1px solid #eadede; border-radius: 999px; background: #fff; color: #800000; text-decoration: none; transition: border-color .15s, background .15s; }
+.peil-stempel svg { flex: none; width: 36px; height: 36px; display: block; opacity: .85; filter: drop-shadow(0 1px 0 rgba(255,255,255,.9)) drop-shadow(0 -1px 0 rgba(128,0,0,.12)); }
+.peil-stempel__tk { display: flex; flex-direction: column; line-height: 1.25; }
+.peil-stempel__t1 { font-size: 13px; font-weight: 700; color: #7a1f1f; }
+.peil-stempel__t2 { font-size: 12px; color: #6a5d58; }
+.peil-stempel:hover { border-color: #cfa9a9; background: #fcf7f7; }
+.peil-pijl { display: inline-block; margin-left: .25em; font-size: 12px; line-height: 1; color: inherit; transition: transform .15s; }
+@media (prefers-reduced-motion: no-preference) { .peil-stempel:hover .peil-pijl { transform: translate(2px, -2px); } }
+.peil-stempel:hover .peil-stempel__t1 { text-decoration: underline; text-underline-offset: 2px; }
+.peil-merk { flex: none; display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: #800000; color: #fff; font: 700 12px/18px system-ui, sans-serif; text-align: center; text-decoration: none; }
+.peil-alinea { position: relative; margin: 24px 0 0; padding-left: 26px; max-width: 72ch; font-size: 13px; line-height: 1.6em; color: var(--gedempt); }
+.peil-alinea[hidden] { display: none; }
+.peil-alinea .peil-merk { position: absolute; left: 0; top: 3px; }
+.peil-alinea strong { color: var(--tekst); }
+.peil-alinea a { display: inline-block; padding: 12px 4px; min-height: 44px; box-sizing: border-box; }

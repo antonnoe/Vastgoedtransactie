@@ -77,7 +77,8 @@ export function laadMeta(vandaagISO) {
         bron: dmtoData._meta.uitgever,
         bronUrl: dmtoData._meta.bron,
         status: kern.houdbaarheid(dmtoData._meta.peildatum, vandaag),
-        maandenOud: kern.maandenTussen(dmtoData._meta.peildatum, vandaag)
+        maandenOud: kern.maandenTussen(dmtoData._meta.peildatum, vandaag),
+        grensMaanden: kern.HOUDBAAR_CONTROLEREN_MAANDEN
     };
 }
 
@@ -311,6 +312,9 @@ export function bereken(ui) {
  * label, zodat te zien is wat vastligt en wat niet. Twee posten met bijna
  * dezelfde naam, waarvan de ene een tarief is en de andere een schatting,
  * horen niet zonder onderscheid onder elkaar te staan. */
+/* Het VEFA-tarief dat de kern rekent, voor de benaderingstekst in de schil. */
+export const VEFA_TARIEF_PCT = kern.TPF_VEFA_PCT;
+
 export const SOORT_TEKST = {
     wettelijk: 'wettelijk tarief',
     schatting: 'schatting, geen tarief',

@@ -11,6 +11,7 @@
  */
 
 import * as adapter from './kernadapter.js';
+import { PEIL_LABEL_AAN, peilRegelHtml, peilVoetHtml } from './peil.js';
 
 /* Doeladres van de hoogtemelding. Moet exact overeenkomen met het adres waar
  * het artikel op draait, inclusief protocol en eventueel www, anders gooit de
@@ -614,12 +615,26 @@ function render() {
     rijLijst(el('[data-lijst="inKoopsom"]'),
         inKoopsom.map((p) => ({ label: p.label, soort: p.soort, bedrag: euro(p.bedrag) })));
 
+    /* Aannames zonder overheidsbron, zichtbaar waar ze meetellen. */
+    const koperPosten = (geldig && koperKant && uitkomst.koper) ? uitkomst.koper.posten : [];
+    const deboursPost = koperPosten.find((p) => p.soort === 'schatting' && typeof p.bedrag === 'number');
+    toonEl(el('[data-toon="aannameDebours"]'), Boolean(deboursPost));
+    if (deboursPost) zetTekst('aannameDeboursBedrag', euro(deboursPost.bedrag));
+    const nieuwbouwKoop = Boolean(koperPosten.length) && a.type === 'nieuwbouw';
+    toonEl(el('[data-toon="aannameVefa"]'), nieuwbouwKoop);
+    zetTekst('aannameVefaPct', adapter.VEFA_TARIEF_PCT.toLocaleString('nl-NL', { minimumFractionDigits: 3, maximumFractionDigits: 3 }));
+
+    /* Peil-stempel direct onder het voorbehoud */
+    const stempel = el('[data-peil="stempel"]');
+    if (stempel) stempel.innerHTML = peilRegelHtml();
+
     /* Peildatum, bron en houdbaarheid, uit dmto.json */
     const meta = adapter.laadMeta();
     zetTekst('peildatum', meta.peildatum || '—');
     zetTekst('bron', meta.bron || '—');
     toonEl(el('[data-toon="verouderd"]'), meta.status === 'verouderd');
     zetTekst('verouderdPeildatum', meta.peildatum || '—');
+    zetTekst('verouderdGrens', meta.grensMaanden == null ? '—' : String(meta.grensMaanden));
     zetTekst('verouderdMaanden', meta.maandenOud == null ? '—' : String(meta.maandenOud));
 
     /* Verantwoording: waarop berust dit? */
@@ -695,6 +710,8 @@ function render() {
 }
 
 /* ── Opstarten ─────────────────────────────────────────────────────────── */
+
+{ const voet = document.getElementById('peilVoet'); if (voet) { voet.innerHTML = peilVoetHtml(); voet.hidden = !PEIL_LABEL_AAN; } }
 
 koppelInvoer();
 koppelKlik();

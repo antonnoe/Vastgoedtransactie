@@ -186,7 +186,7 @@
              de tarieven eronder oud zijn, niet pas na de opbouw. -->
         <div class="verouderd verborgen" data-toon="verouderd" role="alert">
           <strong>Deze tarieven zijn mogelijk achterhaald</strong>
-          <p>De tarieventabel dateert van <span data-tekst="verouderdPeildatum">—</span> en is inmiddels <span data-tekst="verouderdMaanden">—</span> maanden oud. De belastingdienst publiceert maandelijks een nieuwe uitgave, dus er is waarschijnlijk een recentere. Ga bij uw notaris na welk tarief nu geldt voordat u op dit bedrag afgaat.</p>
+          <p>De tarieventabel dateert van <span data-tekst="verouderdPeildatum">—</span> en is inmiddels <span data-tekst="verouderdMaanden">—</span> maanden oud. De belastingdienst publiceert maandelijks een nieuwe uitgave, dus er is waarschijnlijk een recentere. Ga bij uw notaris na welk tarief nu geldt voordat u op dit bedrag afgaat. Deze waarschuwing verschijnt bij een tabel van meer dan <span data-tekst="verouderdGrens">—</span> maanden oud; die grens is onze eigen keuze, geen wettelijke termijn.</p>
         </div>
 
         <div data-toon="opbouwBlok">
@@ -212,7 +212,14 @@
           <div><strong>De kosten van uw verkrijging ontbreken</strong><br>Bij een geërfd of geschonken pand bestaat geen forfait: alleen uw werkelijke kosten mogen van de meerwaarde af. Zolang u die niet invult, rekent deze tool zonder die aftrek, en valt de belasting hier dus te hoog uit. Wat u netto overhoudt, is in werkelijkheid hoger dan hier staat.</div>
         </div>
 
-        <p class="bronregel">Berekening, geen advies. Tarieven met peildatum <span data-tekst="peildatum">—</span> · bron: <span data-tekst="bron">—</span></p>
+        <div class="voorbehoud">
+          <p class="bronregel">Berekening, geen advies. Tarieven met peildatum <span data-tekst="peildatum">—</span> · bron: <span data-tekst="bron">—</span></p>
+          <!-- Aannames zonder overheidsbron: alleen zichtbaar waar ze meetellen. -->
+          <p class="aanname verborgen" data-toon="aannameDebours"><strong>Aanname.</strong> Débours zijn de voorschotten die de notaris voor u uitgeeft, zoals kadaster en uittreksels. Daar bestaat geen wettelijk tarief voor. Wij rekenen met een ervaringscijfer van <span data-tekst="aannameDeboursBedrag">—</span>; uw notaris noemt het werkelijke bedrag.</p>
+          <p class="aanname verborgen" data-toon="aannameVefa"><strong>Benadering.</strong> Bij nieuwbouw rekenen wij de overdrachtsbelasting met <span data-tekst="aannameVefaPct">—</span> procent. Dat is een benadering die uw notaris bevestigt.</p>
+          <!-- Peil-stempel: direct onder het voorbehoud, één voor beide uitkomsten. -->
+          <div data-peil="stempel"></div>
+        </div>
 
         <div class="verantwoording">
           <button type="button" class="opbouw-knop" data-actie="verantwoording" aria-expanded="false">
@@ -359,6 +366,8 @@
       <span class="teken" aria-hidden="true">!</span>
       <div><strong>De tarieven konden niet worden geladen</strong><br>Zonder de tarieventabel rekent deze tool niet. Er wordt bewust geen terugvaltarief gebruikt. Ververs de pagina; blijft dit staan, meld het dan via het artikel.</div>
     </div>
+
+    <p class="peil-alinea" id="peilVoet" hidden></p>
 
   </div>
 </div>
