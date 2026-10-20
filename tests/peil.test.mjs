@@ -46,6 +46,7 @@ const KOPPELING = {
     ],
   },
   'p.fr.notaris.remise_drempel_en_maximum': { constante: 'REMISE_DREMPEL en REMISE_MAX_PCT (calc.js)', vergelijk: (w) => [['drempel', kern.REMISE_DREMPEL, w && w.vanaf], ['maximum procent', kern.REMISE_MAX_PCT, w && w.maximum_procent]] },
+  'p.fr.vefa.tpf_tarief': { constante: 'TPF_VEFA_PCT (calc.js)', vergelijk: (w) => [['TPF bij VEFA in procent', kern.TPF_VEFA_PCT, w]] },
   'p.fr.tva.tarief_algemeen': { constante: 'TVA_PCT (calc.js)', vergelijk: (w) => [['btw', kern.TVA_PCT, w]] },
   'p.fr.ps.taux_global': { constante: 'TARIEF_PS_PCT (calc.js)', vergelijk: (w) => [['prélèvements sociaux in procent', kern.TARIEF_PS_PCT, w == null ? null : dec(w * 100)]] },
   'p.xb.deruyter.prelevement_solidarite': { constante: 'TARIEF_PS_DE_RUYTER_PCT (calc.js)', vergelijk: (w) => [['prélèvement de solidarité in procent', kern.TARIEF_PS_DE_RUYTER_PCT, w == null ? null : dec(w * 100)]] },
@@ -73,7 +74,6 @@ const KOPPELING = {
 const NOG_TE_VERIFIEREN = {
   'p.fr.notaris.debours_forfait': { constante: 'DEBOURS_FORFAIT (calc.js)', toolwaarde: () => kern.DEBOURS_FORFAIT },
   'p.fr.vastgoed.houdbaarheidstermijn_tarieven': { constante: 'HOUDBAAR_CONTROLEREN_MAANDEN (calc.js)', toolwaarde: () => kern.HOUDBAAR_CONTROLEREN_MAANDEN },
-  'p.fr.vefa.tpf_tarief': { constante: 'TPF_VEFA_PCT (calc.js)', toolwaarde: () => kern.TPF_VEFA_PCT },
 };
 
 const fouten = [];
