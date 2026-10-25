@@ -107,7 +107,7 @@
     },
     {
       "id": "p.fr.notaris.remise_drempel_en_maximum",
-      "naam": "Wettelijke korting op de emolumenten",
+      "naam": "Korting op de emolumenten (vrijwillig, wettelijk maximum)",
       "waarde": {
         "vanaf": 100000,
         "maximum_procent": 20
