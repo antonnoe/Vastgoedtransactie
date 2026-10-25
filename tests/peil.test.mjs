@@ -19,6 +19,7 @@ const schilJs = lees('schil.js');
 const schilCss = lees('schil.css');
 const peilJs = lees('peil.js');
 const UITLEG_URL = 'https://infofrankrijk.com/ons-manifest-hoe-wij-werken/';
+const KAART_URL = 'https://communitiesabroad.com/manifest/tool/vastgoedtransacties-in-frankrijk';
 
 const gelijk = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const dec = (n) => Math.round(n * 1e6) / 1e6; // tegen drijvende-kommaruis
@@ -89,8 +90,8 @@ const fout = (m) => fouten.push(m);
   if (WAARDEN.stand !== peil.PEIL_STAND) fout(`stand in peil/waarden.json is ${WAARDEN.stand}, maar PEIL_STAND in peil.js is ${peil.PEIL_STAND}.`);
   if (peil.PEIL_STAND === '2026-10-20' && (nl !== '20 oktober 2026' || kort !== '20 okt 2026')) fout(`Datumweergave klopt niet: '${nl}' en '${kort}'.`);
   const h = peil.peilRegelHtml();
-  if (!h.includes(`href="${UITLEG_URL}"`) || !h.includes('target="_blank"') || !h.includes('rel="noopener"')) fout('Stempel linkt niet naar het manifest met target _blank en rel noopener.');
-  if (!h.includes(`aria-label="Bedragen gecontroleerd tegen Peil, stand ${nl}, lees hoe wij werken"`)) fout('Stempel mist de aria-label met volledige datum.');
+  if (!h.includes(`href="${KAART_URL}"`) || !h.includes('target="_blank"') || !h.includes('rel="noopener"')) fout('Stempel linkt niet naar de toolkaart met target _blank en rel noopener.');
+  if (!h.includes(`aria-label="Bedragen gecontroleerd tegen Peil, stand ${nl}, bekijk wat er gecontroleerd is"`)) fout('Stempel mist de aria-label met volledige datum.');
   if (!h.includes('Gecontroleerd tegen Peil</span>') || !h.includes(`stand ${kort}<span class="peil-pijl" aria-hidden="true">&#8599;</span></span>`)) fout('Stempel mist de twee korte regels met het pijltje.');
   if ((h.match(/<a /g) || []).length !== 1 || !h.includes('<svg')) fout('Stempel moet één link met inline svg zijn.');
   if (!h.includes('stroke="#800000"')) fout('De stempel gebruikt niet de kleur #800000.');
