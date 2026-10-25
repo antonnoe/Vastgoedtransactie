@@ -45,7 +45,7 @@ const state = {
 const VERFIJNINGEN_KOPER = [
     { id: 'eersteWoning', label: 'Ik koop voor het eerst een eigen woning', uitleg: 'Bedoeld voor wie nu voor het eerst een woning koopt om zelf in te wonen. In sommige departementen scheelt dat in de overdrachtsbelasting. Hebt u eerder al een eigen woning gehad, dan geldt dit niet.' },
     { id: 'makelaarKoop', label: 'Er is een makelaar bij de aankoop', uitleg: 'In de opdracht aan de makelaar staat wie de courtage betaalt: de koper of de verkoper. Staat het bedrag ten laste van de koper, dan hoort het bij uw totale aankoopkosten. Kijk het na in de opdracht of vraag het aan de makelaar.' },
-    { id: 'kortingHonorarium', label: 'Ik vraag de wettelijke korting op het notarishonorarium', uitleg: 'De notaris mag u binnen wettelijke grenzen een korting geven op zijn eigen honorarium, boven een bepaalde koopsom. Belasting en verschotten vallen daar niet onder. U moet er zelf om vragen, vóór de akte. Zet u hem aan, dan rekent de tool met het wettelijke maximum: het gunstigste geval, niet het waarschijnlijkste.' }
+    { id: 'kortingHonorarium', label: 'Ik vraag de notaris om een korting op zijn honorarium', uitleg: 'De notaris mag u binnen wettelijke grenzen een korting geven op zijn eigen honorarium, boven een bepaalde koopsom. Belasting en verschotten vallen daar niet onder. U moet er zelf om vragen, vóór de akte. Zet u hem aan, dan rekent de tool met het wettelijke maximum: het gunstigste geval, niet het waarschijnlijkste.' }
 ];
 
 const VERFIJNINGEN_VERKOPER = [
