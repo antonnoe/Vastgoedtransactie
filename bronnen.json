@@ -35,7 +35,7 @@
       "status": "primair"
     },
     "emolumenten.remise": {
-      "grondslag": "wettelijke korting op de emolumenten, maximaal 20 procent over het deel van de grondslag vanaf 100.000 euro; de notaris is niet verplicht",
+      "grondslag": "de notaris mag een korting geven op de emolumenten, maximaal 20 procent over het deel vanaf 100.000 euro, maar is daartoe niet verplicht",
       "bronnaam": "economie.gouv.fr",
       "bronUrl": "https://www.economie.gouv.fr/particuliers/gerer-mon-argent/investir-dans-limmobilier/achat-dun-bien-immobilier-quels-frais-de-notaire-devez-vous-payer",
       "status": "primair"

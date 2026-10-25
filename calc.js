@@ -167,8 +167,10 @@ export function heeftAankoopkostenForfait(verkrijging) {
 }
 
 /** Is er bij deze situatie een forfait voor werkzaamheden? */
-export function heeftWerkzaamhedenForfait(jarenBezit, isBouwgrond) {
-    return !isBouwgrond && jarenBezit > 5;
+export function heeftWerkzaamhedenForfait(bezit, isBouwgrond) {
+    /* bezit: true/false uit langerDanVijfJaar, of een aantal jaren (dan > 5). */
+    const langer = typeof bezit === 'boolean' ? bezit : bezit > 5;
+    return !isBouwgrond && langer;
 }
 
 /* Een makelaaropgave: wie betaalt, en of het bedrag een percentage van de
@@ -507,6 +509,23 @@ export function volleJaren(datumAankoop, datumVerkoop) {
 }
 
 /**
+ * Is het bezit op datum langer dan vijf jaar? Precies vijf jaar geldt niet,
+ * vijf jaar en een dag wel (BOI-RFPI-PVI-20-10-20-20).
+ */
+export function langerDanVijfJaar(datumAankoop, datumVerkoop) {
+    const parse = (s) => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s == null ? '' : s).trim());
+        return m ? { j: +m[1], m: +m[2], d: +m[3] } : null;
+    };
+    const a = parse(datumAankoop);
+    const v = parse(datumVerkoop);
+    if (!a || !v) return false;
+    const jaren = v.j - a.j;
+    if (jaren !== 5) return jaren > 5;
+    return v.m > a.m || (v.m === a.m && v.d > a.d);
+}
+
+/**
  * Abattement voor bezitsduur in procenten, als [IR, sociale lasten].
  */
 export function berekenAbattement(jaren) {
@@ -636,7 +655,7 @@ export function berekenScenario(inv, dmtoData) {
      * geen nul maar een gat in de uitkomst, want een gemiste aftrek maakt de
      * meerwaarde juist te hoog. Daarom wordt dat apart gemeld. */
     const aankoopkostenForfait = heeftAankoopkostenForfait(inv.verkrijging);
-    const werkzaamhedenForfait = heeftWerkzaamhedenForfait(jarenBezit, inv.isBouwgrond);
+    const werkzaamhedenForfait = heeftWerkzaamhedenForfait(langerDanVijfJaar(inv.datumAankoop, inv.datumVerkoop), inv.isBouwgrond);
     const aankoopkosten = kiesKostenpost(
         aankoopkostenForfait ? aankoopprijs * (FORFAIT_AANKOOPKOSTEN_PCT / 100) : 0,
         aankoopkostenForfait ? inv.aankoopkostenModus : 'werkelijk',
@@ -1110,7 +1129,7 @@ if (typeof document !== 'undefined' && document.getElementById('spec_table')) {
         toon('primo_wrapper', !inv.isNieuwbouw);
         toon('remise_pct_wrapper', el('remise_aan').checked);
         const akForfait = heeftAankoopkostenForfait(inv.verkrijging);
-        const wzForfait = heeftWerkzaamhedenForfait(volleJaren(inv.datumAankoop, inv.datumVerkoop), inv.isBouwgrond);
+        const wzForfait = heeftWerkzaamhedenForfait(langerDanVijfJaar(inv.datumAankoop, inv.datumVerkoop), inv.isBouwgrond);
         // Zonder forfait valt er niets te kiezen: de keuzelijst verdwijnt en
         // alleen het veld voor de werkelijke kosten blijft staan.
         toon('aankoopkosten_modus', akForfait);

@@ -26,6 +26,7 @@ import {
     makelaarKanten,
     heeftAankoopkostenForfait,
     heeftWerkzaamhedenForfait,
+    langerDanVijfJaar,
     berekenScenario,
     berekenGevoeligheden,
     jaarLater,
@@ -355,6 +356,24 @@ check('bij bouwgrond telt een opgegeven werkelijk bedrag wel mee',
     berekenScenario({ ...STANDAARD_INVOER, isBouwgrond: true, werkzaamhedenEigen: 12000 }, dmto)
         .werkzaamheden.bedrag, 12000);
 check('bij bouwgrond blijft de surtaxe uitgesloten', kaleGrond.surtaxe, 0);
+
+console.log('\nGrensgevallen forfait werkzaamheden (aankoop 200.000, verkoop 320.000)');
+const grens = (a, v, grond) => berekenScenario({ ...STANDAARD_INVOER, aankoopprijs: 200000, verkoopprijs: 320000,
+    datumAankoop: a, datumVerkoop: v, isBouwgrond: grond }, dmto);
+const g5 = grens('2015-01-01', '2020-01-01', false);
+const g56 = grens('2015-01-01', '2020-07-01', false);
+const g51d = grens('2015-01-01', '2020-01-02', false);
+const g16 = grens('2005-01-01', '2021-01-01', true);
+check('precies 5 jaar: langerDanVijfJaar is onwaar', langerDanVijfJaar('2015-01-01', '2020-01-01'), false);
+check('5 jaar en 1 dag: langerDanVijfJaar is waar', langerDanVijfJaar('2015-01-01', '2020-01-02'), true);
+check('precies 5 jaar: geen forfait (aftrek 0)', g5.werkzaamheden.bedrag, 0);
+check('5 jaar en 6 maanden: wel forfait (30.000)', g56.werkzaamheden.bedrag, 30000);
+check('5 jaar en 1 dag: wel forfait (30.000)', g51d.werkzaamheden.bedrag, 30000);
+check('bouwgrond 16 jaar: geen forfait', g16.werkzaamheden.bedrag, 0);
+check('precies 5 jaar: meerwaarde 85.800 (zonder forfait)', rond(g5.brutoMeerwaarde), 85800);
+check('5 jaar en 6 maanden: meerwaarde 55.800 (met forfait)', rond(g56.brutoMeerwaarde), 55800);
+check('5 jaar en 6 maanden betaalt minder belasting dan precies 5 jaar',
+    g56.plusValueTax + g56.surtaxe < g5.plusValueTax + g5.surtaxe, true);
 
 console.log('\nKoopsom en verkoopprijs staan los van elkaar');
 check('een lege koopsom volgt de verkoopprijs',
