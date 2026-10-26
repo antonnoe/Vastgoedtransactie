@@ -43,19 +43,19 @@ const state = {
 
 /* De verfijningen, letterlijk uit het ontwerp. */
 const VERFIJNINGEN_KOPER = [
-    { id: 'eersteWoning', label: 'Ik koop voor het eerst een eigen woning', uitleg: 'Bedoeld voor wie nu voor het eerst een woning koopt om zelf in te wonen. In sommige departementen scheelt dat in de overdrachtsbelasting. Hebt u eerder al een eigen woning gehad, dan geldt dit niet.' },
+    { id: 'eersteWoning', label: 'Ik koop voor het eerst een eigen woning', uitleg: 'Bedoeld voor wie een woning koopt om zelf in te wonen en in de twee jaar vóór de aankoop geen hoofdverblijf in eigendom had. Een eerdere woning is dus geen bezwaar, als u die langer dan twee jaar geleden verkocht heeft of als het geen hoofdverblijf was. Woont u in het buitenland, dan telt alleen eigendom in Frankrijk. In sommige departementen scheelt dat in de overdrachtsbelasting.' },
     { id: 'makelaarKoop', label: 'Er is een makelaar bij de aankoop', uitleg: 'In de opdracht aan de makelaar staat wie de courtage betaalt: de koper of de verkoper. Staat het bedrag ten laste van de koper, dan hoort het bij uw totale aankoopkosten. Kijk het na in de opdracht of vraag het aan de makelaar.' },
     { id: 'kortingHonorarium', label: 'Ik vraag de notaris om een korting op zijn honorarium', uitleg: 'De notaris mag u binnen wettelijke grenzen een korting geven op zijn eigen honorarium, boven een bepaalde koopsom. Belasting en verschotten vallen daar niet onder. U moet er zelf om vragen, vóór de akte. Zet u hem aan, dan rekent de tool met het wettelijke maximum: het gunstigste geval, niet het waarschijnlijkste.' }
 ];
 
 const VERFIJNINGEN_VERKOPER = [
     { id: 'fiscaalBuiten', label: 'Ik woon fiscaal buiten Frankrijk', uitleg: 'Bent u voor de belasting geen inwoner van Frankrijk, dan geldt een ander regime voor de meerwaarde, met eigen vrijstellingen en een fiscaal vertegenwoordiger bij hogere bedragen. Uw bedrag hierboven verandert er niet door. Laat uw situatie nakijken.' },
-    { id: 'verzekerdBuiten', label: 'Ik ben voor ziektekosten verzekerd buiten Frankrijk', uitleg: 'Woont of verzekert u zich buiten Frankrijk voor ziektekosten, dan kan een deel van de heffingen op de meerwaarde anders uitpakken. U toont dat aan met een verklaring van uw verzekeraar. Twijfelt u, laat dit dan uit.' },
+    { id: 'verzekerdBuiten', label: 'Ik ben voor ziektekosten verzekerd in een ander EER-land of Zwitserland', uitleg: 'Bent u voor ziektekosten verzekerd in een ander land van de EER of in Zwitserland, en niet via het Franse stelsel, dan kan een deel van de heffingen op de meerwaarde anders uitpakken. U toont dat aan met een verklaring van uw verzekeraar. Twijfelt u, laat dit dan uit.' },
     { id: 'gemeubileerdReel', label: 'De woning was gemeubileerd verhuurd onder het reële stelsel', uitleg: 'Bij gemeubileerde verhuur onder het reële stelsel is er in de boekhouding vaak op het pand afgeschreven. Dat kan de meerwaarde bij verkoop anders laten uitvallen dan deze tool laat zien. Vraag uw boekhouder om de cijfers.' },
     { id: 'aktes', label: 'Ik heb de akte en de facturen van toen nog', uitleg: 'Met de oude akte en facturen mag u de destijds gemaakte kosten meetellen bij uw aankoopprijs. Dat verlaagt de meerwaarde. Zonder bewijsstukken geldt vaak een vast forfait.' },
     { id: 'verbouwd', label: 'Ik heb laten verbouwen door een bedrijf, met facturen', uitleg: 'Werk dat door een erkend bedrijf is uitgevoerd en gefactureerd, mag onder voorwaarden bij de aankoopprijs worden opgeteld. Zelf geklust of zwart betaald telt niet mee. Bewaar de facturen op naam van de eigenaar.' },
     { id: 'makelaarVerk', label: 'Er is een makelaar bij de verkoop', uitleg: 'In de verkoopopdracht staat wie de courtage betaalt en hoe hoog die is: een percentage van de prijs of een vast bedrag. Betaalt u die als verkoper, dan gaat hij van uw opbrengst af. Neem het over zoals het in de opdracht staat.' },
-    { id: 'verkoopkosten', label: 'Ik maak verkoopkosten (landmeter, keuringen, doorhaling)', uitleg: 'Denk aan de landmeter, de verplichte keuringen van de woning en het doorhalen van een oude hypotheek. Die kosten gaan van uw opbrengst af. Weet u een bedrag niet, kies dan "weet ik niet" — de post blijft dan buiten de berekening.' }
+    { id: 'verkoopkosten', label: 'Ik maak verkoopkosten (landmeter, keuringen, doorhaling)', uitleg: 'Denk aan de landmeter, de verplichte keuringen van de woning en het doorhalen van een oude hypotheek. Al die kosten gaan van uw opbrengst af. Voor de belasting op de meerwaarde telt de landmeter niet mee, de keuringen en de doorhaling wel. Weet u een bedrag niet, kies dan "weet ik niet" — de post blijft dan buiten de berekening.' }
 ];
 
 /* ── Flow ──────────────────────────────────────────────────────────────── */
@@ -63,7 +63,8 @@ const VERFIJNINGEN_VERKOPER = [
 function flow() {
     const a = state.antwoorden;
     const koper = ['k1', 'k2', 'k3'];
-    const verk = a.hoofdverblijf === 'ja' ? ['v0'] : ['v0', 'vB', 'v1', 'v2', 'v3', 'v4'];
+    /* Bouwgrond is nooit als hoofdverblijf vrijgesteld, dus die vraag volgt ook bij ja. */
+    const verk = (a.hoofdverblijf === 'ja' && a.bouwgrond !== 'ja') ? ['v0', 'vB'] : ['v0', 'vB', 'v1', 'v2', 'v3', 'v4'];
     if (state.route === 'koper') return ['rol'].concat(koper, ['res']);
     if (state.route === 'verkoper') return ['rol'].concat(verk, ['res']);
     if (state.route === 'beide') return ['rol'].concat(koper, ['kres'], verk, ['res']);

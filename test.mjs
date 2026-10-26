@@ -294,9 +294,54 @@ check('een ingevulde post telt gewoon mee', metOnbekend.diagnostics, 800);
 check('alle drie ingevuld geeft geen onbekende posten',
     berekenScenario({ ...STANDAARD_INVOER, landmeter: 1000, diagnostics: 800, mainlevee: 500 }, dmto)
         .onbekendePosten.length, 0);
-check('de drie posten verlagen samen de meerwaardegrondslag',
+check('alleen diagnostics en mainlevee verlagen de meerwaardegrondslag, de landmeter niet (BOFiP PVI-20-10-10 par. 80)',
     berekenScenario({ ...STANDAARD_INVOER, landmeter: 1000, diagnostics: 800, mainlevee: 500 }, dmto).verkoopkosten,
-    2300);
+    1300);
+{
+    const zonderLm = berekenScenario({ ...STANDAARD_INVOER, landmeter: 0, diagnostics: 800, mainlevee: 500 }, dmto);
+    const metLm = berekenScenario({ ...STANDAARD_INVOER, landmeter: 1000, diagnostics: 800, mainlevee: 500 }, dmto);
+    check('de landmeter laat de meerwaarde en de heffing ongemoeid', metLm.plusValueTax, zonderLm.plusValueTax);
+    check('de landmeter blijft wel een kost van de verkoper', rond(metLm.totaalKostenVerkoper - zonderLm.totaalKostenVerkoper), 1000);
+}
+
+console.log('\nHerstel rekenwijze (keuring vastgoed-meerwaarde)');
+{
+    /* Overzeese departementen: opslag A444-53 en btw 8,5 of 0 (art. 294 en 296 CGI). */
+    const basis = berekenEmolumenten(250000);
+    const opties = (code) => ({ isNieuwbouw: true, remisePct: 0, departementCode: code });
+    const ref = notarisComponenten(250000, opties(null));
+    check('metropool: geen opslag, btw 20 procent', [ref.opslag, ref.tvaPct, ref.tva].join('|'), [0, 20, rond(basis * 0.2)].join('|'));
+    for (const [code, opslagPct, tvaPct] of [['971', 23, 8.5], ['972', 24, 8.5], ['973', 20, 0], ['974', 36, 8.5], ['976', 36, 0]]) {
+        const n = notarisComponenten(250000, opties(code));
+        const em = basis * (1 + opslagPct / 100);
+        check(`departement ${code}: opslag ${opslagPct} procent over de emolumenten`, n.opslag, rond(basis * opslagPct / 100));
+        check(`departement ${code}: btw ${tvaPct} procent over emolumenten plus opslag`, n.tva, rond(em * tvaPct / 100));
+        check(`departement ${code}: totaal klopt met de componenten`,
+            n.totaal, rond(em + em * tvaPct / 100 + n.overdrachtsbelasting + n.csi + n.debours));
+    }
+    /* 974: 36 procent opslag en 8,5 procent btw, tegen 20 procent btw zonder opslag. */
+    const d974 = notarisComponenten(250000, opties('974'));
+    check('974 komt ruim boven de metropool uit (keuring: circa 660 euro)', d974.totaal - ref.totaal > 600 && d974.totaal - ref.totaal < 700, true);
+    const viaScenario = berekenScenario({ ...STANDAARD_INVOER, rol: 'kopen', postcode: '97400', koopsom: 250000, isNieuwbouw: true }, dmto);
+    check('berekenScenario past de opslag toe via de postcode', viaScenario.notarisSpecificatie.opslagPct, 36);
+
+    /* Hoofdverblijf: art. 150 U II 1°; niet voor bouwgrond, niet voor een niet-ingezetene. */
+    const verk = { ...STANDAARD_INVOER, rol: 'verkopen', verkoopprijs: 320000, aankoopprijs: 200000,
+        datumAankoop: '2010-01-01', datumVerkoop: '2026-01-01', landmeter: 0, diagnostics: 0, mainlevee: 0 };
+    check('hoofdverblijf van een inwoner: vrijgesteld', berekenScenario({ ...verk, isHoofdverblijf: true }, dmto).plusValueTax, 0);
+    check('hoofdverblijf van een niet-ingezetene: niet vrijgesteld',
+        berekenScenario({ ...verk, isHoofdverblijf: true, isNietIngezetene: true }, dmto).plusValueTax > 0, true);
+    check('bouwgrond als hoofdverblijf: niet vrijgesteld',
+        berekenScenario({ ...verk, isHoofdverblijf: true, isBouwgrond: true }, dmto).plusValueTax > 0, true);
+    check('bouwgrond als hoofdverblijf: pvReden is geen vrijstelling',
+        berekenScenario({ ...verk, isHoofdverblijf: true, isBouwgrond: true }, dmto).pvReden, '');
+
+    /* Prijs tot en met 15.000 euro: art. 150 U II 6°. */
+    const laag = { ...verk, verkoopprijs: 15000, aankoopprijs: 5000, datumAankoop: '2020-01-01', isBouwgrond: true };
+    check('verkoopprijs 15.000: geen heffing', berekenScenario(laag, dmto).plusValueTax, 0);
+    check('verkoopprijs 15.000: reden vrijstelling', berekenScenario(laag, dmto).pvReden, 'vrijstelling lage verkoopprijs');
+    check('verkoopprijs 15.001: wel heffing', berekenScenario({ ...laag, verkoopprijs: 15001 }, dmto).plusValueTax > 0, true);
+}
 
 console.log('\nWijze van verkrijging: forfait bestaat alleen bij een aankoop');
 // Art. 150 VB II 2 en 3 CGI met art. 41 duovicies I van bijlage III.

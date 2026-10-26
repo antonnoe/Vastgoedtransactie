@@ -346,6 +346,9 @@ function postenKoper(res) {
     if (spec.korting > 0) {
         rijen.push({ label: 'Korting op het honorarium', soort: 'afspraak', bedrag: -spec.korting, bronId: spec.bronnen.korting });
     }
+    if (spec.opslag > 0) {
+        rijen.push({ label: `Opslag op het honorarium, overzeese departementen (${spec.opslagPct} procent)`, soort: 'wettelijk', bedrag: spec.opslag, bronId: spec.bronnen.emolumenten });
+    }
     rijen.push(
         { label: 'Btw over het honorarium', soort: 'wettelijk', bedrag: spec.tva, bronId: spec.bronnen.tva },
         { label: 'Contribution de sécurité immobilière', soort: 'wettelijk', bedrag: spec.csi, bronId: spec.bronnen.csi },
@@ -374,7 +377,9 @@ function postenVerkoper(res) {
         { label: 'Makelaarscourtage', soort: 'opgave', bedrag: res.makelaarsKostenVerkoop > 0 ? -res.makelaarsKostenVerkoop : null, bronId: kern.BRON.pvVerkoopkosten },
         { label: 'Meerwaardebelasting en sociale heffingen', soort: 'wettelijk', bedrag: res.plusValueTax > 0 ? -res.plusValueTax : null, bronId: kern.BRON.pvTarieven },
         { label: 'Heffing op hoge meerwaarden', soort: 'wettelijk', bedrag: res.surtaxe > 0 ? -res.surtaxe : null, bronId: kern.BRON.pvSurtaxe },
-        { label: 'Verkoopkosten', soort: 'opgave', bedrag: res.verkoopkosten > 0 ? -res.verkoopkosten : null, bronId: kern.BRON.pvVerkoopkosten }
+        { label: 'Verkoopkosten', soort: 'opgave', bedrag: res.verkoopkosten > 0 ? -res.verkoopkosten : null, bronId: kern.BRON.pvVerkoopkosten },
+        /* De landmeter is een kost van de verkoper, maar geen aftrekpost voor de meerwaarde. */
+        { label: 'Landmeter (niet aftrekbaar van de meerwaarde)', soort: 'opgave', bedrag: res.landmeter > 0 ? -res.landmeter : null, bronId: kern.BRON.pvVerkoopkosten }
     ];
 }
 

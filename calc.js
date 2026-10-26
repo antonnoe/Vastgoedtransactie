@@ -103,8 +103,18 @@ export const EMOLUMENTEN_TRANCHES = [
 /* BTW over de emolumenten van de notaris. */
 export const TVA_PCT = 20.0;
 
+/* Overzeese departementen: de emolumenten zijn verhoogd met een vast percentage
+ * (Code de commerce art. A444-53, tweede alinea: 23 procent Guadeloupe, 24
+ * Martinique, 20 Guyane, 36 La Réunion en Mayotte; de tarieven gelden tot en met
+ * 29 februari 2028) en de btw is anders (CGI art. 294 en 296: 8,5 procent in
+ * Guadeloupe, Martinique en La Réunion; in Guyane en Mayotte voorlopig geen btw,
+ * art. 294 1; beide artikelen vervallen per 1 januari 2027 volgens de DILA-gegevens,
+ * dus controleren bij de volgende Peil-ijking). */
+export const DOM_EMOLUMENTEN_OPSLAG_PCT = { '971': 23, '972': 24, '973': 20, '974': 36, '976': 36 };
+export const DOM_TVA_PCT = { '971': 8.5, '972': 8.5, '973': 0, '974': 8.5, '976': 0 };
+
 /* Contribution de securite immobiliere: verschuldigd op grond van art. 879 CGI,
- * tarief in art. 881 K, en een ondergrens per akte in art. 881 F. Onder een
+ * tarief in art. 881 K, en een ondergrens per akte in art. 881 M b. Onder een
  * prijs van 15.000 euro komt het percentage onder die ondergrens uit; dan geldt
  * het minimum. */
 export const CSI_PCT = 0.10;
@@ -135,7 +145,8 @@ export const DEBOURS_FORFAIT = 1200.0;
 
 /* Korting die de notaris mag geven op zijn emolumenten: ten hoogste
  * REMISE_MAX_PCT over het deel van de grondslag vanaf REMISE_DREMPEL.
- * Hij is daartoe niet verplicht. Bron: economie.gouv.fr, frais de notaire. */
+ * Hij is daartoe niet verplicht. Bron: Code de commerce art. A444-174 2° (maximum
+ * 20 procent) en art. L444-2 (korting facultatief, vast en gelijk voor iedereen). */
 export const REMISE_DREMPEL = 100000;
 export const REMISE_MAX_PCT = 20;
 
@@ -274,6 +285,10 @@ export const SURTAXE_BAREME = [
  * verkopen vanaf deze datum, op grond van art. 84 van wet 2025-127 van
  * 14 februari 2025. Bron: impots.gouv.fr, "Je vends mon bien immobilier,
  * vais-je payer de la plus-value immobiliere ?". */
+/* Vrijstelling bij een verkoopprijs tot en met dit bedrag: art. 150 U II 6° CGI
+ * ("inférieur ou égal à 15 000 €"). Bij onverdeeldheid geldt de drempel per aandeel. */
+export const VRIJSTELLING_VERKOOPPRIJS = 15000;
+
 export const TERUGNAME_AFSCHRIJVINGEN_VANAF = '2025-02-15';
 
 export const SIGNALERINGEN = {
@@ -415,7 +430,7 @@ export function berekenDmto(prijs, departementaalPct, meta) {
  * Optionele korting van de notaris op zijn emolumenten. Wettelijk maximum:
  * REMISE_MAX_PCT over het deel van de grondslag vanaf REMISE_DREMPEL. De
  * notaris is niet verplicht die korting te geven; standaard staat hij uit.
- * Bron: economie.gouv.fr, frais de notaire.
+ * Bron: Code de commerce art. A444-174 2° en L444-2.
  */
 export function berekenRemise(prijs, remisePct) {
     const pct = Math.min(Math.max(Number(remisePct) || 0, 0), REMISE_MAX_PCT);
@@ -433,12 +448,17 @@ export function berekenRemise(prijs, remisePct) {
 export function notarisComponenten(prijs, opties) {
     if (!(prijs > 0)) return null;
     const korting = berekenRemise(prijs, opties.remisePct);
-    const emolumenten = berekenEmolumenten(prijs) - korting;
-    const tva = emolumenten * (TVA_PCT / 100);
+    const dom = opties.departementCode || null;
+    const opslagPct = dom && DOM_EMOLUMENTEN_OPSLAG_PCT[dom] ? DOM_EMOLUMENTEN_OPSLAG_PCT[dom] : 0;
+    const tvaPct = dom && dom in DOM_TVA_PCT ? DOM_TVA_PCT[dom] : TVA_PCT;
+    const nettoEmolumenten = berekenEmolumenten(prijs) - korting;
+    const opslag = nettoEmolumenten * (opslagPct / 100);
+    const emolumenten = nettoEmolumenten + opslag;
+    const tva = emolumenten * (tvaPct / 100);
     const overdrachtsbelasting = opties.isNieuwbouw
         ? prijs * (TPF_VEFA_PCT / 100)
         : berekenDmto(prijs, opties.departementaalPct, opties.meta);
-    /* De ondergrens van art. 881 F bijt onder een prijs van 15.000 euro. Zonder
+    /* De ondergrens van art. 881 M b bijt onder een prijs van 15.000 euro. Zonder
      * die grens rekent de tool bij de goedkoopste panden te weinig. */
     const csi = Math.max(prijs * (CSI_PCT / 100), CSI_MINIMUM);
     return {
@@ -448,6 +468,8 @@ export function notarisComponenten(prijs, opties) {
         emolumentenBruto: rond2(berekenEmolumenten(prijs)),
         emolumenten: rond2(emolumenten),
         korting: rond2(korting),
+        opslag: rond2(opslag),
+        opslagPct, tvaPct,
         tva: rond2(tva),
         overdrachtsbelasting: rond2(overdrachtsbelasting),
         csi: rond2(csi),
@@ -574,6 +596,10 @@ export function berekenSurtaxe(pvImposable, aantalVerkopers, isBouwgrond) {
  * met gewijzigde invoer opnieuw draaien voor de gevoeligheden, en kan test.mjs
  * hem rechtstreeks aanroepen.
  */
+export function hoofdverblijfVrijgesteld(inv) {
+    return Boolean(inv.isHoofdverblijf) && !inv.isBouwgrond && !inv.isNietIngezetene;
+}
+
 export function berekenScenario(inv, dmtoData) {
     const meta = dmtoData._meta;
     const verkoopprijs = Math.max(0, Number(inv.verkoopprijs) || 0);
@@ -626,7 +652,8 @@ export function berekenScenario(inv, dmtoData) {
     let notarisSpecificatie = null;
     if (inv.isNieuwbouw || departement) {
         notarisSpecificatie = notarisComponenten(prijsVoorNotaris, {
-            isNieuwbouw: inv.isNieuwbouw, departementaalPct: tarief, meta, remisePct: inv.remisePct
+            isNieuwbouw: inv.isNieuwbouw, departementaalPct: tarief, meta, remisePct: inv.remisePct,
+            departementCode: departement ? departement.code : null
         });
         notarisKosten = notarisSpecificatie ? notarisSpecificatie.totaal : 0;
         if (notarisSpecificatie) {
@@ -648,7 +675,10 @@ export function berekenScenario(inv, dmtoData) {
     const jarenBezit = volleJaren(inv.datumAankoop, inv.datumVerkoop);
 
     // Plus-value
-    const verkoopkosten = landmeter + diagnostics + mainlevee;
+    /* Alleen de limitatieve lijst van BOI-RFPI-PVI-20-10-10 par. 80 is aftrekbaar
+     * (tussenpersoon, verplichte diagnoses, doorhaling hypotheek e.d.). Een
+     * landmeter staat er niet bij: die kost geld, maar verlaagt de meerwaarde niet. */
+    const verkoopkosten = diagnostics + mainlevee;
     const prijsVoorMeerwaarde = nettoVerkoperBasis - verkoopkosten;
     /* Bestaat het forfait in deze situatie niet, dan is er niets te kiezen:
      * uitsluitend de werkelijke kosten tellen. Een niet opgegeven bedrag is dan
@@ -680,8 +710,15 @@ export function berekenScenario(inv, dmtoData) {
     let surtaxe = 0;
     let pvReden = '';
 
-    if (inv.isHoofdverblijf) {
+    /* Vrijstelling hoofdverblijf: art. 150 U II 1° CGI. Niet voor bouwgrond
+     * (BOI-RFPI-PVI-10-40-10 par. 340) en niet voor een niet-ingezetene op het
+     * moment van verkoop (art. 244 bis A II 1° CGI, die het hoofdverblijf alleen
+     * onder voorwaarden van vertrek uitzondert; zie de signalering). Daarnaast
+     * art. 150 U II 6°: geen heffing bij een verkoopprijs tot en met 15.000 euro. */
+    if (hoofdverblijfVrijgesteld(inv)) {
         pvReden = 'vrijstelling hoofdverblijf';
+    } else if (verkoopprijs > 0 && verkoopprijs <= VRIJSTELLING_VERKOOPPRIJS) {
+        pvReden = 'vrijstelling lage verkoopprijs';
     } else {
         const gecorrigeerdeAankoop = aankoopprijs + aankoopkosten.bedrag + werkzaamheden.bedrag;
         brutoMeerwaarde = prijsVoorMeerwaarde - gecorrigeerdeAankoop;
@@ -708,7 +745,7 @@ export function berekenScenario(inv, dmtoData) {
      * gemeentelijke opslag bij bestaande bouw in het DMTO zit. Twee delen, twee
      * bronnen: het kale tarief bij de ene, de opslag bij de andere. */
     if (koopt && inv.isNieuwbouw) toegepasteRegels.push(BRON.vefaAssiette);
-    if (verkooptRol && !inv.isHoofdverblijf) {
+    if (verkooptRol && pvReden !== 'vrijstelling hoofdverblijf' && pvReden !== 'vrijstelling lage verkoopprijs') {
         if (brutoMeerwaarde > 0) {
             toegepasteRegels.push(BRON.pvAbattement);
             if (inv.deRuyter) toegepasteRegels.push(BRON.pvDeRuyter);
@@ -725,7 +762,7 @@ export function berekenScenario(inv, dmtoData) {
         if (inv.isNietIngezetene) toegepasteRegels.push(BRON.pvNietIngezetene);
     }
 
-    const totaalKostenVerkoper = makelaarsKosten + plusValueTax + surtaxe + verkoopkosten;
+    const totaalKostenVerkoper = makelaarsKosten + plusValueTax + surtaxe + verkoopkosten + landmeter;
     const nettoOpbrengst = verkoopprijs - totaalKostenVerkoper;
     const totaalKostenKoper = notarisKosten === null
         ? null
@@ -884,7 +921,7 @@ export function valideer(inv, dmtoData) {
      * niet van de prijs af. Een verkoopprijs eisen om te kunnen melden dat er
      * niets te betalen valt, zou de gebruiker naar een vraag sturen die er niet
      * toe doet. */
-    if (verkoopt && !inv.isHoofdverblijf && !(Number(inv.verkoopprijs) > 0)) {
+    if (verkoopt && !hoofdverblijfVrijgesteld(inv) && !(Number(inv.verkoopprijs) > 0)) {
         fouten.push('Vul een verkoopprijs groter dan nul in.');
     }
     if (koopt && !(koopsomVan(inv) > 0)) {
@@ -908,7 +945,7 @@ export function valideer(inv, dmtoData) {
         if (negatief(waarde)) fouten.push(`Het bedrag voor ${naam} kan niet negatief zijn.`);
     }
     /* Ook de bezitsduur doet er bij een vrijgesteld hoofdverblijf niet toe. */
-    if (verkoopt && !inv.isHoofdverblijf) {
+    if (verkoopt && !hoofdverblijfVrijgesteld(inv)) {
         if (!inv.datumAankoop || !inv.datumVerkoop) {
             fouten.push('Vul zowel een aankoopdatum als een verkoopdatum in.');
         } else if (inv.datumVerkoop < inv.datumAankoop) {
@@ -977,7 +1014,7 @@ export function berekenGevoeligheden(inv, dmtoData) {
         && basis.departement && basis.departement.primo < basis.departement.std) {
         voegToe('primo', 'Als u primo-accédant bent', 'koper', { ...inv, isPrimo: true });
     }
-    if (verkoopt && !inv.isHoofdverblijf && basis.brutoMeerwaarde > 0 && basis.abatPs < 100) {
+    if (verkoopt && !hoofdverblijfVrijgesteld(inv) && basis.brutoMeerwaarde > 0 && basis.abatPs < 100) {
         voegToe('jaarLanger', 'Een jaar langer wachten met verkopen', 'verkoper',
             { ...inv, datumVerkoop: jaarLater(inv.datumVerkoop) });
     }
@@ -1355,7 +1392,7 @@ if (typeof document !== 'undefined' && document.getElementById('spec_table')) {
 
         // --- Toelichting ---
         let uitleg = '<strong>Validatie van berekening:</strong><br>';
-        if (verkoopt && inv.isHoofdverblijf) {
+        if (verkoopt && hoofdverblijfVrijgesteld(inv)) {
             uitleg += '✅ Object is Hoofdverblijf. Volledige vrijstelling Plus-Value.';
         } else if (verkoopt && res.brutoMeerwaarde > 0) {
             uitleg += `Jaren bezit: ${res.jarenBezit}.<br>`;
