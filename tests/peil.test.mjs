@@ -27,6 +27,10 @@ const telStd = (veld) => { const t = {}; for (const d of Object.values(DMTO.depa
 
 // ---- Koppeling Peil-id naar toolconstante. Elke regel levert [wat, toolwaarde, peilwaarde]-rijen.
 const KOPPELING = {
+  // Débours: in Peil een schatting met bandbreedte (status raming); de tool rekent met een vaste schatting die daarbinnen moet liggen.
+  'p.fr.notaris.debours_forfait': { constante: 'DEBOURS_FORFAIT (calc.js)', vergelijk: (w) => [['schatting binnen de bandbreedte van Peil', true, !!w && kern.DEBOURS_FORFAIT >= w.gangbaar_van && kern.DEBOURS_FORFAIT <= w.gangbaar_tot]] },
+  'p.fr.notaris.majoration_dom': { constante: 'DOM_EMOLUMENTEN_OPSLAG_PCT (calc.js)', vergelijk: (w) => [['opslag per overzees departement', kern.DOM_EMOLUMENTEN_OPSLAG_PCT, w && { '971': w['971_guadeloupe'], '972': w['972_martinique'], '973': w['973_guyane'], '974': w['974_la_reunion'], '976': w['976_mayotte'] }]] },
+  'p.fr.tva.tarief_dom': { constante: 'DOM_TVA_PCT (calc.js)', vergelijk: (w) => [['btw op de emolumenten per overzees departement (geen btw in 973 en 976)', kern.DOM_TVA_PCT, w && { '971': w.guadeloupe_martinique_la_reunion_normaal, '972': w.guadeloupe_martinique_la_reunion_normaal, '973': 0, '974': w.guadeloupe_martinique_la_reunion_normaal, '976': 0 }]] },
   'p.fr.csi.tarief_en_minimum': { constante: 'CSI_PCT en CSI_MINIMUM (calc.js)', vergelijk: (w) => [['tarief', kern.CSI_PCT, w && w.tarief_procent], ['minimum per akte', kern.CSI_MINIMUM, w && w.minimum_eur]] },
   'p.fr.dmto.departementaal_primo': {
     constante: 'dmto.json, veld primo per département',
@@ -73,7 +77,6 @@ const KOPPELING = {
 // Parameters met status te_verifieren: waarde null in Peil, de tool houdt zijn waarde en toont die als aanname of benadering.
 // Krijgt Peil later een waarde, dan vergelijkt deze test hem met de constante hieronder.
 const NOG_TE_VERIFIEREN = {
-  'p.fr.notaris.debours_forfait': { constante: 'DEBOURS_FORFAIT (calc.js)', toolwaarde: () => kern.DEBOURS_FORFAIT },
   'p.fr.vastgoed.houdbaarheidstermijn_tarieven': { constante: 'HOUDBAAR_CONTROLEREN_MAANDEN (calc.js)', toolwaarde: () => kern.HOUDBAAR_CONTROLEREN_MAANDEN },
 };
 

@@ -1,5 +1,5 @@
 {
-  "stand": "2026-10-20",
+  "stand": "2026-10-26",
   "toelichting": "Kopie van de waarden uit Peil, het parameterregister van Communities Abroad. Wordt bijgewerkt door de Peil-agent; tests/peil.test.mjs vergelijkt de tool hiermee. Parameters met status te_verifieren hebben waarde null en worden niet vergeleken.",
   "parameters": [
     {
@@ -19,7 +19,7 @@
       "waarde": {
         "standaard_primo_accedant": 4.5,
         "indre_36": 3.8,
-        "savoie_73": 4.0,
+        "savoie_73": 4,
         "granulariteit": "departement"
       },
       "waarde_weergave": "4,50 procent voor een eerste eigen woning, met twee uitzonderingen: Indre 3,80 procent en Savoie 4,00 procent (art. 1594 F septies CGI). Tarieven volgens de DGFiP-tabel per 1 juni 2026.",
@@ -73,12 +73,15 @@
     },
     {
       "id": "p.fr.notaris.debours_forfait",
-      "naam": "Débours, forfaitaire schatting",
-      "status": "te_verifieren",
-      "waarde": null,
-      "waarde_weergave": null,
+      "naam": "Débours, schatting (geen wettelijk bedrag)",
+      "status": "raming",
+      "waarde": {
+        "gangbaar_van": 800,
+        "gangbaar_tot": 1500
+      },
+      "waarde_weergave": "800 tot 1.500 euro. Waarschijnlijke bandbreedte, geen officieel bedrag: de débours verschillen per dossier (onder meer kadaster, stukken van de gemeente en de hypotheekdienst).",
       "bron_url": null,
-      "verificatiedatum": null
+      "verificatiedatum": "2026-10-25"
     },
     {
       "id": "p.fr.notaris.emolumenten_schaal",
@@ -102,8 +105,24 @@
         }
       ],
       "waarde_weergave": "tot 6.500 euro 3,870 procent; tot 17.000 euro 1,596 procent; tot 60.000 euro 1,064 procent; daarboven 0,799 procent",
-      "bron_url": "https://www.economie.gouv.fr/particuliers/gerer-mon-argent/investir-dans-limmobilier/achat-dun-bien-immobilier-quels-frais-de-notaire-devez-vous-payer",
-      "verificatiedatum": "2026-08-12"
+      "bron_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000041684370",
+      "verificatiedatum": "2026-10-26"
+    },
+    {
+      "id": "p.fr.notaris.majoration_dom",
+      "naam": "Opslag op de emolumenten van de notaris in de overzeese departementen",
+      "waarde": {
+        "971_guadeloupe": 23,
+        "972_martinique": 24,
+        "973_guyane": 20,
+        "974_la_reunion": 36,
+        "976_mayotte": 36,
+        "wallis_en_futuna": 25,
+        "eenheid_waarde": "procent opslag op de emolumenten"
+      },
+      "waarde_weergave": "opslag op de emolumenten: Guadeloupe 23 procent, Martinique 24 procent, Guyane 20 procent, La Réunion en Mayotte 36 procent (Wallis en Futuna 25 procent)",
+      "bron_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000053603093",
+      "verificatiedatum": "2026-10-26"
     },
     {
       "id": "p.fr.notaris.remise_drempel_en_maximum",
@@ -186,7 +205,7 @@
           260000
         ]
       },
-      "waarde_weergave": "vanaf 50.000 euro belastbare meerwaarde, 2 tot 6 procent met afvlakking per tranche",
+      "waarde_weergave": "vanaf 50.000 euro belastbare meerwaarde, 2 tot 6 procent over de hele meerwaarde, met afvlakking in de vijf banden van 10.000 euro direct boven 50.000, 100.000, 150.000, 200.000 en 250.000 euro",
       "bron_url": "https://bofip.impots.gouv.fr/bofip/8597-PGP.html/identifiant=BOI-RFPI-TPVIE-20-20230718",
       "verificatiedatum": "2026-10-20"
     },
@@ -221,6 +240,18 @@
       "waarde_weergave": "20 procent",
       "bron_url": "https://bofip.impots.gouv.fr/doctrine/BOI-TVA-LIQ-20",
       "verificatiedatum": "2026-10-19"
+    },
+    {
+      "id": "p.fr.tva.tarief_dom",
+      "naam": "Btw-tarief in de overzeese departementen",
+      "waarde": {
+        "guadeloupe_martinique_la_reunion_normaal": 8.5,
+        "guadeloupe_martinique_la_reunion_verlaagd": 2.1,
+        "guyane_mayotte": "niet van toepassing"
+      },
+      "waarde_weergave": "normaal tarief 8,5 procent in Guadeloupe, Martinique en La Réunion (verlaagd 2,1 procent); in Guyane en Mayotte geen btw",
+      "bron_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000028419532",
+      "verificatiedatum": "2026-10-26"
     },
     {
       "id": "p.fr.vastgoed.houdbaarheidstermijn_tarieven",

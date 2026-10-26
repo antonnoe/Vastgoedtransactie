@@ -4,7 +4,7 @@
  * Bij elke controle alleen PEIL_STAND aanpassen (en peil/waarden.json).
  * Deze module raakt de rekenkern niet en heeft geen DOM nodig. */
 
-export const PEIL_STAND = '2026-10-20';
+export const PEIL_STAND = '2026-10-26';
 /* Schakelaar voor het Peil-label (stempel en voettekstalinea). Zolang false toont de tool niets over Peil. */
 export const PEIL_LABEL_AAN = true;
 export const PEIL_UITLEG_URL = 'https://infofrankrijk.com/ons-manifest-hoe-wij-werken/';
